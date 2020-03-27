@@ -1,2 +1,4 @@
 pyside2
 astropy
+matplotlib
+scipy
