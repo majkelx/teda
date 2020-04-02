@@ -27,15 +27,23 @@ class FitsPlotter(object):
         self.stretch = stretch
         self.stretch_kwargs = stretchkwargs
         self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list('zielonka', ['w', 'g'], )
-        self._data = None
+        self._hdus = None
         self.img = None
+
+    def open(self):
+        if self._hdus is None:
+            self._hdus = fits.open(self.fitsfile, lazy_load_hdus=False)
+            self._hdus.info()
 
     @property
     def data(self):
-        if self._data is None:
-            hdus = fits.open(self.fitsfile, lazy_load_hdus=False)
-            self._data = hdus[self.hdu].data
-        return self._data
+        self.open()
+        return self._hdus[self.hdu].data
+
+    @property
+    def header(self):
+        self.open()
+        return self._hdus[self.hdu].header
 
     def get_ax(self, figsize=(6, 6)):
         if self.ax is None:

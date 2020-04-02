@@ -46,7 +46,7 @@ from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
                            QTextCursor, QTextTableFormat)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 from PySide2.QtWidgets import (QAction, QApplication, QDialog, QDockWidget,
-                               QFileDialog, QListWidget, QMainWindow, QMessageBox)
+                               QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem)
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from fitsplot import (FitsPlotter)
@@ -68,8 +68,9 @@ class MainWindow(QMainWindow):
         self.createToolBars()
         self.createStatusBar()
         self.createDockWindows()
+        self.createInfoWindow()
 
-        self.setWindowTitle("Dock Widgets")
+        self.setWindowTitle("TEDA")
 
     def print_(self):
         document = self.textEdit.document()
@@ -92,6 +93,8 @@ class MainWindow(QMainWindow):
         fits_plot.plot_fits_file()
         self.central_widget = FigureCanvas(fits_plot.figure)
         self.setCentralWidget(self.central_widget)
+
+        self.setHeader(fits_plot.header)
 
     def save(self):
         filename, _ = QFileDialog.getSaveFileName(self,
@@ -156,6 +159,7 @@ class MainWindow(QMainWindow):
         self.fileToolBar = self.addToolBar("File")
         self.fileToolBar.addAction(self.openAct)
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
+        self.viewMenu.addSeparator()
 
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
@@ -201,6 +205,30 @@ class MainWindow(QMainWindow):
 
         self.customerList.currentTextChanged.connect(self.insertCustomer)
         self.paragraphsList.currentTextChanged.connect(self.addParagraph)
+
+    def createInfoWindow(self):
+        dock = QDockWidget("FITS data", self)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+        self.headerWidget = QTableWidget(self)
+        self.headerWidget.setColumnCount(2)
+        dock.setWidget(self.headerWidget)
+
+    def setHeader(self, header):
+        self.headerWidget.setRowCount(len(header))
+        i = 0;
+        for key in list(header.keys()) :
+            newItem = QTableWidgetItem()
+            newItem.setText(key)
+            self.headerWidget.setItem(i, 0, newItem)
+            newItem = QTableWidgetItem()
+            newItem.setText(str(header[key]))
+            self.headerWidget.setItem(i, 1, newItem)
+            i = i + 1
+
+
 
 
 if __name__ == '__main__':
