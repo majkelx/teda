@@ -63,7 +63,6 @@ class MainWindow(QMainWindow):
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
-
         self.createActions()
         self.createMenus()
         self.createToolBars()
