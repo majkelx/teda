@@ -1,44 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
-from PySide2 import *
-from PySide2.QtWidgets import *
-from PySide2.QtGui import *
-from PySide2.QtCore import *
-from PySide2.QtCharts import *
 from astropy.io import fits
-from astropy.utils.data import get_pkg_data_filename as get
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
-import scipy.misc
-import matplotlib.pyplot as plt
-import matplotlib
-from numpy import *
 import astropy.visualization as vis
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+
+import matplotlib
+import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
-
-@Slot()
-def load_fits_file():
-    fileName = QFileDialog.getOpenFileName(mainWin, "Open Image", "/home/akond/Pulpit/fits", "Fits files (*.fits)")[0]
-
-    fits_plot = FitsPlotter(fileName)
-    fits_plot.plot_fits_file()
-    fig = fits_plot.figure
-    canvas = FigureCanvas(fig)
-    mainWin.central_widget.image_widget.layout.addWidget(canvas)
-    mainWin.central_widget.image_widget.setLayout(mainWin.central_widget.image_widget.layout)
-    # mainWin.image_widget.show_image()
-
-
-@Slot()
-def clear_image():
-    # temporary
-    widgets_size = mainWin.central_widget.image_widget.layout.count()
-    widget_to_remove = mainWin.central_widget.image_widget.layout.itemAt(widgets_size - 1)
-    widget_to_remove.widget().deleteLater()
+from numpy import *
 
 
 class FitsPlotter(object):
@@ -177,62 +147,3 @@ class FitsPlotter(object):
         'square': {},
     }
 
-
-class CentralWidget(QWidget):
-    def __init__(self):
-        QWidget.__init__(self)
-        self.layout = QVBoxLayout()
-        self.button_widget = ButtonsWidget()
-        self.image_widget = ImageWidget()
-        self.layout.addWidget(self.button_widget)
-        self.layout.addWidget(self.image_widget)
-
-        self.setLayout(self.layout)
-
-
-class ImageWidget(QWidget):
-    def __init__(self):
-        QWidget.__init__(self)
-        self.layout = QVBoxLayout()
-
-
-class ButtonsWidget(QWidget):
-    def __init__(self):
-        QWidget.__init__(self)
-        self.layout = QGridLayout()
-        load_button = QPushButton("Load fits file")
-        clear_button = QPushButton("Clear")
-
-        load_button.clicked.connect(load_fits_file)
-        clear_button.clicked.connect(clear_image)
-
-        self.layout.addWidget(load_button, 0, 0)
-        self.layout.addWidget(clear_button, 0, 1)
-
-        self.setLayout(self.layout)
-
-
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super(MainWindow, self).__init__()
-        self.setWindowTitle("TEDA")
-        self.central_widget = CentralWidget()
-        # self.buttons_widget = ButtonsWidget()
-        # self.image_widget = ImageWidget()
-        self.setCentralWidget(self.central_widget)
-
-
-    # def create_menu(self):
-    #     self.file_menu = self.menuBar().addMenu("File")
-    #     self.file_menu.addAction(self.draw_fits_image())
-
-
-if __name__ == '__main__':
-
-    import sys
-
-    app = QApplication(sys.argv)
-    mainWin = MainWindow()
-    mainWin.resize(800, 600)
-    mainWin.show()
-    sys.exit(app.exec_())
