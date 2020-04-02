@@ -48,7 +48,8 @@ from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 from PySide2.QtWidgets import (QAction, QApplication, QDialog, QDockWidget,
                                QFileDialog, QListWidget, QMainWindow, QMessageBox)
 
-from fitsplot import (FitsPlotter, FigureCanvas)
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from fitsplot import (FitsPlotter)
 from matplotlib.figure import Figure
 
 
