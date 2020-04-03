@@ -57,6 +57,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        #self.fits_plot = None
+
         self.setWindowTitle("TEDA")
 
         fig = Figure(figsize=(14, 10))
@@ -67,8 +69,8 @@ class MainWindow(QMainWindow):
         self.createMenus()
         self.createToolBars()
         self.createStatusBar()
-        self.createDockWindows()
         self.createInfoWindow()
+        self.createDockWindows()
 
         self.setWindowTitle("TEDA")
 
@@ -89,12 +91,12 @@ class MainWindow(QMainWindow):
         if not fileName:
             return
 
-        fits_plot = FitsPlotter(fileName)
-        fits_plot.plot_fits_file()
-        self.central_widget = FigureCanvas(fits_plot.figure)
+        self.fits_plot = FitsPlotter(fileName)
+        self.fits_plot.plot_fits_file()
+        self.central_widget = FigureCanvas(self.fits_plot.figure)
         self.setCentralWidget(self.central_widget)
 
-        self.setHeader(fits_plot.header)
+        self.setHeader(self.fits_plot.header)
 
     def save(self):
         filename, _ = QFileDialog.getSaveFileName(self,
@@ -160,6 +162,18 @@ class MainWindow(QMainWindow):
         self.fileToolBar.addAction(self.openAct)
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addSeparator()
+
+        self.hduToolBar = self.addToolBar("HDU")
+        self.hduToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
+        self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
+
+    def nextHDU(self):
+        self.fits_plot.changeHDU(True, 1)
+        self.setHeader(self.fits_plot.header)
+
+    def prevHDU(self):
+        self.fits_plot.changeHDU(True, -1)
+        self.setHeader(self.fits_plot.header)
 
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
