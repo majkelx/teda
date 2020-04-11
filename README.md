@@ -10,3 +10,5 @@
     pip install -r requirements.txt
 
 ```
+
+Information about Virtual Machine for development: https://intranet.akond.com/jira/browse/OD-31
