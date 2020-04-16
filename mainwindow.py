@@ -40,22 +40,22 @@
 #############################################################################
 
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
-
+from PySide2 import QtWidgets
 from PySide2.QtCore import QDate, QFile, Qt, QTextStream
-from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
+from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat, QPainter, QPainterPath, QBrush, QPen,
                            QTextCursor, QTextTableFormat)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 from PySide2.QtWidgets import (QAction, QApplication, QDialog, QDockWidget,
                                QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem)
-
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from fitsplot import (FitsPlotter)
+from painterComponent import (PainterComponent)
 from matplotlib.figure import Figure
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
-        super(MainWindow, self).__init__()
+        super().__init__()
 
         self.setWindowTitle("TEDA")
 
@@ -63,12 +63,15 @@ class MainWindow(QMainWindow):
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
+        self.painterComponent = PainterComponent()
+
         self.createActions()
         self.createMenus()
         self.createToolBars()
         self.createStatusBar()
         self.createDockWindows()
         self.createInfoWindow()
+        self.createCanvasEvents()
 
         self.setWindowTitle("TEDA")
 
@@ -92,7 +95,16 @@ class MainWindow(QMainWindow):
         fits_plot = FitsPlotter(fileName)
         fits_plot.plot_fits_file()
         self.central_widget = FigureCanvas(fits_plot.figure)
-        self.setCentralWidget(self.central_widget)
+        toolbar = NavigationToolbar(self.central_widget, self)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(toolbar)
+        layout.addWidget(self.central_widget)
+
+        # Create a placeholder widget to hold our toolbar and canvas.
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
+        self.createCanvasEvents()
 
         self.setHeader(fits_plot.header)
 
@@ -216,6 +228,15 @@ class MainWindow(QMainWindow):
         self.headerWidget.setColumnCount(2)
         dock.setWidget(self.headerWidget)
 
+    def createCanvasEvents(self):
+        self.central_widget.mpl_connect("scroll_event", self.onCanvasClick)
+
+    def onCanvasClick(self, event):
+        #self.painterComponent.add(event.xdata,event.ydata,12,"circle")
+        ax = self.central_widget.figure.add_subplot(111)
+        self.painterComponent.paintAllShapes(ax)
+        self.central_widget.draw()
+
     def setHeader(self, header):
         self.headerWidget.setRowCount(len(header))
         i = 0;
@@ -227,7 +248,6 @@ class MainWindow(QMainWindow):
             newItem.setText(str(header[key]))
             self.headerWidget.setItem(i, 1, newItem)
             i = i + 1
-
 
 
 
