@@ -42,7 +42,7 @@
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
 from PySide2 import QtWidgets
 from PySide2.QtCore import QDate, QFile, Qt, QTextStream
-from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat, QPainter, QPainterPath, QBrush, QPen,
+from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
                            QTextCursor, QTextTableFormat)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 from PySide2.QtWidgets import (QAction, QApplication, QDialog, QDockWidget,
@@ -66,14 +66,13 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
 
         self.painterComponent = PainterComponent()
-
         self.createActions()
         self.createMenus()
         self.createToolBars()
         self.createStatusBar()
         self.createInfoWindow()
         self.createDockWindows()
-        self.createCanvasEvents()
+        self.setButtonsStatuses()#do wyrzucenia jesli będą przyciski stanowe activ/inactiv
 
         self.setWindowTitle("TEDA")
 
@@ -106,7 +105,6 @@ class MainWindow(QMainWindow):
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
-        self.createCanvasEvents()
 
         self.setHeader(self.fits_plot.header)
 
@@ -179,6 +177,9 @@ class MainWindow(QMainWindow):
         self.hduToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
         self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
 
+        self.regionToolBar = self.addToolBar("Region")
+        self.regionToolBar.addAction("add circle").triggered.connect(self.changeAddCircleStatus)
+
     def nextHDU(self):
         self.fits_plot.changeHDU(True, 1)
         self.setHeader(self.fits_plot.header)
@@ -186,6 +187,21 @@ class MainWindow(QMainWindow):
     def prevHDU(self):
         self.fits_plot.changeHDU(True, -1)
         self.setHeader(self.fits_plot.header)
+
+    def changeAddCircleStatus(self):
+        #przydałby sie przycisk stanowy activ/inactiv
+        if self.addCircleActive != 'true':
+            self.addCircleActive = 'true'
+            self.painterComponent.disableAllShapesDraggable()
+            self.addCircleButtonPress = self.central_widget.mpl_connect("button_press_event", self.onAddCircle)
+        else:
+            self.addCircleActive = 'false'
+            ax = self.central_widget.figure.add_subplot(111)
+            self.painterComponent.makeAllShapesDraggable(ax)
+            self.central_widget.mpl_disconnect(self.addCircleButtonPress)
+
+    def setButtonsStatuses(self):
+        self.addCircleActive = 'false'
 
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
@@ -242,11 +258,9 @@ class MainWindow(QMainWindow):
         self.headerWidget.setColumnCount(2)
         dock.setWidget(self.headerWidget)
 
-    def createCanvasEvents(self):
-        self.central_widget.mpl_connect("scroll_event", self.onCanvasClick)
-
-    def onCanvasClick(self, event):
-        #self.painterComponent.add(event.xdata,event.ydata,12,"circle")
+    def onAddCircle(self, event):
+        r = event.xdata/2
+        self.painterComponent.add(event.xdata,event.ydata,r,"circle")
         ax = self.central_widget.figure.add_subplot(111)
         self.painterComponent.paintAllShapes(ax)
         self.central_widget.draw()

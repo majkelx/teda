@@ -6,10 +6,6 @@ class PainterComponent(object):
     def __init__(self):
         self.shapes = []
         self.drs = []
-        c = CircleShape(20, 20, 10)
-        self.shapes.append(c)
-        b = CircleShape(30, 30, 14)
-        self.shapes.append(b)
 
     def add(self, x, y, size = 10,type="circle"):
         if type == "circle":
@@ -18,13 +14,22 @@ class PainterComponent(object):
 
     def paintAllShapes(self, axis):
         axis.patches.clear()
-        self.drs = []
         for shape in self.shapes:
             shap=shape.paintShape()
             axis.add_patch(shap)
-            dr = DraggablePoint(shap,shape)
+
+    def makeAllShapesDraggable(self, axis):
+        axis.patches.clear()
+        self.drs = []
+        for shape in self.shapes:
+            shap = shape.paintShape()
+            axis.add_patch(shap)
+            dr = DraggablePoint(shap, shape)
             dr.connect()
             self.drs.append(dr)
+
+    def disableAllShapesDraggable(self):
+        self.drs = []
 
     def getAllShapes(self):
         return self.shapes
