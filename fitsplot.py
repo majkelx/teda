@@ -82,7 +82,8 @@ class FitsPlotter(object):
             elif stretch == 'histogram':
                 stretch = vis.HistEqStretch(self.data, **kwargs)
             elif stretch == 'linear':  # args: slope=1, intercept=0
-                stretch = vis.LinearStretch(**kwargs)
+                # stretch = vis.LinearStretch(**kwargs)
+                stretch = vis.LinearStretch()
             elif stretch == 'log':  # args: a=1000.0
                 stretch = vis.LogStretch(**kwargs)
             elif stretch == 'powerdist':  # args: a=1000.0
