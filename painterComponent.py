@@ -1,29 +1,49 @@
 from painterShapes.circleShape import (CircleShape)
+from painterShapes.CircleCenterShape import (CircleCenterShape)
+import matplotlib.pyplot as plt
+from math import *
 
 class PainterComponent(object):
     """Painter"""
 
     def __init__(self):
         self.shapes = []
+        self.centerCircle = []
         self.drs = []
+        self.templine = None
+        self.tempCanvas = None
+        self.startpainting = 'false'
+        self.actualShape = ""
+
 
     def add(self, x, y, size = 10,type="circle"):
         if type == "circle":
             c = CircleShape(x, y, size)
             self.shapes.append(c)
+        if type == "circleCenter":
+            self.centerCircle = []
+            c = CircleCenterShape(x, y, size)
+            self.centerCircle.append(c)
 
     def paintAllShapes(self, axis):
         axis.patches.clear()
+        axis.lines.clear()
         for shape in self.shapes:
-            shap=shape.paintShape()
-            axis.add_patch(shap)
+            shap=shape.paintShape(axis)
+        for shape in self.centerCircle:
+            shap=shape.paintShape(axis)
 
     def makeAllShapesDraggable(self, axis):
         axis.patches.clear()
+        axis.lines.clear()
         self.drs = []
         for shape in self.shapes:
-            shap = shape.paintShape()
-            axis.add_patch(shap)
+            shap = shape.paintShape(axis)
+            dr = DraggablePoint(shap, shape)
+            dr.connect()
+            self.drs.append(dr)
+        for shape in self.centerCircle:
+            shap = shape.paintShape(axis)
             dr = DraggablePoint(shap, shape)
             dr.connect()
             self.drs.append(dr)
@@ -33,6 +53,77 @@ class PainterComponent(object):
 
     def getAllShapes(self):
         return self.shapes
+
+    def startPainting(self,canvas,shape):
+        self.actualShape = shape
+        self.setCanvasEvents(canvas)
+    def stopPainting(self,canvas):
+        self.actualShape = ""
+        self.removeCanvasEvents(canvas)
+
+    def startLine(self,canvas,x1,y1):
+        ax = canvas.figure.add_subplot(111)
+        self.tempLines = ax.lines.copy()
+        canvas.draw()
+
+    def paintLine(self,canvas,x1,x2,y1,y2):
+        ax = canvas.figure.add_subplot(111)
+        if self.templine != None:
+            self.templine = None
+            ax.lines = ax.lines[:-1]
+        xcord = [x1,x2]
+        ycord = [y1,y2]
+        # restore the background region
+        #canvas.restore_region(self.background)
+        # redraw just the current rectangle
+        self.templine = plt.plot(xcord, ycord, linewidth=1, color='g')
+        #ax.add_artist(self.templine)
+
+        # blit just the redrawn area
+        canvas.draw()
+
+    def hideLine(self,canvas):
+        # restore the background region
+        ax = canvas.figure.add_subplot(111)
+        self.templine = None
+        ax.lines = self.tempLines.copy()
+        canvas.draw()
+
+    def setCanvasEvents(self,canvas):
+        self.tempCanvas = canvas
+        self.addButtonPress = canvas.mpl_connect("button_press_event", self.onAddCircle)
+        self.addButtonRelease = canvas.mpl_connect('button_release_event', self.onAddCircleRelease)
+        self.addButtonMotion = canvas.mpl_connect('motion_notify_event', self.onAddCircleMotion)
+
+    def removeCanvasEvents(self,canvas):
+        if hasattr(self, 'addButtonPress'):
+            canvas.mpl_disconnect(self.addButtonPress)
+            canvas.mpl_disconnect(self.addButtonRelease)
+            canvas.mpl_disconnect(self.addButtonMotion)
+
+    def onAddCircle(self, event):
+        self.clicked = {
+            'x': event.xdata,
+            'y': event.ydata
+        }
+        self.startpainting = 'true'
+        self.startLine(self.tempCanvas,event.xdata,event.ydata)
+
+
+    def onAddCircleMotion(self, event):
+        if self.startpainting == 'true':
+            self.paintLine(self.tempCanvas,self.clicked['x'],event.xdata,self.clicked['y'],event.ydata)
+        self.tempCanvas.draw()
+
+
+    def onAddCircleRelease(self, event):
+        self.startpainting = 'false'
+        self.hideLine(self.tempCanvas)
+        r=sqrt(pow((event.xdata-self.clicked['x']),2)+pow((event.ydata-self.clicked['y']),2))
+        self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
+        ax = self.tempCanvas.figure.add_subplot(111)
+        self.paintAllShapes(ax)
+        self.tempCanvas.draw()
 
 class DraggablePoint:
     lock = None #only one can be animated at a time
@@ -60,6 +151,8 @@ class DraggablePoint:
         canvas = self.point.figure.canvas
         axes = self.point.axes
         self.point.set_animated(True)
+        if hasattr(self.painterElement, 'removeAdditional'):
+            self.painterElement.removeAdditional()
         canvas.draw()
         self.background = canvas.copy_from_bbox(self.point.axes.bbox)
 
@@ -79,6 +172,7 @@ class DraggablePoint:
         self.point.center = (self.point.center[0]+dx, self.point.center[1]+dy)
         self.painterElement.x = self.point.center[0]
         self.painterElement.y = self.point.center[1]
+
         canvas = self.point.figure.canvas
         axes = self.point.axes
         # restore the background region
@@ -86,6 +180,8 @@ class DraggablePoint:
 
         # redraw just the current rectangle
         axes.draw_artist(self.point)
+        if hasattr(self.painterElement, 'repaintAdditional'):
+            self.painterElement.repaintAdditional(axes)
 
         # blit just the redrawn area
         canvas.blit(axes.bbox)
@@ -103,6 +199,8 @@ class DraggablePoint:
         self.background = None
 
         # redraw the full figure
+        if hasattr(self.painterElement, 'paintAdditional'):
+            self.painterElement.paintAdditional()
         self.point.figure.canvas.draw()
 
     def disconnect(self):

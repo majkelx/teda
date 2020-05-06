@@ -52,6 +52,7 @@ from fitsplot import (FitsPlotter)
 from fitsopen import (FitsOpen)
 from painterComponent import (PainterComponent)
 from matplotlib.figure import Figure
+from math import *
 # from astropy.io import fits
 # import matplotlib
 # import matplotlib.pyplot as plt
@@ -80,6 +81,7 @@ class MainWindow(QMainWindow):
         self.setButtonsStatuses()#do wyrzucenia jesli będą przyciski stanowe activ/inactiv
         self.defineButtonsActions()
         self.setWindowTitle("TEDA")
+        #self.startpainting = 'false'
 
     def print_(self):
         document = self.textEdit.document()
@@ -186,6 +188,8 @@ class MainWindow(QMainWindow):
 
         self.regionToolBar = self.addToolBar("Region")
         self.regionToolBar.addAction("add circle").triggered.connect(self.changeAddCircleStatus)
+        self.regionToolBar.addAction("add center circle").triggered.connect(self.changeAddCenterCircleStatus)
+        self.regionToolBar.addAction("make draggable").triggered.connect(self.changeDraggableStatus)
 
     def nextHDU(self):
         self.fits_plot.changeHDU(True, 1)
@@ -197,15 +201,22 @@ class MainWindow(QMainWindow):
 
     def changeAddCircleStatus(self):
         #przydałby sie przycisk stanowy activ/inactiv
-        if self.addCircleActive != 'true':
-            self.addCircleActive = 'true'
-            self.painterComponent.disableAllShapesDraggable()
-            self.addCircleButtonPress = self.central_widget.mpl_connect("button_press_event", self.onAddCircle)
-        else:
-            self.addCircleActive = 'false'
-            ax = self.central_widget.figure.add_subplot(111)
-            self.painterComponent.makeAllShapesDraggable(ax)
-            self.central_widget.mpl_disconnect(self.addCircleButtonPress)
+        self.addCircleActive = 'true'
+        self.painterComponent.stopPainting(self.central_widget)
+        self.painterComponent.disableAllShapesDraggable()
+        self.painterComponent.startPainting(self.central_widget,"circle")
+
+    def changeAddCenterCircleStatus(self):
+        # przydałby sie przycisk stanowy activ/inactiv
+        self.addCircleActive = 'true'
+        self.painterComponent.stopPainting(self.central_widget)
+        self.painterComponent.disableAllShapesDraggable()
+        self.painterComponent.startPainting(self.central_widget, "circleCenter")
+
+    def changeDraggableStatus(self):
+        self.painterComponent.stopPainting(self.central_widget)
+        ax = self.central_widget.figure.add_subplot(111)
+        self.painterComponent.makeAllShapesDraggable(ax)
 
     def setButtonsStatuses(self):
         self.addCircleActive = 'false'
@@ -310,12 +321,6 @@ class MainWindow(QMainWindow):
         self.headerWidget.setColumnCount(2)
         dock.setWidget(self.headerWidget)
 
-    def onAddCircle(self, event):
-        r = event.xdata/2
-        self.painterComponent.add(event.xdata,event.ydata,r,"circle")
-        ax = self.central_widget.figure.add_subplot(111)
-        self.painterComponent.paintAllShapes(ax)
-        self.central_widget.draw()
 
     def setHeader(self, header):
         self.headerWidget.setRowCount(len(header))

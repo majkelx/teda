@@ -16,6 +16,7 @@ class CircleShape(object):
     def paint(self):
         return {self.x, self.y, self.size}
 
-    def paintShape(self):
+    def paintShape(self,axis):
         circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
+        axis.add_patch(circle)
         return circle
