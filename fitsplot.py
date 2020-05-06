@@ -59,12 +59,17 @@ class FitsPlotter(object):
     def plot_fits_data(self, data, ax, alpha, norm, cmap):
         self.img = ax.imshow(data, origin='lower', alpha=alpha, norm=norm, cmap=cmap, resample=False)
 
-    def plot_fits_file(self, ax=None, alpha=1.0):
+    def plot_fits_file(self, ax=None, alpha=1.0, color=None):
+        if color is not None:
+            self.changeCmap(color)
         if ax is None:
             ax = self.get_ax()
         data = self.data;
         if data is not None:
             self.plot_fits_data(data, ax, alpha, self.get_normalization(), self.cmap)
+
+    def changeCmap(self,color):
+        self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list('zielonka', ['w', color], )
 
     def set_normalization(self, stretch=None, interval=None, stretchkwargs={}, intervalkwargs={}):
         if stretch is None:
