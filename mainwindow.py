@@ -676,13 +676,14 @@ class MainWindow(QMainWindow):
                                           stretchkwargs=stretch_dictionary,
                                           intervalkwargs=interval_dictionary)
 
-        self.central_widget = FigureCanvas(self.fits_image.figure)
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.central_widget)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        self.fits_image.invalidate()
+        # self.central_widget = FigureCanvas(self.fits_image.figure)
+        # widget = QWidget()
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.toolbar)
+        # layout.addWidget(self.central_widget)
+        # widget.setLayout(layout)
+        # self.setCentralWidget(widget)
 
     def changeColor(self, color):
         #testowe
