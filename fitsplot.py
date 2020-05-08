@@ -8,12 +8,16 @@ import astropy.visualization as vis
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+# import traitlets
+
 
 from numpy import *
+import json
 
-
+# class FitsPlotter(HasTraits):
 class FitsPlotter(object):
     """Fits plotter"""
+    # contrast = traitlets.Float()
 
     def __init__(self, fitsfile, hdu=0,
                  figure=None, ax=None,
@@ -180,3 +184,7 @@ class FitsPlotter(object):
 
         self.reset_ax()
         self.plot_fits_file()
+
+    def invalidate(self):
+        print('Invalidate')
+        pass

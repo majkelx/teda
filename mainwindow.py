@@ -41,7 +41,7 @@
 
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
 from PySide2 import QtWidgets
-from PySide2.QtCore import QDate, QFile, Qt, QTextStream
+from PySide2.QtCore import QDate, QFile, Qt, QTextStream, QSize
 from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
                            QTextCursor, QTextTableFormat)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
@@ -690,13 +690,14 @@ class MainWindow(QMainWindow):
                                           stretchkwargs=stretch_dictionary,
                                           intervalkwargs=interval_dictionary)
 
-        self.central_widget = FigureCanvas(self.fits_image.figure)
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.central_widget)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        self.fits_image.invalidate()
+        # self.central_widget = FigureCanvas(self.fits_image.figure)
+        # widget = QWidget()
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.toolbar)
+        # layout.addWidget(self.central_widget)
+        # widget.setLayout(layout)
+        # self.setCentralWidget(widget)
 
     def changeColor(self, color):
         #testowe
@@ -735,6 +736,9 @@ class MainWindow(QMainWindow):
         self.viewMenu.addAction(dock.toggleViewAction())
         self.headerWidget = QTableWidget(self)
         self.headerWidget.setColumnCount(2)
+        self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
+        self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
+        self.headerWidget.horizontalHeader().setStretchLastSection(1);
         dock.setWidget(self.headerWidget)
 
 
@@ -749,6 +753,16 @@ class MainWindow(QMainWindow):
             newItem.setText(str(header[key]))
             self.headerWidget.setItem(i, 1, newItem)
             i = i + 1
+        self.headerWidget.resizeRowsToContents()
+        self.headerWidget.verticalHeader().hide()
+
+    def onAddCircle(self, event):
+        r = event.xdata/2
+        self.painterComponent.add(event.xdata,event.ydata,r,"circle")
+        ax = self.central_widget.figure.add_subplot(111)
+        self.painterComponent.paintAllShapes(ax)
+        self.central_widget.draw()
+
 
 if __name__ == '__main__':
     import sys
