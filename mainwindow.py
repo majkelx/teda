@@ -184,10 +184,24 @@ class MainWindow(QMainWindow):
         self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
 
         self.regionToolBar = self.addToolBar("Region")
-        self.regionToolBar.addAction("Add circle").triggered.connect(self.changeAddCircleStatus)
-        self.regionToolBar.addAction("Add center circle").triggered.connect(self.changeAddCenterCircleStatus)
-        self.regionToolBar.addAction("Move/Select").triggered.connect(self.changeDraggableStatus)
-        self.regionToolBar.addAction("Delete selected").triggered.connect(self.deleteSelected)
+        self.BtnCircle = QPushButton("Circle")
+        self.BtnCircle.setCheckable(True)
+        self.BtnCircle.clicked.connect(self.changeAddCircleStatus)
+        self.regionToolBar.addWidget(self.BtnCircle)
+
+        self.BtnCenterCircle = QPushButton("Center Circle")
+        self.BtnCenterCircle.setCheckable(True)
+        self.BtnCenterCircle.clicked.connect(self.changeAddCenterCircleStatus)
+        self.regionToolBar.addWidget(self.BtnCenterCircle)
+
+        self.BtnDragg = QPushButton("Move/Select")
+        self.BtnDragg.setCheckable(True)
+        self.BtnDragg.clicked.connect(self.changeDraggableStatus)
+        self.regionToolBar.addWidget(self.BtnDragg)
+
+        self.BtnDelete = QPushButton("Delete selected")
+        self.BtnDelete.clicked.connect(self.deleteSelected)
+        self.regionToolBar.addWidget(self.BtnDelete)
 
     def nextHDU(self):
         self.fits_plot.changeHDU(True, 1)
@@ -198,29 +212,46 @@ class MainWindow(QMainWindow):
         self.setHeader(self.fits_plot.header)
 
     def changeAddCircleStatus(self):
-        #przydałby sie przycisk stanowy activ/inactiv
-        self.addCircleActive = 'true'
-        self.painterComponent.stopPainting(self.central_widget)
-        self.painterComponent.disableAllShapesDraggable()
-        self.painterComponent.startPainting(self.central_widget,"circle")
+        if self.BtnCircle.isChecked():
+            self.toogleOffRegionButtons()
+            self.BtnCircle.toggle()
+            self.painterComponent.startPainting(self.central_widget,"circle")
+        else:
+            self.painterComponent.stopPainting(self.central_widget)
 
     def changeAddCenterCircleStatus(self):
-        # przydałby sie przycisk stanowy activ/inactiv
-        self.addCircleActive = 'true'
-        self.painterComponent.stopPainting(self.central_widget)
-        self.painterComponent.disableAllShapesDraggable()
-        self.painterComponent.startPainting(self.central_widget, "circleCenter")
+        if self.BtnCenterCircle.isChecked():
+            self.toogleOffRegionButtons()
+            self.BtnCenterCircle.toggle()
+            self.painterComponent.startPainting(self.central_widget,"circleCenter")
+        else:
+            self.painterComponent.stopPainting(self.central_widget)
 
     def changeDraggableStatus(self):
-        self.painterComponent.stopPainting(self.central_widget)
-        ax = self.central_widget.figure.axes[0]
-        self.painterComponent.makeAllShapesDraggable(ax)
+        if self.BtnDragg.isChecked():
+            self.toogleOffRegionButtons()
+            self.BtnDragg.toggle()
+            ax = self.central_widget.figure.axes[0]
+            self.painterComponent.makeAllShapesDraggable(ax)
+        else:
+            self.painterComponent.disableAllShapesDraggable()
 
     def deleteSelected(self):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
 
     def setButtonsStatuses(self):
         self.addCircleActive = 'false'
+
+    def toogleOffRegionButtons(self):
+        if self.BtnCircle.isChecked():
+            self.BtnCircle.toggle()
+        if self.BtnCenterCircle.isChecked():
+            self.BtnCenterCircle.toggle()
+        if self.BtnDragg.isChecked():
+            self.BtnDragg.toggle()
+        self.painterComponent.stopPainting(self.central_widget)
+        self.painterComponent.disableAllShapesDraggable()
+
 
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
