@@ -14,6 +14,7 @@ class PainterComponent(object):
         self.tempCanvas = None
         self.startpainting = 'false'
         self.actualShape = ""
+        self.draggableActive = False
 
 
     def add(self, x, y, size = 10,type="circle"):
@@ -32,8 +33,10 @@ class PainterComponent(object):
             shap=shape.paintShape(axis)
         for shape in self.centerCircle:
             shap=shape.paintShape(axis)
+        self.tempCanvas.draw()
 
     def makeAllShapesDraggable(self, axis):
+        self.draggableActive = True
         axis.patches.clear()
         axis.lines.clear()
         self.drs = []
@@ -49,6 +52,7 @@ class PainterComponent(object):
             self.drs.append(dr)
 
     def disableAllShapesDraggable(self):
+        self.draggableActive = False
         self.drs = []
 
     def getAllShapes(self):
@@ -62,29 +66,23 @@ class PainterComponent(object):
         self.removeCanvasEvents(canvas)
 
     def startLine(self,canvas,x1,y1):
-        ax = canvas.figure.add_subplot(111)
+        ax = canvas.figure.axes[0]
         self.tempLines = ax.lines.copy()
         canvas.draw()
 
     def paintLine(self,canvas,x1,x2,y1,y2):
-        ax = canvas.figure.add_subplot(111)
+        ax = canvas.figure.axes[0]
         if self.templine != None:
             self.templine = None
             ax.lines = ax.lines[:-1]
         xcord = [x1,x2]
         ycord = [y1,y2]
-        # restore the background region
-        #canvas.restore_region(self.background)
-        # redraw just the current rectangle
         self.templine = plt.plot(xcord, ycord, linewidth=1, color='g')
-        #ax.add_artist(self.templine)
-
-        # blit just the redrawn area
         canvas.draw()
 
     def hideLine(self,canvas):
         # restore the background region
-        ax = canvas.figure.add_subplot(111)
+        ax = canvas.figure.axes[0]
         self.templine = None
         ax.lines = self.tempLines.copy()
         canvas.draw()
@@ -120,10 +118,24 @@ class PainterComponent(object):
         self.startpainting = 'false'
         self.hideLine(self.tempCanvas)
         r=sqrt(pow((event.xdata-self.clicked['x']),2)+pow((event.ydata-self.clicked['y']),2))
-        self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
-        ax = self.tempCanvas.figure.add_subplot(111)
-        self.paintAllShapes(ax)
-        self.tempCanvas.draw()
+        if r != 0:
+            self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
+            ax = self.tempCanvas.figure.axes[0]
+            self.paintAllShapes(ax)
+            self.tempCanvas.draw()
+
+    def deleteSelectedShapes(self, axis):
+        tempShapes = []
+        for shape in self.shapes:
+            if shape.selected != True:
+                tempShapes.append(shape)
+        self.shapes = tempShapes
+        for shape in self.centerCircle:
+            if shape.selected == True:
+                self.centerCircle.remove(shape)
+        if self.draggableActive:
+            self.makeAllShapesDraggable(axis)
+        self.paintAllShapes(axis)
 
 class DraggablePoint:
     lock = None #only one can be animated at a time
@@ -132,6 +144,7 @@ class DraggablePoint:
         self.painterElement = painterElement
         self.press = None
         self.background = None
+        self.movingStart = False
 
     def connect(self):
         'connect to all the events we need'
@@ -147,16 +160,17 @@ class DraggablePoint:
         self.press = (self.point.center), event.xdata, event.ydata
         DraggablePoint.lock = self
 
-        # draw everything but the selected rectangle and store the pixel buffer
+        # draw everything but the selected and store the pixel buffer
         canvas = self.point.figure.canvas
         axes = self.point.axes
+
         self.point.set_animated(True)
         if hasattr(self.painterElement, 'removeAdditional'):
             self.painterElement.removeAdditional()
         canvas.draw()
         self.background = canvas.copy_from_bbox(self.point.axes.bbox)
 
-        # now redraw just the rectangle
+        # now redraw just the selected
         axes.draw_artist(self.point)
 
         # and blit just the redrawn area
@@ -178,7 +192,14 @@ class DraggablePoint:
         # restore the background region
         canvas.restore_region(self.background)
 
-        # redraw just the current rectangle
+        #zaznaczenie na przesuwaniu
+        if self.movingStart == False:
+            self.movingStart = True
+            self.painterElement.select()
+            self.point = self.painterElement.refreshShape(axes)
+            self.point.set_animated(True)
+
+        # redraw just the current
         axes.draw_artist(self.point)
         if hasattr(self.painterElement, 'repaintAdditional'):
             self.painterElement.repaintAdditional(axes)
@@ -194,14 +215,16 @@ class DraggablePoint:
         self.press = None
         DraggablePoint.lock = None
 
-        # turn off the rect animation property and reset the background
+        # turn off the current animation property and reset the background
         self.point.set_animated(False)
         self.background = None
-
+        axes = self.point.axes
         # redraw the full figure
-        if hasattr(self.painterElement, 'paintAdditional'):
-            self.painterElement.paintAdditional()
+        if self.movingStart == False:
+            self.painterElement.selectDeselect()
+            self.point = self.painterElement.refreshShape(axes)
         self.point.figure.canvas.draw()
+        self.movingStart = False
 
     def disconnect(self):
         'disconnect all the stored connection ids'

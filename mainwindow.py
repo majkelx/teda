@@ -184,9 +184,10 @@ class MainWindow(QMainWindow):
         self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
 
         self.regionToolBar = self.addToolBar("Region")
-        self.regionToolBar.addAction("add circle").triggered.connect(self.changeAddCircleStatus)
-        self.regionToolBar.addAction("add center circle").triggered.connect(self.changeAddCenterCircleStatus)
-        self.regionToolBar.addAction("make draggable").triggered.connect(self.changeDraggableStatus)
+        self.regionToolBar.addAction("Add circle").triggered.connect(self.changeAddCircleStatus)
+        self.regionToolBar.addAction("Add center circle").triggered.connect(self.changeAddCenterCircleStatus)
+        self.regionToolBar.addAction("Move/Select").triggered.connect(self.changeDraggableStatus)
+        self.regionToolBar.addAction("Delete selected").triggered.connect(self.deleteSelected)
 
     def nextHDU(self):
         self.fits_plot.changeHDU(True, 1)
@@ -212,8 +213,11 @@ class MainWindow(QMainWindow):
 
     def changeDraggableStatus(self):
         self.painterComponent.stopPainting(self.central_widget)
-        ax = self.central_widget.figure.add_subplot(111)
+        ax = self.central_widget.figure.axes[0]
         self.painterComponent.makeAllShapesDraggable(ax)
+
+    def deleteSelected(self):
+        self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
 
     def setButtonsStatuses(self):
         self.addCircleActive = 'false'
