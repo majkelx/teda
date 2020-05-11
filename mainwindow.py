@@ -54,7 +54,6 @@ from painterComponent import (PainterComponent)
 from matplotlib.figure import Figure
 from math import *
 
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -288,33 +287,25 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
-        #
-        # dock = QDockWidget("FITS data", self)
-        # dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        #
-        # self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        # self.viewMenu.addAction(dock.toggleViewAction())
-        # self.headerWidget = QTableWidget(self)
-        # self.headerWidget.setColumnCount(2)
-        # self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
-        # self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
-        # self.headerWidget.horizontalHeader().setStretchLastSection(1)
-        # dock.setWidget(self.headerWidget)
-        #Stretch sliders
-        # dock = QDockWidget("Stretch sliders", self)
+        #wykres
+        dock = QDockWidget("Figure", self)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
+        figure_widget = QWidget()
+        figure_layout = QHBoxLayout()
+        fig = Figure(figsize=(3,2))
+        canvas = FigureCanvas(fig)
 
-        # dock.setWidget(self.stretch_sliders_widget)
-        # self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        # self.viewMenu.addAction(dock.toggleViewAction())
+        ax = fig.add_subplot(111)
+        ax.plot([1,2,3,4],[1,4,6,8])
 
-        # #Interval sliders
-        # dock = QDockWidget("Interval sliders", self)
-        #
-        #
-        # dock.setWidget(self.interval_sliders_widget)
-        # self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        # self.viewMenu.addAction(dock.toggleViewAction())
+        figure_layout.addWidget(canvas)
+        figure_widget.setLayout(figure_layout)
+        figure_widget.setMinimumHeight(50)
+
+        dock.setWidget(figure_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
