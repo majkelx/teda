@@ -19,7 +19,7 @@ class FitsPlotter(object):
     """Fits plotter"""
     # contrast = traitlets.Float()
 
-    def __init__(self, fitsfile, hdu=0,
+    def __init__(self, fitsfile=None, hdu=0,
                  figure=None, ax=None,
                  interval=None, intervalkwargs=None,
                  stretch=None, stretchkwargs=None):
@@ -32,32 +32,37 @@ class FitsPlotter(object):
         self.stretch = stretch
         self.stretch_kwargs = stretchkwargs
         self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list('zielonka', ['w', 'g'], )
-        self._hdus = None
+        self._huds = None
         self.img = None
 
     def open(self):
-        if self._hdus is None:
-            self._hdus = fits.open(self.fitsfile, lazy_load_hdus=False)
-            self._hdus.info()
+        if self._huds is None:
+            self._huds = fits.open(self.fitsfile, lazy_load_hdus=False)
+            self._huds.info()
+
+    def set_file(self, filename):
+        self._huds = None
+        self.fitsfile = filename
 
     @property
     def data(self):
         self.open()
-        if isinstance(self._hdus[self.hdu], PrimaryHDU) or isinstance(self._hdus[self.hdu], ImageHDU):
-            return self._hdus[self.hdu].data
+        if isinstance(self._huds[self.hdu], PrimaryHDU) or isinstance(self._huds[self.hdu], ImageHDU):
+            return self._huds[self.hdu].data
         else:
             return None
 
     @property
     def header(self):
         self.open()
-        return self._hdus[self.hdu].header
+        return self._huds[self.hdu].header
 
     def get_ax(self, figsize=(6, 6)):
         if self.ax is None:
             if self.figure is None:
                 self.figure = plt.figure(figsize=figsize)
             self.ax = self.figure.add_subplot(111)
+            self.setup_axies(self.ax)
         return self.ax
 
     def plot_fits_data(self, data, ax, alpha, norm, cmap):
@@ -145,6 +150,7 @@ class FitsPlotter(object):
         return {k: r[k] for k in defaults.keys()}
 
     def reset_ax(self):
+        return   # one figure, one exies
         self.ax = None
         #self.figure.
         plt.close(self.figure)
@@ -179,8 +185,8 @@ class FitsPlotter(object):
             self.hdu = val;
         if self.hdu < 0:
             self.hdu = 0
-        elif self.hdu > len(self._hdus) - 1:
-            self.hdu = len(self._hdus) - 1
+        elif self.hdu > len(self._huds) - 1:
+            self.hdu = len(self._huds) - 1
 
         self.reset_ax()
         self.plot_fits_file()
@@ -188,4 +194,9 @@ class FitsPlotter(object):
     def invalidate(self):
         print('Invalidate')
         self.figure.canvas.draw()
+        pass
+
+    def setup_axies(self, ax):
+        ax.yaxis.set_major_locator(plt.NullLocator())
+        ax.xaxis.set_major_locator(plt.NullLocator())
         pass

@@ -61,8 +61,9 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("TEDA")
         self.combobox = QComboBox()
-        self.fits_image = None
+        self.filename = None
         fig = Figure(figsize=(14, 10))
+        self.fits_image = FitsPlotter(figure=fig)
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
@@ -93,24 +94,27 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Ready", 2000)
 
     def open(self):
-        global fileName
         fileName, _ = QFileDialog.getOpenFileName(mainWin, "Open Image", ".", "Fits files (*.fits)")
         # fileName = QFileDialog.getOpenFileName(mainWin, "Open Image", "/home/akond/Pulpit/fits files", "Fits files (*.fits)")[0]
         if not fileName:
             return
+        self.filename = fileName
+        self.fits_image.set_file(self.filename)
+        self.fits_image.plot_fits_file()
 
-        self.fits_plot = FitsOpen(fileName)
-        self.fits_plot.plot_fits_file()
-        self.central_widget = FigureCanvas(self.fits_plot.figure)
-        self.toolbar = NavigationToolbar(self.central_widget, self)
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.central_widget)
+        # self.fits_plot = FitsOpen(fileName)
+        # self.fits_plot.plot_fits_file()
+        # self.central_widget.figure = self.fits_plot.figure
+        # self.central_widget = FigureCanvas(self.fits_plot.figure)
+        # self.toolbar = NavigationToolbar(self.central_widget, self)
+        # layout = QtWidgets.QVBoxLayout()
+        # layout.addWidget(self.toolbar)
+        # layout.addWidget(self.central_widget)
 
         # Create a placeholder widget to hold our toolbar and canvas.
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        # widget = QtWidgets.QWidget()
+        # widget.setLayout(layout)
+        # self.setCentralWidget(widget)
         #
         self.setHeader(self.fits_plot.header)
 
@@ -184,12 +188,13 @@ class MainWindow(QMainWindow):
         self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
 
         self.regionToolBar = self.addToolBar("Region")
-        self.BtnCircle = QPushButton("Circle")
+
+        self.BtnCircle = QPushButton("Add Region")
         self.BtnCircle.setCheckable(True)
         self.BtnCircle.clicked.connect(self.changeAddCircleStatus)
         self.regionToolBar.addWidget(self.BtnCircle)
 
-        self.BtnCenterCircle = QPushButton("Center Circle")
+        self.BtnCenterCircle = QPushButton("Radial profile")
         self.BtnCenterCircle.setCheckable(True)
         self.BtnCenterCircle.clicked.connect(self.changeAddCenterCircleStatus)
         self.regionToolBar.addWidget(self.BtnCenterCircle)
@@ -215,7 +220,7 @@ class MainWindow(QMainWindow):
         if self.BtnCircle.isChecked():
             self.toogleOffRegionButtons()
             self.BtnCircle.toggle()
-            self.painterComponent.startPainting(self.central_widget,"circle")
+            self.painterComponent.startPainting(self.central_widget, "circle")
         else:
             self.painterComponent.stopPainting(self.central_widget)
 
@@ -257,35 +262,54 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Ready")
 
     def createDockWindows(self):
-        dock = QDockWidget("Kwargs", self)
+        dock = QDockWidget("Scale", self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         #comboboxes
+        widget = QWidget()
+        layout = QVBoxLayout()
         self.combobox_widget = QWidget()
         self.combobox_layout = self.createComboboxes()
         self.combobox_widget.setLayout(self.combobox_layout)
+        # self.combobox_widget.setMaximumHeight(40)
+        layout.addWidget(self.combobox_widget)
 
-        dock.setWidget(self.combobox_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-
-        #Stretch sliders
-        dock = QDockWidget("Stretch sliders", self)
+        #Stretch
         self.stretch_sliders_widget = QWidget()
         self.stretch_sliders_layout = self.createStretchStackedLayout()
         self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
+        # self.stretch_sliders_widget.setMaximumHeight(50)
+        layout.addWidget(self.stretch_sliders_widget)
 
-        dock.setWidget(self.stretch_sliders_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-
-        #Interval sliders
-        dock = QDockWidget("Interval sliders", self)
+        #Interval
         self.interval_sliders_widget = QWidget()
         self.interval_sliders_layout = self.createIntervalStackedLayout()
         self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
+        # self.interval_sliders_widget.setMaximumHeight(125)
+        layout.addWidget(self.interval_sliders_widget)
+        widget.setLayout(layout)
+        widget.setMaximumHeight(250)
+        dock.setWidget(widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
 
-        dock.setWidget(self.interval_sliders_widget)
+        #wykres
+        dock = QDockWidget("Figure", self)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+
+        figure_widget = QWidget()
+        figure_layout = QHBoxLayout()
+        fig = Figure(figsize=(3,2))
+        canvas = FigureCanvas(fig)
+
+        ax = fig.add_subplot(111)
+        ax.plot([1,2,3,4],[1,4,6,8])
+
+        figure_layout.addWidget(canvas)
+        figure_widget.setLayout(figure_layout)
+        figure_widget.setMinimumHeight(50)
+
+        dock.setWidget(figure_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
@@ -550,12 +574,7 @@ class MainWindow(QMainWindow):
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
         self.central_widget = FigureCanvas(self.fits_image.figure)
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.central_widget)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        self.setCentralWidget(self.central_widget)
 
     def createAsinhParamsSliders(self):
         widget = QWidget()
@@ -751,13 +770,14 @@ class MainWindow(QMainWindow):
                                           stretchkwargs=self.stretch_dict,
                                           intervalkwargs=self.interval_dict)
 
-        self.central_widget = FigureCanvas(self.fits_image.figure)
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.central_widget)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        self.fits_image.invalidate()
+        # self.central_widget = FigureCanvas(self.fits_image.figure)
+        # widget = QWidget()
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.toolbar)
+        # layout.addWidget(self.central_widget)
+        # widget.setLayout(layout)
+        # self.setCentralWidget(widget)
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS data", self)
