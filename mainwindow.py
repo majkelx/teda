@@ -101,6 +101,7 @@ class MainWindow(QMainWindow):
         self.filename = fileName
         self.fits_image.set_file(self.filename)
         self.fits_image.plot_fits_file()
+        self.fits_image.invalidate()
 
         # self.fits_plot = FitsOpen(fileName)
         # self.fits_plot.plot_fits_file()
@@ -116,7 +117,7 @@ class MainWindow(QMainWindow):
         # widget.setLayout(layout)
         # self.setCentralWidget(widget)
         #
-        self.setHeader(self.fits_plot.header)
+        self.setHeader(self.fits_image.header)
 
     def save(self):
         filename, _ = QFileDialog.getSaveFileName(self,
@@ -209,12 +210,12 @@ class MainWindow(QMainWindow):
         self.regionToolBar.addWidget(self.BtnDelete)
 
     def nextHDU(self):
-        self.fits_plot.changeHDU(True, 1)
-        self.setHeader(self.fits_plot.header)
+        self.fits_image.changeHDU(True, 1)
+        self.setHeader(self.fits_image.header)
 
     def prevHDU(self):
-        self.fits_plot.changeHDU(True, -1)
-        self.setHeader(self.fits_plot.header)
+        self.fits_image.changeHDU(True, -1)
+        self.setHeader(self.fits_image.header)
 
     def changeAddCircleStatus(self):
         if self.BtnCircle.isChecked():
@@ -573,8 +574,9 @@ class MainWindow(QMainWindow):
             self.fits_image.plot_fits_file()
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
-        self.central_widget = FigureCanvas(self.fits_image.figure)
-        self.setCentralWidget(self.central_widget)
+        self.fits_image.invalidate()
+        # self.central_widget = FigureCanvas(self.fits_image.figure)
+        # self.setCentralWidget(self.central_widget)
 
     def createAsinhParamsSliders(self):
         widget = QWidget()
@@ -772,12 +774,7 @@ class MainWindow(QMainWindow):
 
         self.fits_image.invalidate()
         # self.central_widget = FigureCanvas(self.fits_image.figure)
-        # widget = QWidget()
-        # layout = QVBoxLayout()
-        # layout.addWidget(self.toolbar)
-        # layout.addWidget(self.central_widget)
-        # widget.setLayout(layout)
-        # self.setCentralWidget(widget)
+        # self.setCentralWidget(self.central_widget)
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS data", self)
