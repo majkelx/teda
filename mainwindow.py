@@ -102,12 +102,12 @@ class MainWindow(QMainWindow):
         self.fits_plot = FitsOpen(fileName)
         self.fits_plot.plot_fits_file()
         self.central_widget = FigureCanvas(self.fits_plot.figure)
-        self.toolbar = NavigationToolbar(self.central_widget, self)
+        # self.toolbar = NavigationToolbar(self.central_widget, self)
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.toolbar)
+        # layout.addWidget(self.toolbar)
         layout.addWidget(self.central_widget)
 
-        # Create a placeholder widget to hold our toolbar and canvas.
+        #Create a placeholder widget to hold our toolbar and canvas.
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
@@ -215,7 +215,7 @@ class MainWindow(QMainWindow):
         if self.BtnCircle.isChecked():
             self.toogleOffRegionButtons()
             self.BtnCircle.toggle()
-            self.painterComponent.startPainting(self.central_widget,"circle")
+            self.painterComponent.startPainting(self.central_widget, "circle")
         else:
             self.painterComponent.stopPainting(self.central_widget)
 
@@ -257,37 +257,64 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Ready")
 
     def createDockWindows(self):
-        dock = QDockWidget("Kwargs", self)
+        dock = QDockWidget("Scale", self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         #comboboxes
+        widget = QWidget()
+        layout = QVBoxLayout()
         self.combobox_widget = QWidget()
         self.combobox_layout = self.createComboboxes()
         self.combobox_widget.setLayout(self.combobox_layout)
+        # self.combobox_widget.setMaximumHeight(40)
+        layout.addWidget(self.combobox_widget)
 
-        dock.setWidget(self.combobox_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-
-        #Stretch sliders
-        dock = QDockWidget("Stretch sliders", self)
+        #Stretch
         self.stretch_sliders_widget = QWidget()
         self.stretch_sliders_layout = self.createStretchStackedLayout()
         self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
+        # self.stretch_sliders_widget.setMaximumHeight(50)
+        layout.addWidget(self.stretch_sliders_widget)
 
-        dock.setWidget(self.stretch_sliders_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-
-        #Interval sliders
-        dock = QDockWidget("Interval sliders", self)
+        #Interval
         self.interval_sliders_widget = QWidget()
         self.interval_sliders_layout = self.createIntervalStackedLayout()
         self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
-
-        dock.setWidget(self.interval_sliders_widget)
+        # self.interval_sliders_widget.setMaximumHeight(125)
+        layout.addWidget(self.interval_sliders_widget)
+        widget.setLayout(layout)
+        widget.setMaximumHeight(250)
+        dock.setWidget(widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+
+        #
+        # dock = QDockWidget("FITS data", self)
+        # dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        #
+        # self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        # self.viewMenu.addAction(dock.toggleViewAction())
+        # self.headerWidget = QTableWidget(self)
+        # self.headerWidget.setColumnCount(2)
+        # self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
+        # self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
+        # self.headerWidget.horizontalHeader().setStretchLastSection(1)
+        # dock.setWidget(self.headerWidget)
+        #Stretch sliders
+        # dock = QDockWidget("Stretch sliders", self)
+
+
+        # dock.setWidget(self.stretch_sliders_widget)
+        # self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        # self.viewMenu.addAction(dock.toggleViewAction())
+
+        # #Interval sliders
+        # dock = QDockWidget("Interval sliders", self)
+        #
+        #
+        # dock.setWidget(self.interval_sliders_widget)
+        # self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        # self.viewMenu.addAction(dock.toggleViewAction())
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
@@ -550,12 +577,7 @@ class MainWindow(QMainWindow):
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
         self.central_widget = FigureCanvas(self.fits_image.figure)
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.central_widget)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        self.setCentralWidget(self.central_widget)
 
     def createAsinhParamsSliders(self):
         widget = QWidget()
@@ -752,12 +774,7 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=self.interval_dict)
 
         self.central_widget = FigureCanvas(self.fits_image.figure)
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.central_widget)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        self.setCentralWidget(self.central_widget)
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS data", self)
