@@ -187,4 +187,5 @@ class FitsPlotter(object):
 
     def invalidate(self):
         print('Invalidate')
+        self.figure.canvas.draw()
         pass
