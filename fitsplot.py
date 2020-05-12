@@ -27,6 +27,7 @@ class FitsPlotter(object):
         self.hdu = 0
         self.figure = figure
         self.ax = ax
+        self.zoom = 1.0
         self.interval = interval
         self.interval_kwargs = intervalkwargs
         self.stretch = stretch
@@ -57,6 +58,14 @@ class FitsPlotter(object):
     def header(self):
         self.open()
         return self._huds[self.hdu].header
+
+    @property
+    def full_xlim(self):
+        return (-0.5, self.data.shape[1] - 0.5)
+
+    @property
+    def full_ylim(self):
+        return (-0.5, self.data.shape[0] - 0.5)
 
     def get_ax(self, figsize=(6, 6)):
         if self.ax is None:
@@ -194,10 +203,58 @@ class FitsPlotter(object):
 
     def invalidate(self):
         print('Invalidate')
-        self.figure.canvas.draw()
-        pass
+        self.figure.canvas.draw_idle()
 
     def setup_axies(self, ax):
         ax.yaxis.set_major_locator(plt.NullLocator())
         ax.xaxis.set_major_locator(plt.NullLocator())
-        pass
+        fig = ax.get_figure()
+        fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
+
+    def on_zoom(self, event):
+        # taken from https://gist.github.com/tacaswell/3144287
+        base_scale = 1.2
+        min_zoom = 0.1
+        max_zoom = 50
+
+        if event.button == 'up' :
+            # deal with zoom in
+            new_zoom = self.zoom * base_scale
+        elif event.button == 'down':
+            # deal with zoom out
+            new_zoom = self.zoom / base_scale
+        else:
+            # deal with something that should never happen
+            new_zoom = 1.0
+
+        if min_zoom < new_zoom < max_zoom:
+            self.zoom = new_zoom
+
+            cur_xlim = self.ax.get_xlim()
+            cur_ylim = self.ax.get_ylim()
+            full_xlim = self.full_xlim
+            full_ylim = self.full_ylim
+
+            self.ax.set_xlim(self.calc_new_limits(cur_xlim, full_xlim, event.xdata, self.zoom))
+            self.ax.set_ylim(self.calc_new_limits(cur_ylim, full_ylim, event.ydata, self.zoom))
+
+            self.ax.figure.canvas.draw_idle()  # force re-draw the next time the GUI refreshes
+
+    @staticmethod
+    def calc_new_limits(cur_lim, full_lim, stationary, zoom):
+        # get the current x and y limits
+        # set the range
+        cur_range = (cur_lim[1] - cur_lim[0])
+        full_range = (full_lim[1] - full_lim[0])
+        new_range = full_range / zoom
+        new_lim = [stationary + new_range/cur_range*(cur_lim[0] - stationary), 0]
+
+        max_margin = new_range - full_range
+        # if new_lim[0] > max_margin:
+        #     new_lim[0] -= new_lim[0] - max_margin
+        #     print('Correction -')
+        # elif new_lim[0] + new_range < full_range - max_margin:
+        #     new_lim[0] += full_range - new_lim[0] - max_margin - new_range
+        #     print('Correction +')
+        new_lim[1] = new_lim[0] + new_range
+        return new_lim

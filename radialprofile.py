@@ -16,7 +16,7 @@ class RadialProfileWidget(QWidget):
         self.radius = 20
         figure_layout = QHBoxLayout()
         self.fig = Figure(figsize=(6, 4))
-        self.fig.tight_layout()
+        # self.fig.tight_layout()
 
         canvas = FigureCanvas(self.fig)
 
@@ -54,7 +54,7 @@ class RadialProfileWidget(QWidget):
         self.ax.relim()
         self.ax.autoscale(tight=True)
         # self.ax.plot(rad,val)
-        self.fig.canvas.draw()
+        self.fig.canvas.draw_idle()
 
     def calc_profile(self):
         return self.get_radius_brightness(self.x, self.y, self.radius, self.data)
