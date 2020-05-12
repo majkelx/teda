@@ -50,9 +50,10 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from fitsplot import (FitsPlotter)
 from fitsopen import (FitsOpen)
-from painterComponent import (PainterComponent)
+from painterComponent import PainterComponent
 from matplotlib.figure import Figure
 from math import *
+from radialprofile import RadialProfileWidget
 
 
 class MainWindow(QMainWindow):
@@ -63,6 +64,8 @@ class MainWindow(QMainWindow):
         self.combobox = QComboBox()
         self.filename = None
         fig = Figure(figsize=(14, 10))
+        fig.tight_layout()
+
         self.fits_image = FitsPlotter(figure=fig)
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
@@ -80,6 +83,8 @@ class MainWindow(QMainWindow):
         self.setButtonsStatuses()#do wyrzucenia jesli będą przyciski stanowe activ/inactiv
         # self.defineButtonsActions()
         self.setWindowTitle("TEDA")
+
+        self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
 
     def print_(self):
         document = self.textEdit.document()
@@ -102,6 +107,8 @@ class MainWindow(QMainWindow):
         self.fits_image.set_file(self.filename)
         self.fits_image.plot_fits_file()
         self.fits_image.invalidate()
+
+        self.radial_profile_widget.set_data(self.fits_image.data)
 
         # self.fits_plot = FitsOpen(fileName)
         # self.fits_plot.plot_fits_file()
@@ -289,28 +296,18 @@ class MainWindow(QMainWindow):
         # self.interval_sliders_widget.setMaximumHeight(125)
         layout.addWidget(self.interval_sliders_widget)
         widget.setLayout(layout)
-        widget.setMaximumHeight(250)
+        widget.setMaximumHeight(350)
         dock.setWidget(widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
         #wykres
-        dock = QDockWidget("Figure", self)
+        dock = QDockWidget("Radial Profile", self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
-        figure_widget = QWidget()
-        figure_layout = QHBoxLayout()
-        fig = Figure(figsize=(3,2))
-        canvas = FigureCanvas(fig)
+        self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
 
-        ax = fig.add_subplot(111)
-        ax.plot([1,2,3,4],[1,4,6,8])
-
-        figure_layout.addWidget(canvas)
-        figure_widget.setLayout(figure_layout)
-        figure_widget.setMinimumHeight(50)
-
-        dock.setWidget(figure_widget)
+        dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
@@ -810,6 +807,9 @@ class MainWindow(QMainWindow):
         ax = self.central_widget.figure.add_subplot(111)
         self.painterComponent.paintAllShapes(ax)
         self.central_widget.draw()
+
+    def onCenterCircleChange(self, change):
+        self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
 
 
 if __name__ == '__main__':

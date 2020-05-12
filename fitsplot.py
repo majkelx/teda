@@ -36,7 +36,7 @@ class FitsPlotter(object):
         self.img = None
 
     def open(self):
-        if self._huds is None:
+        if self._huds is None and self.fitsfile:
             self._huds = fits.open(self.fitsfile, lazy_load_hdus=False)
             self._huds.info()
 
@@ -47,7 +47,8 @@ class FitsPlotter(object):
     @property
     def data(self):
         self.open()
-        if isinstance(self._huds[self.hdu], PrimaryHDU) or isinstance(self._huds[self.hdu], ImageHDU):
+        if self._huds is not None and \
+                (isinstance(self._huds[self.hdu], PrimaryHDU) or isinstance(self._huds[self.hdu], ImageHDU)):
             return self._huds[self.hdu].data
         else:
             return None

@@ -1,10 +1,14 @@
 from painterShapes.circleShape import (CircleShape)
 from painterShapes.CircleCenterShape import (CircleCenterShape)
 import matplotlib.pyplot as plt
+from traitlets import Float, Int, HasTraits
 from math import *
 
-class PainterComponent(object):
+class PainterComponent(HasTraits):
     """Painter"""
+
+    ccenter_x = Float()
+    ccenter_y = Float()
 
     def __init__(self):
         self.shapes = []
@@ -24,6 +28,8 @@ class PainterComponent(object):
         if type == "circleCenter":
             self.centerCircle = []
             c = CircleCenterShape(x, y, size)
+            self.ccenter_x = x
+            self.ccenter_y = y
             self.centerCircle.append(c)
 
     def paintAllShapes(self, axis):
