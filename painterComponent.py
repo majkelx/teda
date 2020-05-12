@@ -16,6 +16,7 @@ class PainterComponent(HasTraits):
         self.drs = []
         self.templine = None
         self.tempCanvas = None
+        self.tempcircle = None
         self.startpainting = 'false'
         self.actualShape = ""
         self.draggableActive = False
@@ -32,27 +33,27 @@ class PainterComponent(HasTraits):
             self.ccenter_y = y
             self.centerCircle.append(c)
 
-    def paintAllShapes(self, axis):
-        axis.patches.clear()
-        axis.lines.clear()
+    def paintAllShapes(self, axes):
+        axes.patches.clear()
+        axes.lines.clear()
         for shape in self.shapes:
-            shap=shape.paintShape(axis)
+            shap=shape.paintShape(axes)
         for shape in self.centerCircle:
-            shap=shape.paintShape(axis)
+            shap=shape.paintShape(axes)
         self.tempCanvas.draw()
 
-    def makeAllShapesDraggable(self, axis):
+    def makeAllShapesDraggable(self, axes):
         self.draggableActive = True
-        axis.patches.clear()
-        axis.lines.clear()
+        axes.patches.clear()
+        axes.lines.clear()
         self.drs = []
         for shape in self.shapes:
-            shap = shape.paintShape(axis)
+            shap = shape.paintShape(axes)
             dr = DraggablePoint(shap, shape)
             dr.connect()
             self.drs.append(dr)
         for shape in self.centerCircle:
-            shap = shape.paintShape(axis)
+            shap = shape.paintShape(axes)
             dr = DraggablePoint(shap, shape)
             dr.connect()
             self.drs.append(dr)
@@ -81,15 +82,22 @@ class PainterComponent(HasTraits):
         if self.templine != None:
             self.templine = None
             ax.lines = ax.lines[:-1]
+        if self.tempcircle != None:
+            ax.patches.remove(self.tempcircle)
+            self.tempcircle = None
         xcord = [x1,x2]
         ycord = [y1,y2]
-        self.templine = plt.plot(xcord, ycord, linewidth=1, color='g')
+        r = sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2))
+        self.tempcircle = plt.Circle((x1, y1), r, color='g', fill=False)
+        ax.add_patch(self.tempcircle)
+        self.templine = ax.plot(xcord, ycord, linewidth=1, color='g')
         canvas.draw()
 
     def hideLine(self,canvas):
         # restore the background region
         ax = canvas.figure.axes[0]
         self.templine = None
+        self.tempcircle = None
         ax.lines = self.tempLines.copy()
         canvas.draw()
 
@@ -124,13 +132,14 @@ class PainterComponent(HasTraits):
         self.startpainting = 'false'
         self.hideLine(self.tempCanvas)
         r=sqrt(pow((event.xdata-self.clicked['x']),2)+pow((event.ydata-self.clicked['y']),2))
-        if r != 0:
-            self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
-            ax = self.tempCanvas.figure.axes[0]
-            self.paintAllShapes(ax)
-            self.tempCanvas.draw()
+        if r == 0:
+            r = 15
+        self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
+        ax = self.tempCanvas.figure.axes[0]
+        self.paintAllShapes(ax)
+        self.tempCanvas.draw()
 
-    def deleteSelectedShapes(self, axis):
+    def deleteSelectedShapes(self, axes):
         tempShapes = []
         for shape in self.shapes:
             if shape.selected != True:
@@ -139,9 +148,10 @@ class PainterComponent(HasTraits):
         for shape in self.centerCircle:
             if shape.selected == True:
                 self.centerCircle.remove(shape)
+        self.paintAllShapes(axes)
         if self.draggableActive:
-            self.makeAllShapesDraggable(axis)
-        self.paintAllShapes(axis)
+            self.makeAllShapesDraggable(axes)
+
 
 class DraggablePoint:
     lock = None #only one can be animated at a time

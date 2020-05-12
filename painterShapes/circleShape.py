@@ -18,31 +18,31 @@ class CircleShape(object):
     def paint(self):
         return {self.x, self.y, self.size}
 
-    def paintShape(self,axis):
+    def paintShape(self,axes):
         self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
-        axis.add_patch(self.circle)
+        axes.add_patch(self.circle)
         return self.circle
 
-    def repaintShape(self,axis,x,y,size,color):
+    def repaintShape(self,axes,x,y,size,color):
         self.circle.remove()
         self.x = x
         self.y = y
         self.size = size
         self.color = color
         self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
-        axis.add_patch(self.circle)
+        axes.add_patch(self.circle)
         return self.circle
 
-    def refreshShape(self,axis):
+    def refreshShape(self,axes):
         self.circle.remove()
         self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
-        axis.add_patch(self.circle)
+        axes.add_patch(self.circle)
         return self.circle
 
     def paintAdditional(self):
         pass
 
-    def repaintAdditional(self,axis):
+    def repaintAdditional(self,axes):
         pass
 
     def removeAdditional(self):

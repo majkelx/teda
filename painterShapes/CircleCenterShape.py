@@ -18,13 +18,13 @@ class CircleCenterShape(object):
     def paint(self):
         return {self.x, self.y, self.size}
 
-    def paintShape(self,axis):
+    def paintShape(self,axes):
         self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
-        axis.add_patch(self.circle)
-        self.paintAdditional()
+        axes.add_patch(self.circle)
+        self.paintAdditional(axes)
         return self.circle
 
-    def repaintShape(self,axis,x,y,size,color):
+    def repaintShape(self,axes,x,y,size,color):
         self.circle.remove()
         self.removeAdditional()
         self.x = x
@@ -32,27 +32,27 @@ class CircleCenterShape(object):
         self.size = size
         self.color = color
         self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
-        axis.add_patch(self.circle)
-        self.paintAdditional()
+        axes.add_patch(self.circle)
+        self.paintAdditional(axes)
         return self.circle
 
-    def refreshShape(self,axis):
+    def refreshShape(self,axes):
         self.circle.remove()
         self.removeAdditional()
         self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
-        axis.add_patch(self.circle)
-        self.paintAdditional()
+        axes.add_patch(self.circle)
+        self.paintAdditional(axes)
         return self.circle
 
-    def paintAdditional(self):
+    def paintAdditional(self,axes):
         xcord = [self.x, self.x]
         ycord = [self.y - self.size / 2, self.y + self.size / 2]
-        self.linex = plt.plot(xcord, ycord, linewidth=1, color=self.color)
+        self.linex = axes.plot(xcord, ycord, linewidth=1, color=self.color)
         xcord = [self.x - self.size / 2, self.x + self.size / 2]
         ycord = [self.y, self.y]
-        self.liney = plt.plot(xcord, ycord, linewidth=1, color=self.color)
+        self.liney = axes.plot(xcord, ycord, linewidth=1, color=self.color)
 
-    def repaintAdditional(self,axis):
+    def repaintAdditional(self,axes):
         xcord = [self.x, self.x]
         ycord = [self.y - self.size / 2, self.y + self.size / 2]
         self.linex[0].set_xdata(xcord)
@@ -61,8 +61,8 @@ class CircleCenterShape(object):
         ycord = [self.y, self.y]
         self.liney[0].set_xdata(xcord)
         self.liney[0].set_ydata(ycord)
-        axis.draw_artist(self.linex[0])
-        axis.draw_artist(self.liney[0])
+        axes.draw_artist(self.linex[0])
+        axes.draw_artist(self.liney[0])
 
     def removeAdditional(self):
         try:
