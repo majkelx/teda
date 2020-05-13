@@ -13,6 +13,7 @@ class PainterComponent(HasTraits):
     def __init__(self):
         self.shapes = []
         self.centerCircle = []
+        self.listOfPaintedShapes = []
         self.drs = []
         self.templine = None
         self.tempCanvas = None
@@ -20,6 +21,7 @@ class PainterComponent(HasTraits):
         self.startpainting = 'false'
         self.actualShape = ""
         self.draggableActive = False
+        self.eventInShapeFlag = False
 
 
     def add(self, x, y, size = 10,type="circle"):
@@ -36,11 +38,21 @@ class PainterComponent(HasTraits):
     def paintAllShapes(self, axes):
         axes.patches.clear()
         axes.lines.clear()
+        self.listOfPaintedShapes = []
+        self.drs = []
         for shape in self.shapes:
             shap=shape.paintShape(axes)
+            self.listOfPaintedShapes.append(shap)
+            dr = DraggablePoint(shap, shape, self)
+            dr.connect()
+            self.drs.append(dr)
         for shape in self.centerCircle:
             shap=shape.paintShape(axes)
-        self.tempCanvas.draw()
+            self.listOfPaintedShapes.append(shap)
+            dr = DraggablePoint(shap, shape, self)
+            dr.connect()
+            self.drs.append(dr)
+        self.tempCanvas.draw_idle()
 
     def makeAllShapesDraggable(self, axes):
         self.draggableActive = True
@@ -49,12 +61,12 @@ class PainterComponent(HasTraits):
         self.drs = []
         for shape in self.shapes:
             shap = shape.paintShape(axes)
-            dr = DraggablePoint(shap, shape)
+            dr = DraggablePoint(shap, shape, self)
             dr.connect()
             self.drs.append(dr)
         for shape in self.centerCircle:
             shap = shape.paintShape(axes)
-            dr = DraggablePoint(shap, shape)
+            dr = DraggablePoint(shap, shape, self)
             dr.connect()
             self.drs.append(dr)
 
@@ -75,7 +87,7 @@ class PainterComponent(HasTraits):
     def startLine(self,canvas,x1,y1):
         ax = canvas.figure.axes[0]
         self.tempLines = ax.lines.copy()
-        canvas.draw()
+        canvas.draw_idle()
 
     def paintLine(self,canvas,x1,x2,y1,y2):
         ax = canvas.figure.axes[0]
@@ -91,7 +103,7 @@ class PainterComponent(HasTraits):
         self.tempcircle = plt.Circle((x1, y1), r, color='g', fill=False)
         ax.add_patch(self.tempcircle)
         self.templine = ax.plot(xcord, ycord, linewidth=1, color='g')
-        canvas.draw()
+        canvas.draw_idle()
 
     def hideLine(self,canvas):
         # restore the background region
@@ -99,7 +111,7 @@ class PainterComponent(HasTraits):
         self.templine = None
         self.tempcircle = None
         ax.lines = self.tempLines.copy()
-        canvas.draw()
+        canvas.draw_idle()
 
     def setCanvasEvents(self,canvas):
         self.tempCanvas = canvas
@@ -114,6 +126,9 @@ class PainterComponent(HasTraits):
             canvas.mpl_disconnect(self.addButtonMotion)
 
     def onAddCircle(self, event):
+        if self.eventInShape(event):
+            self.eventInShapeFlag = True
+            return
         self.clicked = {
             'x': event.xdata,
             'y': event.ydata
@@ -123,21 +138,24 @@ class PainterComponent(HasTraits):
 
 
     def onAddCircleMotion(self, event):
-        if self.startpainting == 'true':
-            self.paintLine(self.tempCanvas,self.clicked['x'],event.xdata,self.clicked['y'],event.ydata)
-        self.tempCanvas.draw()
+        if not self.eventInShapeFlag:
+            if self.startpainting == 'true':
+                self.paintLine(self.tempCanvas,self.clicked['x'],event.xdata,self.clicked['y'],event.ydata)
+            self.tempCanvas.draw_idle()
 
 
     def onAddCircleRelease(self, event):
-        self.startpainting = 'false'
-        self.hideLine(self.tempCanvas)
-        r=sqrt(pow((event.xdata-self.clicked['x']),2)+pow((event.ydata-self.clicked['y']),2))
-        if r == 0:
-            r = 15
-        self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
-        ax = self.tempCanvas.figure.axes[0]
-        self.paintAllShapes(ax)
-        self.tempCanvas.draw()
+        if not self.eventInShapeFlag:
+            self.startpainting = 'false'
+            self.hideLine(self.tempCanvas)
+            r=sqrt(pow((event.xdata-self.clicked['x']),2)+pow((event.ydata-self.clicked['y']),2))
+            if r == 0:
+                r = 15
+            self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
+            ax = self.tempCanvas.figure.axes[0]
+            self.paintAllShapes(ax)
+            self.tempCanvas.draw_idle()
+        self.eventInShapeFlag = False
 
     def deleteSelectedShapes(self, axes):
         tempShapes = []
@@ -152,12 +170,20 @@ class PainterComponent(HasTraits):
         if self.draggableActive:
             self.makeAllShapesDraggable(axes)
 
+    def eventInShape(self, event):
+        inShapeClicked = False
+        for shape in self.listOfPaintedShapes:
+            contains, attrd = shape.contains(event)
+            if contains:
+                inShapeClicked = True
+        return inShapeClicked
 
 class DraggablePoint:
     lock = None #only one can be animated at a time
-    def __init__(self, point, painterElement):
+    def __init__(self, point, painterElement, paintComp):
         self.point = point
         self.painterElement = painterElement
+        self.paintComp = paintComp
         self.press = None
         self.background = None
         self.movingStart = False
@@ -239,7 +265,12 @@ class DraggablePoint:
         if self.movingStart == False:
             self.painterElement.selectDeselect()
             self.point = self.painterElement.refreshShape(axes)
-        self.point.figure.canvas.draw()
+        if hasattr(self.painterElement, 'shapeType'):
+            if self.painterElement.shapeType == 'centerCircle':
+                self.paintComp.ccenter_x = self.painterElement.x
+                self.paintComp.ccenter_x = self.painterElement.x
+        self.point.figure.canvas.draw_idle()
+        self.paintComp.paintAllShapes(axes)
         self.movingStart = False
 
     def disconnect(self):

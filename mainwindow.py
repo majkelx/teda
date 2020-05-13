@@ -80,7 +80,6 @@ class MainWindow(QMainWindow):
         self.createStatusBar()
         self.createInfoWindow()
         self.createDockWindows()
-        self.setButtonsStatuses()#do wyrzucenia jesli będą przyciski stanowe activ/inactiv
         # self.defineButtonsActions()
         self.setWindowTitle("TEDA")
 
@@ -207,11 +206,6 @@ class MainWindow(QMainWindow):
         self.BtnCenterCircle.clicked.connect(self.changeAddCenterCircleStatus)
         self.regionToolBar.addWidget(self.BtnCenterCircle)
 
-        self.BtnDragg = QPushButton("Move/Select")
-        self.BtnDragg.setCheckable(True)
-        self.BtnDragg.clicked.connect(self.changeDraggableStatus)
-        self.regionToolBar.addWidget(self.BtnDragg)
-
         self.BtnDelete = QPushButton("Delete selected")
         self.BtnDelete.clicked.connect(self.deleteSelected)
         self.regionToolBar.addWidget(self.BtnDelete)
@@ -240,30 +234,15 @@ class MainWindow(QMainWindow):
         else:
             self.painterComponent.stopPainting(self.central_widget)
 
-    def changeDraggableStatus(self):
-        if self.BtnDragg.isChecked():
-            self.toogleOffRegionButtons()
-            self.BtnDragg.toggle()
-            ax = self.central_widget.figure.axes[0]
-            self.painterComponent.makeAllShapesDraggable(ax)
-        else:
-            self.painterComponent.disableAllShapesDraggable()
-
     def deleteSelected(self):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
-
-    def setButtonsStatuses(self):
-        self.addCircleActive = 'false'
 
     def toogleOffRegionButtons(self):
         if self.BtnCircle.isChecked():
             self.BtnCircle.toggle()
         if self.BtnCenterCircle.isChecked():
             self.BtnCenterCircle.toggle()
-        if self.BtnDragg.isChecked():
-            self.BtnDragg.toggle()
         self.painterComponent.stopPainting(self.central_widget)
-        self.painterComponent.disableAllShapesDraggable()
 
 
     def createStatusBar(self):
@@ -800,13 +779,6 @@ class MainWindow(QMainWindow):
             i = i + 1
         self.headerWidget.resizeRowsToContents()
         self.headerWidget.verticalHeader().hide()
-
-    def onAddCircle(self, event):
-        r = event.xdata/2
-        self.painterComponent.add(event.xdata,event.ydata,r,"circle")
-        ax = self.central_widget.figure.add_subplot(111)
-        self.painterComponent.paintAllShapes(ax)
-        self.central_widget.draw()
 
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)

@@ -13,6 +13,7 @@ class CircleCenterShape(object):
         self.selectionColor = 'y'
         self.selected = False
         self.originColor = color
+        self.shapeType = "centerCircle"
 
 
     def paint(self):
