@@ -40,8 +40,9 @@
 #############################################################################
 
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
+import PySide2
 from PySide2 import QtWidgets
-from PySide2.QtCore import QDate, QFile, Qt, QTextStream, QSize
+from PySide2.QtCore import QDate, QFile, Qt, QTextStream, QSize, QSettings
 from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
                            QTextCursor, QTextTableFormat)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
@@ -59,7 +60,6 @@ from radialprofile import RadialProfileWidget
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.setWindowTitle("TEDA")
         self.combobox = QComboBox()
         self.filename = None
@@ -82,9 +82,15 @@ class MainWindow(QMainWindow):
         self.createInfoWindow()
         self.createDockWindows()
         # self.defineButtonsActions()
-        self.setWindowTitle("TEDA")
+        self.setWindowTitle("TeDa")
+
+        self.readWindowSettings()
 
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
+
+    def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
+        self.writeWindowSettings()
+        super().closeEvent(event)
 
     def print_(self):
         document = self.textEdit.document()
@@ -253,6 +259,7 @@ class MainWindow(QMainWindow):
 
     def createDockWindows(self):
         dock = QDockWidget("Scale", self)
+        dock.setObjectName("SCALE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         #comboboxes
@@ -285,6 +292,7 @@ class MainWindow(QMainWindow):
 
         #wykres
         dock = QDockWidget("Radial Profile", self)
+        dock.setObjectName("RADIAL_PROFILE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
@@ -757,6 +765,7 @@ class MainWindow(QMainWindow):
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS data", self)
+        dock.setObjectName("FTIS_DATA")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -787,12 +796,60 @@ class MainWindow(QMainWindow):
         pass
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
 
+    def readWindowSettings(self):
+        settings = QSettings()
+        settings.beginGroup("MainWindow")
+        size, pos = settings.value("size"), settings.value("pos")
+        settings.endGroup()
+        if size is not None and pos is not None:
+            print('settings: resize to {} and move to {}', size, pos)
+            self.move(pos)
+            # self.resize(size)
+            print('Size reported ', self.size())
+            print('Size set ', size)
+            self.resize(size)
+            print('Size reported ', self.size())
+        else:
+            self.resize(800, 600)
+
+        geometry = settings.value("geometry")
+        if geometry is not None:
+            self.restoreGeometry(geometry)
+            self.restoreState(settings.value("windowState"))
+
+    def writeWindowSettings(self):
+        settings = QSettings()
+        settings.beginGroup("MainWindow")
+        settings.setValue("size", self.size())
+        settings.setValue("pos", self.pos())
+        settings.endGroup()
+
+        settings.setValue('geometry',self.saveGeometry())
+        settings.setValue('windowState',self.saveState())
+
 
 if __name__ == '__main__':
     import sys
 
     app = QApplication(sys.argv)
+    QApplication.setOrganizationName('Akond Lab')
+    QApplication.setOrganizationDomain('akond.com')
+    QApplication.setApplicationName('TeDa FITS Viewer')
     mainWin = MainWindow()
-    mainWin.resize(800, 600)
+    # mainWin.resize(800, 600)   # now in config, see: MainWindow.readWindowSettings
     mainWin.show()
+
+    # ## test settings - to be deleted
+    # s1 = QSettings()
+    # s2 = QSettings()
+    # print('val init:', s1.value('test/presistance'))
+    # x = s1.value('test/presistance')
+    # if x is None:
+    #     x = 0
+    # x += 1
+    # s2.setValue('test/presistance', x)
+    # print('val set:', s2.value('test/presistance'))
+    # print('val get:', s1.value('test/presistance'))
+
+
     sys.exit(app.exec_())
