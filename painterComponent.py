@@ -19,6 +19,7 @@ class PainterComponent(HasTraits):
         self.tempCanvas = None
         self.tempcircle = None
         self.startpainting = 'false'
+        self.startMoving = False
         self.actualShape = ""
         self.draggableActive = False
         self.eventInShapeFlag = False
@@ -77,9 +78,15 @@ class PainterComponent(HasTraits):
     def getAllShapes(self):
         return self.shapes
 
-    def startPainting(self,canvas,shape):
+    def startPainting(self, canvas, shape):
+        self.removeCanvasEvents(canvas)
         self.actualShape = shape
-        self.setCanvasEvents(canvas)
+        self.setCanvasEvents(canvas,'painting')
+
+    def startMovingEvents(self, canvas):
+        self.removeCanvasEvents(canvas)
+        self.setCanvasEvents(canvas,'moving')
+
     def stopPainting(self,canvas):
         self.actualShape = ""
         self.removeCanvasEvents(canvas)
@@ -113,11 +120,16 @@ class PainterComponent(HasTraits):
         ax.lines = self.tempLines.copy()
         canvas.draw_idle()
 
-    def setCanvasEvents(self,canvas):
+    def setCanvasEvents(self,canvas, mode):
         self.tempCanvas = canvas
-        self.addButtonPress = canvas.mpl_connect("button_press_event", self.onAddCircle)
-        self.addButtonRelease = canvas.mpl_connect('button_release_event', self.onAddCircleRelease)
-        self.addButtonMotion = canvas.mpl_connect('motion_notify_event', self.onAddCircleMotion)
+        if mode =='painting':
+            self.addButtonPress = canvas.mpl_connect("button_press_event", self.onAddCircle)
+            self.addButtonRelease = canvas.mpl_connect('button_release_event', self.onAddCircleRelease)
+            self.addButtonMotion = canvas.mpl_connect('motion_notify_event', self.onAddCircleMotion)
+        if mode == 'moving':
+            self.addButtonPress = canvas.mpl_connect("button_press_event", self.onMovingClick)
+            self.addButtonRelease = canvas.mpl_connect('button_release_event', self.onMovingRelease)
+            self.addButtonMotion = canvas.mpl_connect('motion_notify_event', self.onMovingMotion)
 
     def removeCanvasEvents(self,canvas):
         if hasattr(self, 'addButtonPress'):
@@ -156,6 +168,44 @@ class PainterComponent(HasTraits):
             self.paintAllShapes(ax)
             self.tempCanvas.draw_idle()
         self.eventInShapeFlag = False
+
+    def onMovingClick(self,event):
+        if self.eventInShape(event):
+            self.eventInShapeFlag = True
+            return
+        ax = self.tempCanvas.figure.axes[0]
+        self.press = event.xdata, event.ydata
+        self.curr_lim = ax.get_xlim(), ax.get_ylim()
+        self.startMoving = True
+        self.dx = 0
+        self.dy = 0
+
+    def onMovingMotion(self,event):
+        if not self.eventInShapeFlag:
+            if self.startMoving:
+                ax = self.tempCanvas.figure.axes[0]
+                xpress, ypress = self.press
+                xlim, ylim = self.curr_lim
+                self.dx = event.xdata - xpress + self.dx
+                self.dy = event.ydata - ypress + self.dy
+                xli1, xli2 = xlim
+                yli1, yli2 = ylim
+                ax.set_xlim(xli1 - self.dx, xli2 - self.dx)
+                ax.set_ylim(yli1 - self.dy, yli2 - self.dy)
+                self.tempCanvas.draw()
+
+
+    def onMovingRelease(self,event):
+        if not self.eventInShapeFlag:
+            if self.startMoving:
+                self.tempCanvas.draw()
+                self.press = None
+                self.curr_lim = None
+                self.dx = 0
+                self.dy = 0
+                self.tempCanvas.draw()
+        self.eventInShapeFlag = False
+        self.startMoving = False
 
     def deleteSelectedShapes(self, axes):
         tempShapes = []
