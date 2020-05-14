@@ -46,8 +46,10 @@ from PySide2.QtCore import QDate, QFile, Qt, QTextStream, QSize, QSettings
 from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
                            QTextCursor, QTextTableFormat)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
-from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QSlider,QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QPushButton,
-                               QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem, QComboBox)
+from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QSlider, QStackedLayout,
+                               QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QPushButton,
+                               QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem,
+                               QComboBox, QMenu)
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from fitsplot import (FitsPlotter)
 from fitsopen import (FitsOpen)
@@ -129,7 +131,7 @@ class MainWindow(QMainWindow):
         # widget.setLayout(layout)
         # self.setCentralWidget(widget)
         #
-        self.setHeader(self.fits_image.header)
+        self.headerWidget.setHeader()
 
     def save(self):
         filename, _ = QFileDialog.getSaveFileName(self,
@@ -218,11 +220,11 @@ class MainWindow(QMainWindow):
 
     def nextHDU(self):
         self.fits_image.changeHDU(True, 1)
-        self.setHeader(self.fits_image.header)
+        self.headerWidget.setHeader()
 
     def prevHDU(self):
         self.fits_image.changeHDU(True, -1)
-        self.setHeader(self.fits_image.header)
+        self.headerWidget.setHeader()
 
     def changeAddCircleStatus(self):
         if self.BtnCircle.isChecked():
@@ -767,27 +769,16 @@ class MainWindow(QMainWindow):
 
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
-        self.headerWidget = QTableWidget(self)
+        self.headerWidget = HeaderTableWidget(self)
         self.headerWidget.setColumnCount(2)
         self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
         self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
         self.headerWidget.horizontalHeader().setStretchLastSection(1);
+        self.headerWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         dock.setWidget(self.headerWidget)
 
 
-    def setHeader(self, header):
-        self.headerWidget.setRowCount(len(header))
-        i = 0
-        for key in list(header.keys()):
-            newItem = QTableWidgetItem()
-            newItem.setText(key)
-            self.headerWidget.setItem(i, 0, newItem)
-            newItem = QTableWidgetItem()
-            newItem.setText(str(header[key]))
-            self.headerWidget.setItem(i, 1, newItem)
-            i = i + 1
-        self.headerWidget.resizeRowsToContents()
-        self.headerWidget.verticalHeader().hide()
+
 
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
@@ -813,6 +804,8 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(geometry)
             self.restoreState(settings.value("windowState"))
 
+        self.headerWidget.readSettings(settings)
+
     def writeWindowSettings(self):
         settings = QSettings()
         settings.beginGroup("MainWindow")
@@ -823,6 +816,86 @@ class MainWindow(QMainWindow):
         settings.setValue('geometry',self.saveGeometry())
         settings.setValue('windowState',self.saveState())
 
+        self.headerWidget.writeSettings(settings)
+
+
+class HeaderTableWidget(QTableWidget):
+
+    def __init__(self, parent = None):
+        QTableWidget.__init__(self, parent)
+        self.pinnedItems = []
+
+
+    def contextMenuEvent(self, event):
+        if self.selectionModel().selection().indexes():
+            for i in self.selectionModel().selection().indexes():
+                row, column = i.row(), i.column()
+            menu = QMenu(self)
+            pin = menu.addAction("Pin/Unpin")
+            action = menu.exec_(self.mapToGlobal(event.pos()))
+            if action == pin:
+                self.changePinAction(row, column)
+
+            self.setHeader()
+
+    def changePinAction(self, row, column):
+        cell = self.item(row, 0);
+        try:
+            self.pinnedItems.index(cell.text())
+            self.pinnedItems.remove(cell.text())
+        except ValueError:
+            self.pinnedItems.append(cell.text())
+        print(self.pinnedItems)
+
+    def createRow(self, pos, key, val, pin):
+        newKeyItem = QTableWidgetItem()
+        newKeyItem.setText(key)
+        newValItem = QTableWidgetItem()
+        newValItem.setText(val)
+
+        color = PySide2.QtGui.QColor(200, 220, 200)
+        if bool(pin):
+            newKeyItem.setIcon(QIcon.fromTheme('emblem-important'));
+            newKeyItem.setBackground(color)
+            newValItem.setBackground(color)
+        self.insertRow(pos)
+        self.setItem(pos, 0, newKeyItem)
+        self.setItem(pos, 1, newValItem)
+
+    def setHeader(self):
+        header = mainWin.fits_image.header
+        self.setRowCount(0)
+        pos = 0
+        for key in self.pinnedItems :
+            try:
+                value = str(header[key])
+            except KeyError:
+                value = "---- NOT FOUND ----"
+            self.createRow(pos, key, value, bool(1))
+            pos += 1
+
+        for key in list(header.keys()):
+            try:
+                self.pinnedItems.index(key)
+            except ValueError:
+                value = str(header[key])
+                self.createRow(pos, key, value, bool(0))
+                pos += 1
+
+        self.resizeRowsToContents()
+        self.verticalHeader().hide()
+
+    def readSettings(self, settings):
+        try:
+            self.pinnedItems = settings.value('pinned', [], 'QStringList')
+        except SystemError:
+            self.pinnedItems = None
+
+        if self.pinnedItems is None:
+            self.pinnedItems = []
+
+    def writeSettings(self, settings):
+        settings.setValue('pinned', self.pinnedItems)
 
 if __name__ == '__main__':
     import sys
