@@ -256,6 +256,7 @@ class MainWindow(QMainWindow):
 
     def createDockWindows(self):
         dock = QDockWidget("Scale", self)
+        dock.setObjectName("SCALE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         #comboboxes
@@ -288,6 +289,7 @@ class MainWindow(QMainWindow):
 
         #wykres
         dock = QDockWidget("Radial Profile", self)
+        dock.setObjectName("RADIAL_PROFILE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
@@ -760,6 +762,7 @@ class MainWindow(QMainWindow):
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS data", self)
+        dock.setObjectName("FTIS_DATA")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -805,12 +808,20 @@ class MainWindow(QMainWindow):
         else:
             self.resize(800, 600)
 
+        geometry = settings.value("geometry")
+        if geometry is not None:
+            self.restoreGeometry(geometry)
+            self.restoreState(settings.value("windowState"))
+
     def writeWindowSettings(self):
         settings = QSettings()
         settings.beginGroup("MainWindow")
         settings.setValue("size", self.size())
         settings.setValue("pos", self.pos())
         settings.endGroup()
+
+        settings.setValue('geometry',self.saveGeometry())
+        settings.setValue('windowState',self.saveState())
 
 
 if __name__ == '__main__':
