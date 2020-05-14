@@ -76,6 +76,7 @@ class MainWindow(QMainWindow):
         self.interval_dict = {}
 
         self.painterComponent = PainterComponent()
+        self.painterComponent.startMovingEvents(self.central_widget)
         self.createActions()
         self.createMenus()
         self.createToolBars()
@@ -233,6 +234,7 @@ class MainWindow(QMainWindow):
             self.painterComponent.startPainting(self.central_widget, "circle")
         else:
             self.painterComponent.stopPainting(self.central_widget)
+            self.painterComponent.startMovingEvents(self.central_widget)
 
     def changeAddCenterCircleStatus(self):
         if self.BtnCenterCircle.isChecked():
@@ -241,6 +243,7 @@ class MainWindow(QMainWindow):
             self.painterComponent.startPainting(self.central_widget,"circleCenter")
         else:
             self.painterComponent.stopPainting(self.central_widget)
+            self.painterComponent.startMovingEvents(self.central_widget)
 
     def deleteSelected(self):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
