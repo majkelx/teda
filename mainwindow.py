@@ -60,7 +60,6 @@ from radialprofile import RadialProfileWidget
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("TEDA")
         self.combobox = QComboBox()
         self.filename = None
         fig = Figure(figsize=(14, 10))
@@ -191,30 +190,33 @@ class MainWindow(QMainWindow):
         self.helpMenu.addAction(self.aboutQtAct)
 
     def createToolBars(self):
-        self.fileToolBar = self.addToolBar("File")
+        self.fileToolBar = self.addToolBar("File Toolbar")
         self.fileToolBar.addAction(self.openAct)
-        self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
-        self.viewMenu.addSeparator()
 
-        self.hduToolBar = self.addToolBar("HDU")
-        self.hduToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
-        self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
+        self.infoToolBar = self.addToolBar("Info Toolbar")
+        self.infoToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
+        self.infoToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
 
-        self.regionToolBar = self.addToolBar("Region")
+        self.mouseActionToolBar = self.addToolBar("Mouse Task Toolbar")
 
         self.BtnCircle = QPushButton("Add Region")
         self.BtnCircle.setCheckable(True)
         self.BtnCircle.clicked.connect(self.changeAddCircleStatus)
-        self.regionToolBar.addWidget(self.BtnCircle)
+        self.mouseActionToolBar.addWidget(self.BtnCircle)
 
         self.BtnCenterCircle = QPushButton("Radial profile")
         self.BtnCenterCircle.setCheckable(True)
         self.BtnCenterCircle.clicked.connect(self.changeAddCenterCircleStatus)
-        self.regionToolBar.addWidget(self.BtnCenterCircle)
+        self.mouseActionToolBar.addWidget(self.BtnCenterCircle)
 
         self.BtnDelete = QPushButton("Delete selected")
         self.BtnDelete.clicked.connect(self.deleteSelected)
-        self.regionToolBar.addWidget(self.BtnDelete)
+        self.mouseActionToolBar.addWidget(self.BtnDelete)
+
+        self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
+        self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
+        self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
+        self.viewMenu.addSeparator()
 
     def nextHDU(self):
         self.fits_image.changeHDU(True, 1)
