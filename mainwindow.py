@@ -793,7 +793,6 @@ class MainWindow(QMainWindow):
         self.headerWidget.verticalHeader().hide()
 
     def onCenterCircleChange(self, change):
-        pass
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
 
     def readWindowSettings(self):
