@@ -40,6 +40,7 @@
 #############################################################################
 
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
+import PySide2
 from PySide2 import QtWidgets
 from PySide2.QtCore import QDate, QFile, Qt, QTextStream, QSize, QSettings
 from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
@@ -59,7 +60,6 @@ from radialprofile import RadialProfileWidget
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.setWindowTitle("TEDA")
         self.combobox = QComboBox()
         self.filename = None
@@ -81,9 +81,15 @@ class MainWindow(QMainWindow):
         self.createInfoWindow()
         self.createDockWindows()
         # self.defineButtonsActions()
-        self.setWindowTitle("TEDA")
+        self.setWindowTitle("TeDa")
+
+        self.readWindowSettings()
 
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
+
+    def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
+        self.writeWindowSettings()
+        super().closeEvent(event)
 
     def print_(self):
         document = self.textEdit.document()
@@ -783,6 +789,29 @@ class MainWindow(QMainWindow):
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
 
+    def readWindowSettings(self):
+        settings = QSettings()
+        settings.beginGroup("MainWindow")
+        size, pos = settings.value("size"), settings.value("pos")
+        settings.endGroup()
+        if size is not None and pos is not None:
+            print('settings: resize to {} and move to {}', size, pos)
+            self.move(pos)
+            # self.resize(size)
+            print('Size reported ', self.size())
+            print('Size set ', size)
+            self.resize(size)
+            print('Size reported ', self.size())
+        else:
+            self.resize(800, 600)
+
+    def writeWindowSettings(self):
+        settings = QSettings()
+        settings.beginGroup("MainWindow")
+        settings.setValue("size", self.size())
+        settings.setValue("pos", self.pos())
+        settings.endGroup()
+
 
 if __name__ == '__main__':
     import sys
@@ -792,7 +821,7 @@ if __name__ == '__main__':
     QApplication.setOrganizationDomain('akond.com')
     QApplication.setApplicationName('TeDa FITS Viewer')
     mainWin = MainWindow()
-    mainWin.resize(800, 600)
+    # mainWin.resize(800, 600)   # now in config, see: MainWindow.readWindowSettings
     mainWin.show()
 
     # ## test settings - to be deleted
