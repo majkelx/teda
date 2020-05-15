@@ -240,6 +240,45 @@ class FitsPlotter(object):
 
             self.ax.figure.canvas.draw_idle()  # force re-draw the next time the GUI refreshes
 
+    def setZoom(self, zoom:float, reset_pos:bool):
+        if reset_pos:
+            self.ax.set_xlim(self.full_xlim)
+            self.ax.set_ylim(self.full_ylim)
+            self.ax.figure.canvas.draw_idle()
+            self.zoom = 1.0
+            return
+        min_zoom = 0.1
+        max_zoom = 50
+
+        new_zoom = self.zoom * zoom
+
+        if min_zoom < new_zoom < max_zoom:
+            self.zoom = new_zoom
+
+            cur_xlim = self.ax.get_xlim()
+            cur_ylim = self.ax.get_ylim()
+            full_xlim = self.full_xlim
+            full_ylim = self.full_ylim
+            x = cur_xlim[0]+((cur_xlim[1] - cur_xlim[0]) / 2)
+            y = cur_ylim[0]+((cur_ylim[1] - cur_ylim[0]) / 2)
+            self.ax.set_xlim(self.calc_new_limits(cur_xlim, full_xlim, x, self.zoom))
+            self.ax.set_ylim(self.calc_new_limits(cur_ylim, full_ylim, y, self.zoom))
+            self.ax.figure.canvas.draw_idle()
+
+    def center(self):
+        cur_xlim = self.ax.get_xlim()
+        cur_ylim = self.ax.get_ylim()
+        full_xlim = self.full_xlim
+        full_ylim = self.full_ylim
+        xsize = (cur_xlim[1] - cur_xlim[0])/2
+        ysize = (cur_ylim[1] - cur_ylim[0])/2
+        centerx = (full_xlim[1] - full_xlim[0])/2
+        centery = (full_ylim[1] - full_ylim[0])/2
+        newxlim = centerx - xsize, centerx + xsize
+        newylim = centery - ysize, centery + ysize
+        self.ax.set_xlim(newxlim)
+        self.ax.set_ylim(newylim)
+
     @staticmethod
     def calc_new_limits(cur_lim, full_lim, stationary, zoom):
         # get the current x and y limits

@@ -202,6 +202,13 @@ class MainWindow(QMainWindow):
         self.infoToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
         self.infoToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
 
+        self.zoomToolBar = self.addToolBar("Zoom Toolbar")
+        self.zoomToolBar.addAction("x4").triggered.connect(self.setZoomButton4)
+        self.zoomToolBar.addAction("x2").triggered.connect(self.setZoomButton2)
+        self.zoomToolBar.addAction("Home").triggered.connect(self.setZoomButtonHome)
+        self.zoomToolBar.addAction("1/2").triggered.connect(self.setZoomButton05)
+        self.zoomToolBar.addAction("1/4").triggered.connect(self.setZoomButton025)
+
         self.mouseActionToolBar = self.addToolBar("Mouse Task Toolbar")
 
         self.BtnCircle = QPushButton("Add Region")
@@ -230,6 +237,20 @@ class MainWindow(QMainWindow):
     def prevHDU(self):
         self.fits_image.changeHDU(True, -1)
         self.headerWidget.setHeader()
+
+    def setZoomButton4(self):
+        self.setZoomButton(4,False)
+    def setZoomButton2(self):
+        self.setZoomButton(2,False)
+    def setZoomButtonHome(self):
+        self.setZoomButton(1,True)
+    def setZoomButton05(self):
+        self.setZoomButton(0.5,False)
+    def setZoomButton025(self):
+        self.setZoomButton(0.25,False)
+    def setZoomButton(self,zoom:float,reset:bool):
+        if self.fits_image.ax!=None:
+            self.fits_image.setZoom(zoom, reset)
 
     def changeAddCircleStatus(self):
         if self.BtnCircle.isChecked():
