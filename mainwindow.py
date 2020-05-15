@@ -88,6 +88,7 @@ class MainWindow(QMainWindow):
         self.readWindowSettings()
 
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
+        self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
@@ -198,9 +199,17 @@ class MainWindow(QMainWindow):
         self.fileToolBar = self.addToolBar("File Toolbar")
         self.fileToolBar.addAction(self.openAct)
 
+        self.hduToolBar = self.addToolBar("HDU Toolbar")
+        self.hduToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
+        self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
+
         self.infoToolBar = self.addToolBar("Info Toolbar")
-        self.infoToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
-        self.infoToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
+        self.mouse_x_label = QLabel('100.1')
+        self.mouse_y_label = QLabel('100.145')
+        self.infoToolBar.addWidget(QLabel('image x:'))
+        self.infoToolBar.addWidget(self.mouse_x_label)
+        self.infoToolBar.addWidget(QLabel('y:'))
+        self.infoToolBar.addWidget(self.mouse_y_label)
 
         self.mouseActionToolBar = self.addToolBar("Mouse Task Toolbar")
 
@@ -219,6 +228,7 @@ class MainWindow(QMainWindow):
         self.mouseActionToolBar.addWidget(self.BtnDelete)
 
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
+        self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
         self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
         self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
         self.viewMenu.addSeparator()
@@ -770,7 +780,7 @@ class MainWindow(QMainWindow):
         # self.setCentralWidget(self.central_widget)
 
     def createInfoWindow(self):
-        dock = QDockWidget("FITS data", self)
+        dock = QDockWidget("FITS header", self)
         dock.setObjectName("FTIS_DATA")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
@@ -789,6 +799,15 @@ class MainWindow(QMainWindow):
 
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
+
+    def onMouseMoveOnImage(self, change):
+        display = ''
+        if change.new is not None:
+            display = f'{change.new:f}'
+        if change.name == 'mouse_xdata':
+            self.mouse_x_label.setText(display)
+        elif change.name == 'mouse_ydata':
+            self.mouse_y_label.setText(display)
 
     def readWindowSettings(self):
         settings = QSettings()

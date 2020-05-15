@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import math
+import json
+
+import traitlets as tr
+from numpy import *
 
 from astropy.io import fits
 from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU)
@@ -8,16 +13,13 @@ import astropy.visualization as vis
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-# import traitlets
 
 
-from numpy import *
-import json
-
-# class FitsPlotter(HasTraits):
-class FitsPlotter(object):
+class FitsPlotter(tr.HasTraits):
     """Fits plotter"""
     # contrast = traitlets.Float()
+    mouse_xdata = tr.Float(allow_none=True)
+    mouse_ydata = tr.Float(allow_none=True)
 
     def __init__(self, fitsfile=None, hdu=0,
                  figure=None, ax=None,
@@ -76,7 +78,8 @@ class FitsPlotter(object):
         return self.ax
 
     def plot_fits_data(self, data, ax, alpha, norm, cmap):
-        self.img = ax.imshow(data, origin='lower', alpha=alpha, norm=norm, cmap=cmap, resample=False)
+        self.img = ax.imshow(data, origin='lower', extent=(0.5, data.shape[1] + 0.5, 0.5, data.shape[0] + 0.5),
+                             alpha=alpha, norm=norm, cmap=cmap, resample=False)
 
     def plot_fits_file(self, ax=None, alpha=1.0, color=None):
         if color is not None:
@@ -210,6 +213,16 @@ class FitsPlotter(object):
         ax.xaxis.set_major_locator(plt.NullLocator())
         fig = ax.get_figure()
         fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
+        fig.canvas.mpl_connect('figure_leave_event', lambda event: self.on_mouse_exit(event))
+        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_mouse_move(event))
+
+    def on_mouse_exit(self, event):
+        self.mouse_xdata = None
+        self.mouse_ydata = None
+
+    def on_mouse_move(self, event):
+        self.mouse_xdata = event.xdata
+        self.mouse_ydata = event.ydata
 
     def on_zoom(self, event):
         # taken from https://gist.github.com/tacaswell/3144287
@@ -258,3 +271,27 @@ class FitsPlotter(object):
         #     print('Correction +')
         new_lim[1] = new_lim[0] + new_range
         return new_lim
+
+
+#  Functions for conversion between data pixel coordinates and data array indices
+def coo_data_to_index(data):
+    """
+    Converts 1-based pixel-centerd (x,y) coordinates to data index (row, col)
+
+    data: (float, float) or float
+        point in image data coordinates or single coordinate
+    """
+    try:
+        return math.floor(data[1] - 0.5), math.floor(data[0] - 0.5)
+    except TypeError:
+        return math.floor(data - 0.5)
+
+
+def coo_index_to_data(index):
+    """
+    Converts data index (row, col) to 1-based pixel-centerd (x,y) coordinates of the center ot the pixel
+
+    index: (int, int) or int
+        (row,col) index of the pixel in dtatabel or single row or col index
+    """
+    return (index[1] + 1.0, index[0] + 1.0)

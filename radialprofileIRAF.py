@@ -3,6 +3,7 @@ import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from .fitsplot import coo_data_to_index, coo_index_to_data
 
 
 class IRAFRadialProfileWidget(QWidget):
@@ -80,6 +81,12 @@ class IRAFRadialProfileWidget(QWidget):
 
 
     def get_radius_brightness(self, x0, y0, rmax, img):
+        for i in range(coo_data_to_index(x0 - rmax), coo_data_to_index(x0 + rmax) + 1):
+            for j in range(coo_data_to_index(y0 - rmax), coo_data_to_index(y0 + rmax) + 1):
+                try:
+                    v = img[i,j]
+
+
         xidx_min = x0 - rmax
         # suppose the center point of the image is the center of the star
         radius = []
