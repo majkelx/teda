@@ -894,7 +894,8 @@ class HeaderTableWidget(QTableWidget):
 
     def readSettings(self, settings):
         try:
-            self.pinnedItems = settings.value('pinned', [], 'QStringList')
+            self.pinnedItems = settings.value('pinned')
+            # self.pinnedItems = settings.value('pinned', [], 'QStringList')
         except SystemError:
             self.pinnedItems = None
 
