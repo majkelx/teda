@@ -912,6 +912,7 @@ class HeaderTableWidget(QTableWidget):
         for pin in self.pinnedItems:
             settings.setArrayIndex(i);
             settings.setValue("pin", pin);
+            i += 1
         settings.endArray();
 
 if __name__ == '__main__':
