@@ -89,6 +89,7 @@ class MainWindow(QMainWindow):
         self.readWindowSettings()
 
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
+        self.painterComponent.observe(lambda change: self.onCenterCircleRadiusChange(change), ['cradius'])
         self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
@@ -830,6 +831,10 @@ class MainWindow(QMainWindow):
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
         self.radial_profile_iraf_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
+
+    def onCenterCircleRadiusChange(self, change):
+        self.radial_profile_widget.set_radius(self.painterComponent.cradius)
+        self.radial_profile_iraf_widget.set_radius(self.painterComponent.cradius)
 
     def onMouseMoveOnImage(self, change):
         display = ''

@@ -2,7 +2,8 @@ import math
 import numpy as np
 import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
-from matplotlib.figure import Figure
+from matplotlib.figure import Figure, Axes
+import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from fitsplot import coo_data_to_index, coo_index_to_data
 
@@ -25,6 +26,9 @@ class IRAFRadialProfileWidget(QWidget):
         canvas = FigureCanvas(self.fig)
 
         self.ax = self.fig.add_subplot(111)
+        self.setup_axies(self.ax)
+
+
         self.plotted_profile = self.ax.plot([1,2,3,4],[1,4,6,8], '.', ms=1)[0]
         self.gaussian = self.ax.plot([1,2,3,4],[1,4,6,8], ':', alpha=0.5)[0]
         self.rms_legend = self.ax.text(1,0.99, 'Gauss RMS: <?> ',
@@ -40,6 +44,32 @@ class IRAFRadialProfileWidget(QWidget):
         # import matplotlib.pyplot as plt
         # axes = plt.axes()
         # axes.set_ylim([0, 1])
+
+    def setup_axies(self, ax: Axes):
+        ax.tick_params()
+        ax.yaxis.set_tick_params(direction='in')
+
+        @ticker.FuncFormatter
+        def formatter(v, pos):
+            if pos < 0.001:
+                return ''
+            if v >= 10000:
+                return f'{v/1000.0:.0f}k'
+            if v >= 1000:
+                return f'{v/1000.0:.1f}k'
+            if v >= 10:
+                return f'{v:.0f}'
+            return f'{v:4f}'
+
+        ax.yaxis.set_major_formatter(formatter)
+
+        # ax.yaxis.set_major_locator(plt.NullLocator())
+        # ax.xaxis.set_major_locator(plt.NullLocator())
+        # fig = ax.get_figure()
+        # fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
+        # fig.canvas.mpl_connect('figure_leave_event', lambda event: self.on_mouse_exit(event))
+        # fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_mouse_move(event))
+
 
     def set_centroid(self, x, y, radius=None):
         self.x = x
@@ -61,10 +91,10 @@ class IRAFRadialProfileWidget(QWidget):
         self.plotted_profile.set_xdata(rad)
         self.plotted_profile.set_ydata(val)
 
-        rad, val, rmse = self.fit_gaussian(rad, val, self.radius)
+        rad, val, rmse, fwhm, sky = self.fit_gaussian(rad, val, self.radius)
         self.gaussian.set_xdata(rad)
         self.gaussian.set_ydata(val)
-        self.rms_legend.set_text(f'Fit RMSE: {rmse:.3f}')
+        self.rms_legend.set_text(f'Fit RMSE: {rmse:.3f} FWHM: {fwhm:.2f} sky: {sky:.2f} ')
 
         self.ax.autoscale(tight=True)
         self.ax.relim()
@@ -73,15 +103,24 @@ class IRAFRadialProfileWidget(QWidget):
         self.fig.canvas.draw_idle()
 
     def fit_gaussian(self, x, y, ymax):
+        """
+        Fits gaussian + sky of mu=0
+
+        Returns
+        -------
+        x_linespace, y_fit, rmse, fwhm, sky
+        """
         # mu=0 gaussian + constant
         x, y = np.asarray(x), np.asarray(y)
         gauss0 = lambda x, a, c, sig2: c + a * np.exp(-x**2/(2*sig2))
 
         opt, cov = optimize.curve_fit(gauss0, x, y, p0=[1.0, 0.0, 1.0])
         res = gauss0(x, *opt) - y
-        rmse = math.sqrt((res*res).sum())
+        rmse = math.sqrt((res*res).sum()/len(res))
+        fwhm = 2.355 * math.sqrt(opt[2])
+        sky = opt[1]
         xs = np.linspace(0, ymax)
-        return xs, gauss0(xs, *opt), rmse
+        return xs, gauss0(xs, *opt), rmse, fwhm, sky
 
     def calc_profile(self):
         return self.get_radius_brightness(self.x, self.y, self.radius, self.data)

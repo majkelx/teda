@@ -9,6 +9,7 @@ class PainterComponent(HasTraits):
 
     ccenter_x = Float()
     ccenter_y = Float()
+    cradius = Float()
 
     def __init__(self):
         self.shapes = []
@@ -34,6 +35,7 @@ class PainterComponent(HasTraits):
             c = CircleCenterShape(x, y, size)
             self.ccenter_x = x
             self.ccenter_y = y
+            self.cradius = size
             self.centerCircle.append(c)
 
     def paintAllShapes(self, axes):
@@ -318,7 +320,9 @@ class DraggablePoint:
         if hasattr(self.painterElement, 'shapeType'):
             if self.painterElement.shapeType == 'centerCircle':
                 self.paintComp.ccenter_x = self.painterElement.x
-                self.paintComp.ccenter_x = self.painterElement.x
+                self.paintComp.ccenter_y = self.painterElement.y
+                self.paintComp.cradius = self.painterElement.size
+
         self.point.figure.canvas.draw_idle()
         self.paintComp.paintAllShapes(axes)
         self.movingStart = False
