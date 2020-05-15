@@ -894,7 +894,7 @@ class HeaderTableWidget(QTableWidget):
 
     def readSettings(self, settings):
         try:
-            size = settings.beginReadArray("logins");
+            size = settings.beginReadArray("pinnedHeaders");
             for i in range(size):
                 settings.setArrayIndex(i);
                 pin = settings.value("pin");
@@ -907,7 +907,7 @@ class HeaderTableWidget(QTableWidget):
             self.pinnedItems = []
 
     def writeSettings(self, settings):
-        settings.beginWriteArray("logins");
+        settings.beginWriteArray("pinnedHeaders");
         i = 0
         for pin in self.pinnedItems:
             settings.setArrayIndex(i);
