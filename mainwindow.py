@@ -894,8 +894,12 @@ class HeaderTableWidget(QTableWidget):
 
     def readSettings(self, settings):
         try:
-            self.pinnedItems = settings.value('pinned')
-            # self.pinnedItems = settings.value('pinned', [], 'QStringList')
+            size = settings.beginReadArray("logins");
+            for i in range(size):
+                settings.setArrayIndex(i);
+                pin = settings.value("pin");
+                self.pinnedItems.append(pin);
+            settings.endArray();
         except SystemError:
             self.pinnedItems = None
 
@@ -903,7 +907,12 @@ class HeaderTableWidget(QTableWidget):
             self.pinnedItems = []
 
     def writeSettings(self, settings):
-        settings.setValue('pinned', self.pinnedItems)
+        settings.beginWriteArray("logins");
+        i = 0
+        for pin in self.pinnedItems:
+            settings.setArrayIndex(i);
+            settings.setValue("pin", pin);
+        settings.endArray();
 
 if __name__ == '__main__':
     import sys
