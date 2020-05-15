@@ -43,7 +43,7 @@
 import PySide2
 from PySide2 import QtWidgets
 from PySide2.QtCore import QDate, QFile, Qt, QTextStream, QSize, QSettings
-from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
+from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat, QPixmap,
                            QTextCursor, QTextTableFormat)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QSlider,QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QPushButton,
@@ -170,6 +170,8 @@ class MainWindow(QMainWindow):
                           "standard paragraphs to add them.")
 
     def createActions(self):
+        # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
+        # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
         self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
@@ -839,18 +841,5 @@ if __name__ == '__main__':
     mainWin = MainWindow()
     # mainWin.resize(800, 600)   # now in config, see: MainWindow.readWindowSettings
     mainWin.show()
-
-    # ## test settings - to be deleted
-    # s1 = QSettings()
-    # s2 = QSettings()
-    # print('val init:', s1.value('test/presistance'))
-    # x = s1.value('test/presistance')
-    # if x is None:
-    #     x = 0
-    # x += 1
-    # s2.setValue('test/presistance', x)
-    # print('val set:', s2.value('test/presistance'))
-    # print('val get:', s1.value('test/presistance'))
-
 
     sys.exit(app.exec_())
