@@ -283,7 +283,7 @@ def coo_data_to_index(data):
     """
     try:
         return math.floor(data[1] - 0.5), math.floor(data[0] - 0.5)
-    except TypeError:
+    except (TypeError, IndexError):
         return math.floor(data - 0.5)
 
 

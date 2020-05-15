@@ -57,6 +57,7 @@ from painterComponent import PainterComponent
 from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
+from radialprofileIRAF import  IRAFRadialProfileWidget
 
 
 class MainWindow(QMainWindow):
@@ -117,6 +118,7 @@ class MainWindow(QMainWindow):
         self.fits_image.invalidate()
 
         self.radial_profile_widget.set_data(self.fits_image.data)
+        self.radial_profile_iraf_widget.set_data(self.fits_image.data)
 
         # self.fits_plot = FitsOpen(fileName)
         # self.fits_plot.plot_fits_file()
@@ -306,16 +308,23 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
-        #wykres
-        dock = QDockWidget("Radial Profile", self)
+        #radial profiles
+        dock = QDockWidget("Radial Profile Curve", self)
         dock.setObjectName("RADIAL_PROFILE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-
         self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
-
         dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+
+        dock = QDockWidget("Radial Profile Fit", self)
+        dock.setObjectName("RADIAL_PROFILE_IRAF")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.radial_profile_iraf_widget = IRAFRadialProfileWidget(self.fits_image.data)
+        dock.setWidget(self.radial_profile_iraf_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
@@ -799,6 +808,7 @@ class MainWindow(QMainWindow):
 
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
+        self.radial_profile_iraf_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
 
     def onMouseMoveOnImage(self, change):
         display = ''
