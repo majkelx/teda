@@ -91,10 +91,13 @@ class IRAFRadialProfileWidget(QWidget):
         self.plotted_profile.set_xdata(rad)
         self.plotted_profile.set_ydata(val)
 
-        rad, val, rmse, fwhm, sky = self.fit_gaussian(rad, val, self.radius)
-        self.gaussian.set_xdata(rad)
-        self.gaussian.set_ydata(val)
-        self.rms_legend.set_text(f'Fit RMSE: {rmse:.3f} FWHM: {fwhm:.2f} sky: {sky:.2f} ')
+        try:
+            rad, val, rmse, fwhm, sky = self.fit_gaussian(rad, val, self.radius)
+            self.gaussian.set_xdata(rad)
+            self.gaussian.set_ydata(val)
+            self.rms_legend.set_text(f'Fit RMSE: {rmse:.3f} FWHM: {fwhm:.2f} sky: {sky:.2f} ')
+        except Exception:
+            pass
 
         self.ax.autoscale(tight=True)
         self.ax.relim()
@@ -117,7 +120,10 @@ class IRAFRadialProfileWidget(QWidget):
         opt, cov = optimize.curve_fit(gauss0, x, y, p0=[1.0, 0.0, 1.0])
         res = gauss0(x, *opt) - y
         rmse = math.sqrt((res*res).sum()/len(res))
-        fwhm = 2.355 * math.sqrt(opt[2])
+        try:
+            fwhm = 2.355 * math.sqrt(opt[2])
+        except ValueError:
+            fwhm = 0
         sky = opt[1]
         xs = np.linspace(0, ymax)
         return xs, gauss0(xs, *opt), rmse, fwhm, sky

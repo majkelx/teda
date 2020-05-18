@@ -51,6 +51,7 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
                                QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem,
                                QComboBox, QMenu)
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+from coordinates import CoordinatesModel
 from fitsplot import (FitsPlotter)
 from fitsopen import (FitsOpen)
 from painterComponent import PainterComponent
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.combobox = QComboBox()
         self.filename = None
+        self.cursor_coords = CoordinatesModel()
         fig = Figure(figsize=(14, 10))
         fig.tight_layout()
 
@@ -108,34 +110,11 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage("Ready", 2000)
 
-    def open(self):
+    def open_dialog(self):
         fileName, _ = QFileDialog.getOpenFileName(mainWin, "Open Image", ".", "Fits files (*.fits)")
         # fileName = QFileDialog.getOpenFileName(mainWin, "Open Image", "/home/akond/Pulpit/fits files", "Fits files (*.fits)")[0]
-        if not fileName:
-            return
-        self.filename = fileName
-        self.fits_image.set_file(self.filename)
-        self.fits_image.plot_fits_file()
-        self.fits_image.invalidate()
-
-        self.radial_profile_widget.set_data(self.fits_image.data)
-        self.radial_profile_iraf_widget.set_data(self.fits_image.data)
-
-        # self.fits_plot = FitsOpen(fileName)
-        # self.fits_plot.plot_fits_file()
-        # self.central_widget.figure = self.fits_plot.figure
-        # self.central_widget = FigureCanvas(self.fits_plot.figure)
-        # self.toolbar = NavigationToolbar(self.central_widget, self)
-        # layout = QtWidgets.QVBoxLayout()
-        # layout.addWidget(self.toolbar)
-        # layout.addWidget(self.central_widget)
-
-        # Create a placeholder widget to hold our toolbar and canvas.
-        # widget = QtWidgets.QWidget()
-        # widget.setLayout(layout)
-        # self.setCentralWidget(widget)
-        #
-        self.headerWidget.setHeader()
+        if fileName:
+            self.open_fits(fileName)
 
     def save(self):
         filename, _ = QFileDialog.getSaveFileName(self,
@@ -155,6 +134,22 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
 
         self.statusBar().showMessage("Saved '%s'" % filename, 2000)
+
+
+    def open_fits(self, fileName):
+        """Opens specified FITS file and loads it to user interface"""
+        self.filename = fileName
+        self.fits_image.set_file(self.filename)
+        self.fits_image.plot_fits_file()
+        self.fits_image.invalidate()
+
+        self.cursor_coords.set_wcs_from_fits(self.fits_image.header)
+
+        self.radial_profile_widget.set_data(self.fits_image.data)
+        self.radial_profile_iraf_widget.set_data(self.fits_image.data)
+
+        self.headerWidget.setHeader()
+
 
     def undo(self):
         document = self.textEdit.document()
@@ -178,7 +173,7 @@ class MainWindow(QMainWindow):
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
-        self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
+        self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
@@ -837,6 +832,7 @@ class MainWindow(QMainWindow):
         self.radial_profile_iraf_widget.set_radius(self.painterComponent.cradius)
 
     def onMouseMoveOnImage(self, change):
+        # self.cursor_coords.set_img_xy()
         display = ''
         if change.new is not None:
             display = f'{change.new:f}'
