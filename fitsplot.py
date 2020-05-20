@@ -59,7 +59,10 @@ class FitsPlotter(tr.HasTraits):
     @property
     def header(self):
         self.open()
-        return self._huds[self.hdu].header
+        try:
+            return self._huds[self.hdu].header
+        except (TypeError, LookupError):
+            return None
 
     @property
     def full_xlim(self):

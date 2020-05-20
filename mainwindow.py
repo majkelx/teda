@@ -59,6 +59,7 @@ from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
 from radialprofileIRAF import  IRAFRadialProfileWidget
+import console
 
 
 class MainWindow(QMainWindow):
@@ -164,11 +165,18 @@ class MainWindow(QMainWindow):
             return
 
     def about(self):
-        QMessageBox.about(self, "About Dock Widgets",
-                          "The <b>Dock Widgets</b> example demonstrates how to use "
-                          "Qt's dock widgets. You can enter your own text, click a "
-                          "customer to add a customer name and address, and click "
-                          "standard paragraphs to add them.")
+        QMessageBox.about(self, "TeDa FITS Viewer",
+                          "Authors: <ul> "
+                          "<li>Michał Brodniak</li>"
+                          "<li>Konrad Górski</li>"
+                          "<li>Mikołaj Kałuszyński</li>"
+                          "<li>Edward Lis</li>"
+                          "<li>Grzegorz Mroczkowski</li>"
+                          "</ul>"
+                          "Created by <a href='https://akond.com'>Akond Lab</a> for The Araucaria Project")
+
+    def on_console_show(self):
+        console.show(ax=self.fits_image.ax, window=self, data=self.fits_image.data, header=self.fits_image.header, wcs=self.cursor_coords.wcs)
 
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
@@ -178,6 +186,9 @@ class MainWindow(QMainWindow):
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
 
+        self.qtConsoleAct = QAction('Python Console', self,
+                                    statusTip="Open IPython console window", triggered=self.on_console_show)
+
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAct)
@@ -186,6 +197,8 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(self.quitAct)
 
         self.viewMenu = self.menuBar().addMenu("&View")
+        self.viewMenu.addAction(self.qtConsoleAct)
+        self.viewMenu.addSeparator()
 
         self.menuBar().addSeparator()
 
@@ -342,6 +355,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
+        self.viewMenu.addSeparator()
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
