@@ -78,7 +78,7 @@ class MainWindow(QMainWindow):
         self.stretch_dict = {}
         self.interval_dict = {}
 
-        self.painterComponent = PainterComponent()
+        self.painterComponent = PainterComponent(self.fits_image)
         self.painterComponent.startMovingEvents(self.central_widget)
         self.createActions()
         self.createMenus()
