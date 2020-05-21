@@ -61,6 +61,8 @@ from radialprofile import RadialProfileWidget
 from radialprofileIRAF import  IRAFRadialProfileWidget
 from fullViewWidget import FullViewWidget
 from zoomViewWidget import ZoomViewWidget
+from radialprofileIRAF import IRAFRadialProfileWidget
+from info import InfoWidget
 import console
 
 
@@ -314,7 +316,7 @@ class MainWindow(QMainWindow):
     def createDockWindows(self):
         dock = QDockWidget("Scale", self)
         dock.setObjectName("SCALE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
 
         #comboboxes
         widget = QWidget()
@@ -347,7 +349,7 @@ class MainWindow(QMainWindow):
         #radial profiles
         dock = QDockWidget("Radial Profile Curve", self)
         dock.setObjectName("RADIAL_PROFILE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
         dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -358,6 +360,15 @@ class MainWindow(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.radial_profile_iraf_widget = IRAFRadialProfileWidget(self.fits_image.data)
         dock.setWidget(self.radial_profile_iraf_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        #info panel
+        dock = QDockWidget("info", self)
+        dock.setObjectName("INFO_PANEL")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.info_widget = InfoWidget(self)
+        dock.setWidget(self.info_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
@@ -848,7 +859,7 @@ class MainWindow(QMainWindow):
     def createInfoWindow(self):
         dock = QDockWidget("FITS header", self)
         dock.setObjectName("FTIS_DATA")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
 
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -872,7 +883,6 @@ class MainWindow(QMainWindow):
         self.radial_profile_iraf_widget.set_radius(self.painterComponent.cradius)
 
     def onMouseMoveOnImage(self, change):
-        # self.cursor_coords.set_img_xy()
         display = ''
         val = 0
         if change.new is not None:
@@ -881,11 +891,14 @@ class MainWindow(QMainWindow):
         if change.name == 'mouse_xdata':
             self.mouse_x_label.setText(display)
             self.current_x_coord = val
+            self.cursor_coords.set_img_x(change.new)
         elif change.name == 'mouse_ydata':
             self.mouse_y_label.setText(display)
             self.current_y_coord = val
+            self.cursor_coords.set_img_y(change.new)
         if display != '':
             self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
+
 
     def readWindowSettings(self):
         settings = QSettings()

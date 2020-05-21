@@ -21,6 +21,7 @@ class FitsPlotter(tr.HasTraits):
     # contrast = traitlets.Float()
     mouse_xdata = tr.Float(allow_none=True)
     mouse_ydata = tr.Float(allow_none=True)
+    fitsfile = tr.Unicode(allow_none=True)
 
     def __init__(self, fitsfile=None, hdu=0,
                  figure=None, ax=None,
@@ -82,8 +83,13 @@ class FitsPlotter(tr.HasTraits):
         return self.ax
 
     def plot_fits_data(self, data, ax, alpha, norm, cmap):
-        self.img = ax.imshow(data, origin='lower', extent=(0.5, data.shape[1] + 0.5, 0.5, data.shape[0] + 0.5),
-                             alpha=alpha, norm=norm, cmap=cmap, resample=False)
+        extent = (0.5, data.shape[1] + 0.5, 0.5, data.shape[0] + 0.5)
+        if self.img is not None:
+            self.img.set_data(data)
+            self.img.set_extent(extent)
+        else:
+            self.img = ax.imshow(data, origin='lower', extent=extent,
+                                 alpha=alpha, norm=norm, cmap=cmap, resample=False)
 
     def plot_fits_file(self, ax=None, alpha=1.0, color=None):
         if color is not None:
@@ -321,6 +327,12 @@ class FitsPlotter(tr.HasTraits):
                     except LookupError:
                         pass
         return pix, val
+
+    def value(self, x, y):
+        try:
+            return self.data[coo_data_to_index([x,y])]
+        except LookupError:
+            return nan
 
     @staticmethod
     def calc_new_limits(cur_lim, full_lim, stationary, zoom):
