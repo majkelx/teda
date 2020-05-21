@@ -27,6 +27,7 @@ class FitsPlotter(tr.HasTraits):
                  figure=None, ax=None,
                  interval=None, intervalkwargs=None,
                  stretch=None, stretchkwargs=None):
+        super().__init__()
         self.fitsfile = fitsfile
         self.hdu = 0
         self.figure = figure
@@ -219,9 +220,13 @@ class FitsPlotter(tr.HasTraits):
         self.figure.canvas.draw_idle()
 
     def setup_axies(self, ax):
+        fig = ax.get_figure()
+        fig.subplots_adjust(wspace=0)
+        ax.set_position([0.0, 0.0, 1.0, 1.0])
+
         ax.yaxis.set_major_locator(plt.NullLocator())
         ax.xaxis.set_major_locator(plt.NullLocator())
-        fig = ax.get_figure()
+
         fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
         fig.canvas.mpl_connect('figure_leave_event', lambda event: self.on_mouse_exit(event))
         fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_mouse_move(event))
