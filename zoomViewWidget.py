@@ -14,7 +14,7 @@ class ZoomViewWidget(QWidget):
         self.fits = fits
         figure_layout = QHBoxLayout()
         self.fig = Figure(figsize=(20, 20))
-        self.fig.tight_layout()
+        #self.fig.tight_layout()
         self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
         self.fits_image = FitsPlotter(figure=self.fig)
@@ -32,10 +32,8 @@ class ZoomViewWidget(QWidget):
 
     def updateFits(self,fits):
         self.fits = fits
-        self.fits_image.figure.add_subplot(111)
-        self.fits_image.plot_fits_data(self.fits.data,self.fits_image.figure.axes[0],1.0, self.fits.get_normalization(),self.fits.cmap)
+        self.fits_image.plot_fits_data_old(self.fits.data,self.fits_image.figure.axes[0],1.0, self.fits.get_normalization(),self.fits.cmap)
         #self.fits_image.figure.axes[0].images = self.fits.figure.axes[0].images
-        self.fits_image.invalidate()
         self.fig.canvas.draw_idle()
 
     def setXYofZoom(self, fits,x ,y ,zoom=1):
