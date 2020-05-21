@@ -58,6 +58,9 @@ from painterComponent import PainterComponent
 from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
+from radialprofileIRAF import  IRAFRadialProfileWidget
+from fullViewWidget import FullViewWidget
+from zoomViewWidget import ZoomViewWidget
 from radialprofileIRAF import IRAFRadialProfileWidget
 from info import InfoWidget
 import console
@@ -71,6 +74,7 @@ class MainWindow(QMainWindow):
         self.cursor_coords = CoordinatesModel()
         fig = Figure(figsize=(14, 10))
         fig.tight_layout()
+        fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
 
         self.fits_image = FitsPlotter(figure=fig)
         self.central_widget = FigureCanvas(fig)
@@ -78,6 +82,8 @@ class MainWindow(QMainWindow):
 
         self.stretch_dict = {}
         self.interval_dict = {}
+        self.current_x_coord = 0
+        self.current_y_coord = 0
 
         self.painterComponent = PainterComponent(self.fits_image)
         self.painterComponent.startMovingEvents(self.central_widget)
@@ -149,6 +155,7 @@ class MainWindow(QMainWindow):
 
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
+        self.updateFitsInWidgets()
 
         self.headerWidget.setHeader()
 
@@ -363,6 +370,23 @@ class MainWindow(QMainWindow):
         self.info_widget = InfoWidget(self)
         dock.setWidget(self.info_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        # full
+        dock = QDockWidget("Full view", self)
+        dock.setObjectName("FULL_VIEW")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.full_view_widget = FullViewWidget(self.fits_image)
+        dock.setWidget(self.full_view_widget)
+        self.addDockWidget(Qt.TopDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+        # zoom
+        dock = QDockWidget("Zoom view", self)
+        dock.setObjectName("ZOOM_VIEW")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.zoom_view_widget = ZoomViewWidget(self.fits_image)
+        dock.setWidget(self.zoom_view_widget)
+        self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
         self.viewMenu.addSeparator()
@@ -628,6 +652,7 @@ class MainWindow(QMainWindow):
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
         self.fits_image.invalidate()
+        self.updateFitsInWidgets()
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # self.setCentralWidget(self.central_widget)
 
@@ -796,6 +821,7 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=interval_dictionary)
 
         self.fits_image.invalidate()
+        self.updateFitsInWidgets()
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # widget = QWidget()
         # layout = QVBoxLayout()
@@ -826,6 +852,7 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=self.interval_dict)
 
         self.fits_image.invalidate()
+        self.updateFitsInWidgets()
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # self.setCentralWidget(self.central_widget)
 
@@ -857,14 +884,21 @@ class MainWindow(QMainWindow):
 
     def onMouseMoveOnImage(self, change):
         display = ''
+        val = 0
         if change.new is not None:
             display = f'{change.new:f}'
+            val = change.new
         if change.name == 'mouse_xdata':
             self.mouse_x_label.setText(display)
+            self.current_x_coord = val
             self.cursor_coords.set_img_x(change.new)
         elif change.name == 'mouse_ydata':
             self.mouse_y_label.setText(display)
+            self.current_y_coord = val
             self.cursor_coords.set_img_y(change.new)
+        if display != '':
+            self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
+
 
     def readWindowSettings(self):
         settings = QSettings()
@@ -900,6 +934,10 @@ class MainWindow(QMainWindow):
         settings.setValue('windowState',self.saveState())
 
         self.headerWidget.writeSettings(settings)
+
+    def updateFitsInWidgets(self):
+        self.full_view_widget.updateFits(self.fits_image)
+        self.zoom_view_widget.updateFits(self.fits_image)
 
 
 class HeaderTableWidget(QTableWidget):
