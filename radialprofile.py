@@ -76,7 +76,11 @@ class RadialProfileWidget(QWidget):
             except IndexError:
                 v = 0
             brightness = brightness + v
-        return brightness / c
+        try:
+            brightness = brightness / c
+        except ArithmeticError:
+            brightness = 0.0
+        return brightness
 
 
     def get_radius_brightness(self, x0, y0, rmax, img):
