@@ -92,6 +92,10 @@ class FitsPlotter(tr.HasTraits):
             self.img = ax.imshow(data, origin='lower', extent=extent,
                                  alpha=alpha, norm=norm, cmap=cmap, resample=False)
 
+    def plot_fits_data_old(self, data, ax, alpha, norm, cmap):
+        self.img = ax.imshow(data, origin='lower',
+                             alpha=alpha, norm=norm, cmap=cmap, resample=False)
+
     def plot_fits_file(self, ax=None, alpha=1.0, color=None):
         if color is not None:
             self.changeCmap(color)

@@ -936,6 +936,7 @@ class MainWindow(QMainWindow):
         self.headerWidget.writeSettings(settings)
 
     def updateFitsInWidgets(self):
+        print("updateFitsInWidgets")
         self.full_view_widget.updateFits(self.fits_image)
         self.zoom_view_widget.updateFits(self.fits_image)
 
