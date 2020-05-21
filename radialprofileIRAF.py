@@ -1,6 +1,3 @@
-import math
-import numpy as np
-import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure, Axes
 import matplotlib.ticker as ticker
@@ -8,6 +5,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from fitsplot import coo_data_to_index, coo_index_to_data
 
 import numpy as np
+import math
 from scipy import optimize
 
 class IRAFRadialProfileWidget(QWidget):
@@ -148,17 +146,6 @@ class IRAFRadialProfileWidget(QWidget):
                 except LookupError:
                     pass # pixel out of table
         return distances, values
-
-
-        xidx_min = x0 - rmax
-        # suppose the center point of the image is the center of the star
-        radius = []
-        result = []
-        for r in np.arange(0.1, rmax, 0.1):
-            b = self.get_circle_brightness(x0, y0, r, img);
-            result.append(b)
-            radius.append(r)
-        return radius, result
 
 
 

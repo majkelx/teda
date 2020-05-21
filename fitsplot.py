@@ -5,6 +5,7 @@ import json
 
 import traitlets as tr
 from numpy import *
+import math
 
 from astropy.io import fits
 from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU)
@@ -59,7 +60,10 @@ class FitsPlotter(tr.HasTraits):
     @property
     def header(self):
         self.open()
-        return self._huds[self.hdu].header
+        try:
+            return self._huds[self.hdu].header
+        except (TypeError, LookupError):
+            return None
 
     @property
     def full_xlim(self):
@@ -292,6 +296,20 @@ class FitsPlotter(tr.HasTraits):
         self.ax.set_xlim(newxlim)
         self.ax.set_ylim(newylim)
 
+    def get_pixels_in_circle(self, center_x, center_y, radius):
+        pix = []
+        val = []
+        radius2 = radius*radius
+        for x in range(int(round(center_x - radius)), int(round(center_x + radius)) + 1):
+            for y in range(int(round(center_y - radius)), int(round(center_y + radius)) + 1):
+                if (x - center_x)**2 + (y - center_y)**2 <= radius2:
+                    try:
+                        val.append(self.data[ coo_data_to_index([x,y]) ])
+                        pix.append((x,y))
+                    except LookupError:
+                        pass
+        return pix, val
+
     @staticmethod
     def calc_new_limits(cur_lim, full_lim, stationary, zoom):
         # get the current x and y limits
@@ -313,7 +331,7 @@ class FitsPlotter(tr.HasTraits):
 
 
 #  Functions for conversion between data pixel coordinates and data array indices
-def coo_data_to_index(data):
+def coo_data_to_index(data_coo):
     """
     Converts 1-based pixel-centerd (x,y) coordinates to data index (row, col)
 
@@ -321,9 +339,9 @@ def coo_data_to_index(data):
         point in image data coordinates or single coordinate
     """
     try:
-        return math.floor(data[1] - 0.5), math.floor(data[0] - 0.5)
+        return math.floor(data_coo[1] - 0.5), math.floor(data_coo[0] - 0.5)
     except (TypeError, IndexError):
-        return math.floor(data - 0.5)
+        return math.floor(data_coo - 0.5)
 
 
 def coo_index_to_data(index):

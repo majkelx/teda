@@ -3,6 +3,7 @@ from painterShapes.CircleCenterShape import (CircleCenterShape)
 import matplotlib.pyplot as plt
 from traitlets import Float, Int, HasTraits
 from math import *
+from fitting import fit_gauss_2d_c
 
 class PainterComponent(HasTraits):
     """Painter"""
@@ -11,7 +12,7 @@ class PainterComponent(HasTraits):
     ccenter_y = Float()
     cradius = Float()
 
-    def __init__(self):
+    def __init__(self, fits_plotter):
         self.shapes = []
         self.centerCircle = []
         self.listOfPaintedShapes = []
@@ -24,6 +25,7 @@ class PainterComponent(HasTraits):
         self.actualShape = ""
         self.draggableActive = False
         self.eventInShapeFlag = False
+        self.fits_plotter = fits_plotter
 
 
     def add(self, x, y, size = 10,type="circle"):
@@ -235,7 +237,24 @@ class PainterComponent(HasTraits):
         #self.tempCanvas w tym jest aktualny canvas
         #tu centrowanie
         #zwrócić nowe x,y
-        return x,y
+        try:
+            xy, values = self.fits_plotter.get_pixels_in_circle(x, y, r)
+            model, a, mu_x, mu_y, sig, c, rmse = fit_gauss_2d_c(xy, values,
+                                                                initial_mu=[x,y],
+                                                                mu_radius=[5,5])
+            self.fit_xy = xy
+            self.fit_values = values
+            self.fit_model = model
+            self.fit_a = a
+            self.fit_mu_x = mu_x
+            self.fit_mu_y = mu_y
+            self.fit_sig = sig
+            self.fit_c = c
+
+        except Exception as e:
+            print(e)
+            return x,y
+        return mu_x, mu_y
 
 class DraggablePoint:
     lock = None #only one can be animated at a time
