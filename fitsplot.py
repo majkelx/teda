@@ -282,6 +282,18 @@ class FitsPlotter(tr.HasTraits):
             self.ax.set_ylim(self.calc_new_limits(cur_ylim, full_ylim, y, self.zoom))
             self.ax.figure.canvas.draw_idle()
 
+    def moveToXYcordsWithZoom(self, x, y, zoom, fits):
+        self.get_ax()
+        full_xlim = fits.full_xlim
+        full_ylim = fits.full_ylim
+        xsize = ((full_xlim[1] - full_xlim[0]) / 2)/zoom
+        ysize = ((full_ylim[1] - full_ylim[0]) / 2)/zoom
+        newxlim = x - xsize, x + xsize
+        newylim = y - ysize, y + ysize
+        self.ax.set_xlim(newxlim)
+        self.ax.set_ylim(newylim)
+        self.ax.figure.canvas.draw_idle()
+
     def center(self):
         cur_xlim = self.ax.get_xlim()
         cur_ylim = self.ax.get_ylim()

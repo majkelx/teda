@@ -6,14 +6,14 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from fitsplot import (FitsPlotter)
 
 
-class FullViewWidget(QWidget):
+class ZoomViewWidget(QWidget):
 
     def __init__(self, fits, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fits = fits
         figure_layout = QHBoxLayout()
-        self.fig = Figure(figsize=(6, 6))
+        self.fig = Figure(figsize=(20, 20))
         self.fig.tight_layout()
         self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
@@ -37,3 +37,7 @@ class FullViewWidget(QWidget):
         #self.fits_image.figure.axes[0].images = self.fits.figure.axes[0].images
         self.fits_image.invalidate()
         self.fig.canvas.draw_idle()
+
+    def setXYofZoom(self, fits,x ,y ,zoom=1):
+        self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits)
+
