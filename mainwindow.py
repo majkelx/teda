@@ -59,6 +59,7 @@ from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
 from radialprofileIRAF import  IRAFRadialProfileWidget
+from fullViewWidget import FullViewWidget
 
 
 class MainWindow(QMainWindow):
@@ -147,6 +148,7 @@ class MainWindow(QMainWindow):
 
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
+        self.full_view_widget.setNewFits(self.fits_image)
 
         self.headerWidget.setHeader()
 
@@ -339,6 +341,15 @@ class MainWindow(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.radial_profile_iraf_widget = IRAFRadialProfileWidget(self.fits_image.data)
         dock.setWidget(self.radial_profile_iraf_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        # radial profiles
+        dock = QDockWidget("Full view", self)
+        dock.setObjectName("FULL_VIEW")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.full_view_widget = FullViewWidget(self.fits_image)
+        dock.setWidget(self.full_view_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
@@ -604,6 +615,7 @@ class MainWindow(QMainWindow):
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
         self.fits_image.invalidate()
+        self.full_view_widget.setNewFits(self.fits_image)
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # self.setCentralWidget(self.central_widget)
 
@@ -772,6 +784,7 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=interval_dictionary)
 
         self.fits_image.invalidate()
+        self.full_view_widget.setNewFits(self.fits_image)
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # widget = QWidget()
         # layout = QVBoxLayout()
@@ -802,6 +815,7 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=self.interval_dict)
 
         self.fits_image.invalidate()
+        self.full_view_widget.setNewFits(self.fits_image)
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # self.setCentralWidget(self.central_widget)
 
