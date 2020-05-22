@@ -3,7 +3,7 @@ import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from fitsplot import (FitsPlotter)
+from fitsplotzoomed import FitsPlotterZoomed
 
 
 class ZoomViewWidget(QWidget):
@@ -15,9 +15,9 @@ class ZoomViewWidget(QWidget):
         figure_layout = QHBoxLayout()
         self.fig = Figure(figsize=(20, 20))
         #self.fig.tight_layout()
-        self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
+        # self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
-        self.fits_image = FitsPlotter(figure=self.fig)
+        self.fits_image = FitsPlotterZoomed(figure=self.fig)
         self.canvas = FigureCanvas(self.fig)
 
         self.ax = self.fig.add_subplot(111)
@@ -30,12 +30,12 @@ class ZoomViewWidget(QWidget):
         self.setMaximumWidth(200)
         self.setMaximumHeight(200)
 
-    def updateFits(self,fits):
+    def updateFits(self, fits):
         self.fits = fits
-        self.fits_image.plot_fits_data_old(self.fits.data,self.fits_image.figure.axes[0],1.0, self.fits.get_normalization(),self.fits.cmap)
-        #self.fits_image.figure.axes[0].images = self.fits.figure.axes[0].images
-        self.fig.canvas.draw_idle()
+        self.fits_image.data = self.fits.data
+        self.fits_image.copy_visualization_parameters(self.fits)
+        self.fits_image.plot()
 
     def setXYofZoom(self, fits,x ,y ,zoom=1):
-        self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits)
+        self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits, idle=False)
 
