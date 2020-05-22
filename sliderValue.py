@@ -2,7 +2,7 @@ from traitlets import HasTraits, Int, Float
 
 
 class SliderValue(HasTraits):
-    stretch_asinh_a = Float(2.5)
+    stretch_asinh_a = Int(5)
     stretch_contrast_contrast = Int(20)
     stretch_contrast_bias = Int(10)
     stretch_linear_slope = Int(10)
@@ -30,21 +30,37 @@ class SliderValue(HasTraits):
     stretch_combobox_value = str
 
     def __init__(self):
-        self.observe(self.func, names=['stretch_asinh_a',
-                                       'stretch_contrast_contrast',
-                                       'stretch_contrast_bias',
-                                       'stretch_linear_slope',
-                                       'stretch_linear_intercept',
-                                       'stretch_log_a',
-                                       'stretch_powerdist_a',
-                                       'stretch_power_a',
-                                       'stretch_sinh_a',
-                                       'interval_combobox_value'])
+        # self.stretch_asinh_a = 2.5
+        # self.stretch_contrast_contrast = 20
+        # self.stretch_contrast_bias = 20
+        # self.stretch_linear_slope = 10
+        # self.stretch_linear_intercept = 1
+        # self.stretch_log_a = 1
+        # self.stretch_powerdist_a = 1
+        # self.stretch_power_a = 1
+        # self.stretch_sinh_a = 1
+        #
+        # self.interval_manual_vmin = 1
+        # self.interval_manual_vmax = 1
+        # self.interval_percentile_percentile = 1
+        # self.interval_percentile_nsamples = 1
+        # self.interval_asymetric_lpercentile = 1
+        # self.interval_asymetric_upercentile = 1
+        # self.interval_asymetric_nsamples = 1
+        # self.interval_zscale_nsamples = 1000
+        # self.interval_zscale_contrast = 50
+        # self.interval_zscale_maxreject = 5
+        # self.interval_zscale_minpixels = 5
+        # self.interval_zscale_krej = 25
+        # self.interval_zscale_maxiterations = 5
+        #
+        # x = dict(nsamples = interval_zscale_nsamples)
+        self.observe(self.func, names=['stretch_asinh_a'])
 
     def func(self, change):
-        print("Function test.func")
-        print(change['old'])
-        print(change['new'])
+            print("SliderValue func")
+            print(change['old'])
+            print(change['new'])
 
     def checkVars(self):
         print("-------------------")
@@ -53,12 +69,3 @@ class SliderValue(HasTraits):
         print(self.stretch_contrast_bias)
         print(self.interval_zscale_contrast)
         print("-------------------")
-
-    interval_dictionary = {
-        'zscale':  {'nsamples': interval_zscale_nsamples,
-                    'contrast': interval_zscale_contrast.default_value,
-                    'max_reject': interval_zscale_maxreject,
-                    'min_npixels': interval_zscale_minpixels,
-                    'krej': interval_zscale_krej,
-                    'max_iterations': interval_zscale_maxiterations}
-    }
