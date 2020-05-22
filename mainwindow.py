@@ -51,7 +51,6 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
                                QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem,
                                QComboBox, QMenu)
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
-from coordinates import CoordinatesModel
 from fitsplot import (FitsPlotter)
 from fitsopen import (FitsOpen)
 from painterComponent import PainterComponent
@@ -59,11 +58,6 @@ from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
 from radialprofileIRAF import  IRAFRadialProfileWidget
-from fullViewWidget import FullViewWidget
-from zoomViewWidget import ZoomViewWidget
-from radialprofileIRAF import IRAFRadialProfileWidget
-from info import InfoWidget
-import console
 
 
 class MainWindow(QMainWindow):
@@ -71,10 +65,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.combobox = QComboBox()
         self.filename = None
-        self.cursor_coords = CoordinatesModel()
         fig = Figure(figsize=(14, 10))
         fig.tight_layout()
-        fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
 
         self.fits_image = FitsPlotter(figure=fig)
         self.central_widget = FigureCanvas(fig)
@@ -82,10 +74,8 @@ class MainWindow(QMainWindow):
 
         self.stretch_dict = {}
         self.interval_dict = {}
-        self.current_x_coord = 0
-        self.current_y_coord = 0
 
-        self.painterComponent = PainterComponent(self.fits_image)
+        self.painterComponent = PainterComponent()
         self.painterComponent.startMovingEvents(self.central_widget)
         self.createActions()
         self.createMenus()
@@ -118,11 +108,36 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage("Ready", 2000)
 
-    def open_dialog(self):
-        fileName, _ = QFileDialog.getOpenFileName(mainWin, "Open Image", ".", "Fits files (*.fits)")
-        # fileName = QFileDialog.getOpenFileName(mainWin, "Open Image", "/home/akond/Pulpit/fits files", "Fits files (*.fits)")[0]
-        if fileName:
-            self.open_fits(fileName)
+    def open(self):
+        # fileName, _ = QFileDialog.getOpenFileName(mainWin, "Open Image", ".", "Fits files (*.fits)")
+        fileName = QFileDialog.getOpenFileName(mainWin, "Open Image", "/home/akond/Pulpit/fits files", "Fits files (*.fits)")[0]
+        if not fileName:
+            return
+        self.filename = fileName
+        self.fits_image.set_file(self.filename)
+        self.fits_image.plot_fits_file()
+        self.fits_image.invalidate()
+
+        self.radial_profile_widget.set_data(self.fits_image.data)
+        self.radial_profile_iraf_widget.set_data(self.fits_image.data)
+
+        # self.setSlidersValues()
+
+        # self.fits_plot = FitsOpen(fileName)
+        # self.fits_plot.plot_fits_file()
+        # self.central_widget.figure = self.fits_plot.figure
+        # self.central_widget = FigureCanvas(self.fits_plot.figure)
+        # self.toolbar = NavigationToolbar(self.central_widget, self)
+        # layout = QtWidgets.QVBoxLayout()
+        # layout.addWidget(self.toolbar)
+        # layout.addWidget(self.central_widget)
+
+        # Create a placeholder widget to hold our toolbar and canvas.
+        # widget = QtWidgets.QWidget()
+        # widget.setLayout(layout)
+        # self.setCentralWidget(widget)
+        #
+        self.headerWidget.setHeader()
 
     def save(self):
         filename, _ = QFileDialog.getSaveFileName(self,
@@ -143,23 +158,6 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage("Saved '%s'" % filename, 2000)
 
-
-    def open_fits(self, fileName):
-        """Opens specified FITS file and loads it to user interface"""
-        self.filename = fileName
-        self.fits_image.set_file(self.filename)
-        self.fits_image.plot_fits_file()
-        self.fits_image.invalidate()
-
-        self.cursor_coords.set_wcs_from_fits(self.fits_image.header)
-
-        self.radial_profile_widget.set_data(self.fits_image.data)
-        self.radial_profile_iraf_widget.set_data(self.fits_image.data)
-        self.updateFitsInWidgets()
-
-        self.headerWidget.setHeader()
-
-
     def undo(self):
         document = self.textEdit.document()
         document.undo()
@@ -173,29 +171,19 @@ class MainWindow(QMainWindow):
             return
 
     def about(self):
-        QMessageBox.about(self, "TeDa FITS Viewer",
-                          "Authors: <ul> "
-                          "<li>Michał Brodniak</li>"
-                          "<li>Konrad Górski</li>"
-                          "<li>Mikołaj Kałuszyński</li>"
-                          "<li>Edward Lis</li>"
-                          "<li>Grzegorz Mroczkowski</li>"
-                          "</ul>"
-                          "Created by <a href='https://akond.com'>Akond Lab</a> for The Araucaria Project")
-
-    def on_console_show(self):
-        console.show(ax=self.fits_image.ax, window=self, data=self.fits_image.data, header=self.fits_image.header, wcs=self.cursor_coords.wcs)
+        QMessageBox.about(self, "About Dock Widgets",
+                          "The <b>Dock Widgets</b> example demonstrates how to use "
+                          "Qt's dock widgets. You can enter your own text, click a "
+                          "customer to add a customer name and address, and click "
+                          "standard paragraphs to add them.")
 
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
-        self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
+        self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
-
-        self.qtConsoleAct = QAction('Python Console', self,
-                                    statusTip="Open IPython console window", triggered=self.on_console_show)
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
@@ -205,8 +193,6 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(self.quitAct)
 
         self.viewMenu = self.menuBar().addMenu("&View")
-        self.viewMenu.addAction(self.qtConsoleAct)
-        self.viewMenu.addSeparator()
 
         self.menuBar().addSeparator()
 
@@ -316,7 +302,7 @@ class MainWindow(QMainWindow):
     def createDockWindows(self):
         dock = QDockWidget("Scale", self)
         dock.setObjectName("SCALE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         #comboboxes
         widget = QWidget()
@@ -349,7 +335,7 @@ class MainWindow(QMainWindow):
         #radial profiles
         dock = QDockWidget("Radial Profile Curve", self)
         dock.setObjectName("RADIAL_PROFILE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
         dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -363,33 +349,6 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
-        #info panel
-        dock = QDockWidget("info", self)
-        dock.setObjectName("INFO_PANEL")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
-        self.info_widget = InfoWidget(self)
-        dock.setWidget(self.info_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-
-        # full
-        dock = QDockWidget("Full view", self)
-        dock.setObjectName("FULL_VIEW")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
-        self.full_view_widget = FullViewWidget(self.fits_image)
-        dock.setWidget(self.full_view_widget)
-        self.addDockWidget(Qt.TopDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-        # zoom
-        dock = QDockWidget("Zoom view", self)
-        dock.setObjectName("ZOOM_VIEW")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
-        self.zoom_view_widget = ZoomViewWidget(self.fits_image)
-        dock.setWidget(self.zoom_view_widget)
-        self.addDockWidget(Qt.TopDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-
-        self.viewMenu.addSeparator()
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
@@ -403,12 +362,12 @@ class MainWindow(QMainWindow):
         sinh = self.createSinhSliders()
         sqrt = QLabel("sqrt") #do zmiany
         square = QLabel("square") #do zmiany
+        self.stretchStackedLayout.addWidget(powerdist)
         self.stretchStackedLayout.addWidget(asinhSlider)
         self.stretchStackedLayout.addWidget(contrastbiasSliders)
         self.stretchStackedLayout.addWidget(histogram)
         self.stretchStackedLayout.addWidget(linear)
         self.stretchStackedLayout.addWidget(log)
-        self.stretchStackedLayout.addWidget(powerdist)
         self.stretchStackedLayout.addWidget(power)
         self.stretchStackedLayout.addWidget(sinh)
         self.stretchStackedLayout.addWidget(sqrt)
@@ -418,67 +377,71 @@ class MainWindow(QMainWindow):
 
     def createIntervalStackedLayout(self):
         self.intervalStackedLayout = QStackedLayout()
-
         manual = self.createManualParamsSliders()
         percentile = self.createPercentileParamsSliders()
         asymetric = self.createAsymetricParamsSliders()
         zscale = self.createZscaleParamsSliders()
+        self.intervalStackedLayout.addWidget(zscale)
         self.intervalStackedLayout.addWidget(QLabel("minmax")) #do zmiany
         self.intervalStackedLayout.addWidget(manual)
         self.intervalStackedLayout.addWidget(percentile)
         self.intervalStackedLayout.addWidget(asymetric)
-        self.intervalStackedLayout.addWidget(zscale)
+
 
         return self.intervalStackedLayout
 
     def createManualParamsSliders(self):
         widget = QWidget()
         layout = QGridLayout()
-        vminSlider = QSlider(Qt.Horizontal)
-        vminSlider.setMinimum(0)
-        vminSlider.setMaximum(10000)
+        self.manualVminSlider = QSlider(Qt.Horizontal)
+        self.manualVminSlider.setMinimum(0)
+        self.manualVminSlider.setMaximum(10000)
 
-        vmaxSlider = QSlider(Qt.Horizontal)
-        vmaxSlider.setMinimum(10000)
-        vmaxSlider.setMaximum(50000)
+        self.manualVmaxSlider = QSlider(Qt.Horizontal)
+        self.manualVmaxSlider.setMinimum(10000)
+        self.manualVmaxSlider.setMaximum(50000)
 
-        vminSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                          {'vmin': vminSlider.value()/10,
-                                                                          'vmax': vmaxSlider.value()}))
-        vmaxSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                          {'vmin': vminSlider.value(),
-                                                                          'vmax': vmaxSlider.value()}))
+        self.manualVminSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+                                                                          {'vmin': self.manualVminSlider.value()/10,
+                                                                          'vmax': self.manualVmaxSlider.value()}))
+        self.manualVmaxSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+                                                                          {'vmin': self.manualVminSlider.value()/10,
+                                                                          'vmax': self.manualVmaxSlider.value()}))
 
         layout.addWidget(QLabel('vmin'), 0, 0)
-        layout.addWidget(vminSlider, 0, 1)
+        layout.addWidget(self.manualVminSlider, 0, 1)
         layout.addWidget(QLabel('vmax'), 1, 0)
-        layout.addWidget(vmaxSlider, 1, 1)
+        layout.addWidget(self.manualVmaxSlider, 1, 1)
         widget.setLayout(layout)
+
+        # settings = QSettings()
+        # settings.beginGroup("Sliders")
+        # settings.setValue('stretch/manual/vmin', self.manualVminSlider.value)
 
         return widget
 
     def createPercentileParamsSliders(self):
         widget = QWidget()
         layout = QGridLayout()
-        percentileSlider = QSlider(Qt.Horizontal)
-        percentileSlider.setMinimum(10)
-        percentileSlider.setMaximum(100)
+        self.percentileSlider = QSlider(Qt.Horizontal)
+        self.percentileSlider.setMinimum(10)
+        self.percentileSlider.setMaximum(100)
 
-        samplesSlider = QSlider(Qt.Horizontal)
-        samplesSlider.setMinimum(100)
-        samplesSlider.setMaximum(2000)
+        self.percentileSamplesSlider = QSlider(Qt.Horizontal)
+        self.percentileSamplesSlider.setMinimum(100)
+        self.percentileSamplesSlider.setMaximum(2000)
 
-        percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                {'percentile': percentileSlider.value()/100,
-                                                                                'n_samples': samplesSlider.value()}))
-        samplesSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                             {'percentile': percentileSlider.value()/100,
-                                                                             'n_samples': samplesSlider.value()}))
+        self.percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+                                                                                {'percentile': self.percentileSlider.value()/100,
+                                                                                'n_samples': self.percentileSamplesSlider.value()}))
+        self.percentileSamplesSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+                                                                             {'percentile': self.percentileSlider.value()/100,
+                                                                             'n_samples': self.percentileSamplesSlider.value()}))
 
         layout.addWidget(QLabel('percentile'), 0, 0)
-        layout.addWidget(percentileSlider, 0, 1)
+        layout.addWidget(self.percentileSlider, 0, 1)
         layout.addWidget(QLabel('samples'), 1, 0)
-        layout.addWidget(samplesSlider, 1, 1)
+        layout.addWidget(self.percentileSamplesSlider, 1, 1)
         widget.setLayout(layout)
 
         return widget
@@ -487,38 +450,38 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        l_percentileSlider = QSlider(Qt.Horizontal)
-        l_percentileSlider.setMinimum(10)
-        l_percentileSlider.setMaximum(100)
+        self.asymetricL_percentileSlider = QSlider(Qt.Horizontal)
+        self.asymetricL_percentileSlider.setMinimum(10)
+        self.asymetricL_percentileSlider.setMaximum(100)
 
-        u_percentileSlider = QSlider(Qt.Horizontal)
-        u_percentileSlider.setMinimum(20)
-        u_percentileSlider.setMaximum(100)
+        self.asymetricU_percentileSlider = QSlider(Qt.Horizontal)
+        self.asymetricU_percentileSlider.setMinimum(20)
+        self.asymetricU_percentileSlider.setMaximum(100)
 
-        samplesSlider = QSlider(Qt.Horizontal)
-        samplesSlider.setMinimum(100)
-        samplesSlider.setMaximum(2000)
+        self.asymetricSamplesSlider = QSlider(Qt.Horizontal)
+        self.asymetricSamplesSlider.setMinimum(100)
+        self.asymetricSamplesSlider.setMaximum(2000)
         #connects
 
-        l_percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                  {'lower_percentile': l_percentileSlider.value()/100,
-                                                                                  'upper_percentile': u_percentileSlider.value()/100,
-                                                                                  'n_samples': samplesSlider.value()}))
-        u_percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                  {'lower_percentile': l_percentileSlider.value()/100,
-                                                                                  'upper_percentile': u_percentileSlider.value()/100,
-                                                                                  'n_samples': samplesSlider.value()}))
-        samplesSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                             {'lower_percentile': l_percentileSlider.value()/100,
-                                                                                  'upper_percentile': u_percentileSlider.value()/100,
-                                                                                  'n_samples': samplesSlider.value()}))
+        self.asymetricL_percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+                                                                                                {'lower_percentile': self.asymetricL_percentileSlider.value()/100,
+                                                                                  'upper_percentile': self.asymetricU_percentileSlider.value()/100,
+                                                                                  'n_samples': self.asymetricSamplesSlider.value()}))
+        self.asymetricU_percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+                                                                                                {'lower_percentile': self.asymetricL_percentileSlider.value()/100,
+                                                                                  'upper_percentile': self.asymetricU_percentileSlider.value()/100,
+                                                                                  'n_samples': self.asymetricSamplesSlider.value()}))
+        self.asymetricSamplesSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+                                                                                           {'lower_percentile': self.asymetricL_percentileSlider.value()/100,
+                                                                                  'upper_percentile': self.asymetricU_percentileSlider.value()/100,
+                                                                                  'n_samples': self.asymetricSamplesSlider.value()}))
 
         layout.addWidget(QLabel("l_percentile"), 0, 0)
-        layout.addWidget(l_percentileSlider, 0, 1)
+        layout.addWidget(self.asymetricL_percentileSlider, 0, 1)
         layout.addWidget(QLabel("u_percentile"), 1, 0)
-        layout.addWidget(u_percentileSlider, 1, 1)
+        layout.addWidget(self.asymetricU_percentileSlider, 1, 1)
         layout.addWidget(QLabel("samples"), 2, 0)
-        layout.addWidget(samplesSlider, 2, 1)
+        layout.addWidget(self.asymetricSamplesSlider, 2, 1)
         widget.setLayout(layout)
 
         return widget
@@ -621,12 +584,12 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout()
 
         self.stretch_combobox = QComboBox()
-        self.stretch_combobox.addItems(['asinh', 'contrastbias', 'histogram', 'linear',
-                                        'log', 'powerdist', 'power', 'sinh', 'sqrt', 'square'])
+        self.stretch_combobox.addItems(['powerdist', 'asinh', 'contrastbias', 'histogram', 'linear',
+                                        'log', 'power', 'sinh', 'sqrt', 'square'])
 
 
         self.interval_combobox = QComboBox()
-        self.interval_combobox.addItems(['minmax', 'manual', 'percentile', 'asymetric', 'zscale'])
+        self.interval_combobox.addItems(['zscale', 'minmax', 'manual', 'percentile', 'asymetric'])
 
         self.color_combobox = QComboBox()
         self.color_combobox.addItems(['green', 'red', 'blue'])
@@ -643,16 +606,31 @@ class MainWindow(QMainWindow):
     def getSliders(self, stretch_index, interval_index):
         self.stretchStackedLayout.setCurrentIndex(stretch_index)
         self.intervalStackedLayout.setCurrentIndex(interval_index)
+
         self.plotNewFitsImage(self.stretch_combobox.currentText(), self.interval_combobox.currentText())
 
+    def setSlidersValues(self):
+        stretch = self.stretch_combobox.currentText()
+        interval = self.interval_combobox.currentText()
+        default_stretch_kws = self.fits_image.stretch_kws_defaults[stretch]
+        default_interval_kws = self.fits_image.interval_kws_defaults[interval]
+        if stretch == 'asinh':
+            print(default_stretch_kws['a']*10)
+            self.aSlider.setValue(default_stretch_kws['a']*10)
+
+        if interval == 'manual':
+            self.manualVminSlider.setValue(default_interval_kws['vmin']*10)
+            self.manualVmaxSlider.setValue(default_interval_kws['vmax'])
+            print(default_interval_kws['vmax'])
+
     def plotNewFitsImage(self, stretch, interval):
+        self.setSlidersValues()
         if self.fits_image == None:
             self.fits_image = FitsPlotter(fitsfile=fileName, stretch=stretch, interval=interval)
             self.fits_image.plot_fits_file()
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
         self.fits_image.invalidate()
-        self.updateFitsInWidgets()
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # self.setCentralWidget(self.central_widget)
 
@@ -660,14 +638,14 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        aSlider = QSlider(Qt.Horizontal)
-        aSlider.setMinimum(1)
-        aSlider.setMaximum(10)
+        self.aSlider = QSlider(Qt.Horizontal)
+        self.aSlider.setMinimum(1)
+        self.aSlider.setMaximum(10)
 
-        aSlider.valueChanged.connect(lambda changed: self.changeParams({'a': aSlider.value() / 10}, self.interval_dict))
+        self.aSlider.valueChanged.connect(lambda changed: self.changeParams({'a': self.aSlider.value() / 10}, self.interval_dict))
 
         layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(aSlider, 0, 1)
+        layout.addWidget(self.aSlider, 0, 1)
         widget.setLayout(layout)
 
         return widget
@@ -821,7 +799,6 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=interval_dictionary)
 
         self.fits_image.invalidate()
-        self.updateFitsInWidgets()
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # widget = QWidget()
         # layout = QVBoxLayout()
@@ -852,14 +829,13 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=self.interval_dict)
 
         self.fits_image.invalidate()
-        self.updateFitsInWidgets()
         # self.central_widget = FigureCanvas(self.fits_image.figure)
         # self.setCentralWidget(self.central_widget)
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS header", self)
         dock.setObjectName("FTIS_DATA")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -867,7 +843,7 @@ class MainWindow(QMainWindow):
         self.headerWidget.setColumnCount(2)
         self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
         self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
-        self.headerWidget.horizontalHeader().setStretchLastSection(1);
+        self.headerWidget.horizontalHeader().setStretchLastSection(1)
         self.headerWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         dock.setWidget(self.headerWidget)
 
@@ -884,21 +860,12 @@ class MainWindow(QMainWindow):
 
     def onMouseMoveOnImage(self, change):
         display = ''
-        val = 0
         if change.new is not None:
             display = f'{change.new:f}'
-            val = change.new
         if change.name == 'mouse_xdata':
             self.mouse_x_label.setText(display)
-            self.current_x_coord = val
-            self.cursor_coords.set_img_x(change.new)
         elif change.name == 'mouse_ydata':
             self.mouse_y_label.setText(display)
-            self.current_y_coord = val
-            self.cursor_coords.set_img_y(change.new)
-        if display != '':
-            self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
-
 
     def readWindowSettings(self):
         settings = QSettings()
@@ -934,11 +901,6 @@ class MainWindow(QMainWindow):
         settings.setValue('windowState',self.saveState())
 
         self.headerWidget.writeSettings(settings)
-
-    def updateFitsInWidgets(self):
-        print("updateFitsInWidgets")
-        self.full_view_widget.updateFits(self.fits_image)
-        self.zoom_view_widget.updateFits(self.fits_image)
 
 
 class HeaderTableWidget(QTableWidget):
