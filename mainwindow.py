@@ -53,28 +53,43 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from fitsplot import (FitsPlotter)
 from sliderValue import (SliderValue)
+from coordinates import CoordinatesModel
+from fitsplot_fitsfile import FitsPlotterFitsFile
 from fitsopen import (FitsOpen)
 from painterComponent import PainterComponent
 from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
 from radialprofileIRAF import  IRAFRadialProfileWidget
+from fullViewWidget import FullViewWidget
+from zoomViewWidget import ZoomViewWidget
+from radialprofileIRAF import IRAFRadialProfileWidget
+from info import InfoWidget
+from cmaps import ColorMaps
+import console
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.cmaps = ColorMaps()
         self.combobox = QComboBox()
         self.filename = None
+        self.cursor_coords = CoordinatesModel()
         fig = Figure(figsize=(14, 10))
         fig.tight_layout()
         self.sliderValue = SliderValue()
         self.fits_image = FitsPlotter(figure=fig)
+        fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
+
+        self.fits_image = FitsPlotterFitsFile(figure=fig, cmap=self.cmaps.get_active_color_map())
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
         self.stretch_dict = {}
         self.interval_dict = {}
+        self.current_x_coord = 0
+        self.current_y_coord = 0
 
         self.painterComponent = PainterComponent(self.fits_image)
         self.painterComponent.startMovingEvents(self.central_widget)
@@ -92,6 +107,7 @@ class MainWindow(QMainWindow):
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
         self.painterComponent.observe(lambda change: self.onCenterCircleRadiusChange(change), ['cradius'])
         self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
+        self.cmaps.observe(lambda change: self.on_colormap_change(change))
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
@@ -110,26 +126,11 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage("Ready", 2000)
 
-    def open(self):
+    def open_dialog(self):
         fileName, _ = QFileDialog.getOpenFileName(mainWin, "Open Image", ".", "Fits files (*.fits)")
         # fileName = QFileDialog.getOpenFileName(mainWin, "Open Image", "/home/akond/Pulpit/fits files", "Fits files (*.fits)")[0]
-        if not fileName:
-            return
-        self.filename = fileName
-        self.fits_image.set_file(self.filename)
-        self.fits_image.plot_fits_file()
-        self.fits_image.invalidate()
-
-        print(self.fits_image.stretch)
-        print(self.fits_image.interval)
-        self.readSlidersValues()
-        self.getSliders(5, 4)
-        self.stretch_combobox.setCurrentIndex(5)
-        self.interval_combobox.setCurrentIndex(4)
-        self.radial_profile_widget.set_data(self.fits_image.data)
-        self.radial_profile_iraf_widget.set_data(self.fits_image.data)
-
-        self.headerWidget.setHeader()
+        if fileName:
+            self.open_fits(fileName)
 
     def save(self):
         filename, _ = QFileDialog.getSaveFileName(self,
@@ -150,6 +151,23 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage("Saved '%s'" % filename, 2000)
 
+
+    def open_fits(self, fileName):
+        """Opens specified FITS file and loads it to user interface"""
+        self.filename = fileName
+        self.fits_image.set_file(self.filename)
+        self.fits_image.plot()
+        self.fits_image.invalidate()
+
+        self.cursor_coords.set_wcs_from_fits(self.fits_image.header)
+
+        self.radial_profile_widget.set_data(self.fits_image.data)
+        self.radial_profile_iraf_widget.set_data(self.fits_image.data)
+        self.updateFitsInWidgets()
+
+        self.headerWidget.setHeader()
+
+
     def undo(self):
         document = self.textEdit.document()
         document.undo()
@@ -163,19 +181,29 @@ class MainWindow(QMainWindow):
             return
 
     def about(self):
-        QMessageBox.about(self, "About Dock Widgets",
-                          "The <b>Dock Widgets</b> example demonstrates how to use "
-                          "Qt's dock widgets. You can enter your own text, click a "
-                          "customer to add a customer name and address, and click "
-                          "standard paragraphs to add them.")
+        QMessageBox.about(self, "TeDa FITS Viewer",
+                          "Authors: <ul> "
+                          "<li>Michał Brodniak</li>"
+                          "<li>Konrad Górski</li>"
+                          "<li>Mikołaj Kałuszyński</li>"
+                          "<li>Edward Lis</li>"
+                          "<li>Grzegorz Mroczkowski</li>"
+                          "</ul>"
+                          "Created by <a href='https://akond.com'>Akond Lab</a> for The Araucaria Project")
+
+    def on_console_show(self):
+        console.show(ax=self.fits_image.ax, window=self, data=self.fits_image.data, header=self.fits_image.header, wcs=self.cursor_coords.wcs)
 
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
-        self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
+        self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
+
+        self.qtConsoleAct = QAction('Python Console', self,
+                                    statusTip="Open IPython console window", triggered=self.on_console_show)
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
@@ -185,6 +213,8 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(self.quitAct)
 
         self.viewMenu = self.menuBar().addMenu("&View")
+        self.viewMenu.addAction(self.qtConsoleAct)
+        self.viewMenu.addSeparator()
 
         self.menuBar().addSeparator()
 
@@ -294,7 +324,7 @@ class MainWindow(QMainWindow):
     def createDockWindows(self):
         dock = QDockWidget("Scale", self)
         dock.setObjectName("SCALE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
 
         #comboboxes
         widget = QWidget()
@@ -327,7 +357,7 @@ class MainWindow(QMainWindow):
         #radial profiles
         dock = QDockWidget("Radial Profile Curve", self)
         dock.setObjectName("RADIAL_PROFILE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
         dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -340,6 +370,34 @@ class MainWindow(QMainWindow):
         dock.setWidget(self.radial_profile_iraf_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+
+        #info panel
+        dock = QDockWidget("info", self)
+        dock.setObjectName("INFO_PANEL")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.info_widget = InfoWidget(self)
+        dock.setWidget(self.info_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        # full
+        dock = QDockWidget("Full view", self)
+        dock.setObjectName("FULL_VIEW")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.full_view_widget = FullViewWidget(self.fits_image)
+        dock.setWidget(self.full_view_widget)
+        self.addDockWidget(Qt.TopDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+        # zoom
+        dock = QDockWidget("Zoom view", self)
+        dock.setObjectName("ZOOM_VIEW")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.zoom_view_widget = ZoomViewWidget(self.fits_image)
+        dock.setWidget(self.zoom_view_widget)
+        self.addDockWidget(Qt.TopDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        self.viewMenu.addSeparator()
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
@@ -576,11 +634,12 @@ class MainWindow(QMainWindow):
         self.stretch_combobox.addItems(['asinh', 'contrastbias', 'histogram', 'linear',
                                         'log', 'powerdist', 'power', 'sinh', 'sqrt', 'square'])
 
+
         self.interval_combobox = QComboBox()
         self.interval_combobox.addItems(['minmax', 'manual', 'percentile', 'asymetric', 'zscale'])
 
         self.color_combobox = QComboBox()
-        self.color_combobox.addItems(['green', 'red', 'blue'])
+        self.color_combobox.addItems(self.cmaps.colormaps.keys())
 
         layout.addWidget(self.stretch_combobox)
         layout.addWidget(self.interval_combobox)
@@ -611,7 +670,7 @@ class MainWindow(QMainWindow):
     def plotNewFitsImage(self, stretch, interval):
         if self.fits_image == None:
             self.fits_image = FitsPlotter(fitsfile=fileName, stretch=stretch, interval=interval)
-            self.fits_image.plot_fits_file()
+            self.fits_image.plot()
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
         self.fits_image.invalidate()
@@ -765,13 +824,11 @@ class MainWindow(QMainWindow):
 
     def changeParams(self, stretch_dictionary, interval_dictionary):
         #testowe
-        # self.sliderValue.stretch_asinh_a = (self.aSlider.value())
         print(self.stretch_combobox.currentText())
         print(self.interval_combobox.currentText())
         print("------------------")
         print(stretch_dictionary)
         print(interval_dictionary)
-        print(self.zscale_contrast.value())
         #
         if self.stretch_dict != stretch_dictionary:
             self.stretch_dict = stretch_dictionary
@@ -783,36 +840,44 @@ class MainWindow(QMainWindow):
                                           intervalkwargs=interval_dictionary)
 
         self.fits_image.invalidate()
+        self.updateFitsInWidgets()
 
     def changeColor(self, color):
-        #testowe
-        print(self.stretch_combobox.currentText())
-        print(self.interval_combobox.currentText())
-        print(color)
-        print("------------------")
-        print(self.stretch_dict)
-        print(self.interval_dict)
+        self.cmaps.set_active_color_map(color)
+        # #testowe
+        # print(self.stretch_combobox.currentText())
+        # print(self.interval_combobox.currentText())
+        # print(color)
+        # print("------------------")
+        # print(self.stretch_dict)
+        # print(self.interval_dict)
+        # #
+        # if color == 'red':
+        #     self.fits_image.plot(color='r')
+        # elif color == 'green':
+        #     self.fits_image.plot(color='g')
+        # elif color == 'blue':
+        #     self.fits_image.plot(color='b')
         #
-        if color == 'red':
-            self.fits_image.plot_fits_file(color='r')
-        elif color == 'green':
-            self.fits_image.plot_fits_file(color='g')
-        elif color == 'blue':
-            self.fits_image.plot_fits_file(color='b')
+        # self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
+        #                                   interval=self.interval_combobox.currentText(),
+        #                                   stretchkwargs=self.stretch_dict,
+        #                                   intervalkwargs=self.interval_dict)
+        #
+        # self.fits_image.invalidate()
+        # self.updateFitsInWidgets()
+        # # self.central_widget = FigureCanvas(self.fits_image.figure)
+        # # self.setCentralWidget(self.central_widget)
 
-        self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
-                                          interval=self.interval_combobox.currentText(),
-                                          stretchkwargs=self.stretch_dict,
-                                          intervalkwargs=self.interval_dict)
-
-        self.fits_image.invalidate()
-        # self.central_widget = FigureCanvas(self.fits_image.figure)
-        # self.setCentralWidget(self.central_widget)
+    def on_colormap_change(self, change):
+        self.fits_image.cmap = self.cmaps.get_active_color_map()
+        self.fits_image.plot()
+        self.updateFitsInWidgets()
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS header", self)
         dock.setObjectName("FTIS_DATA")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
 
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -837,12 +902,21 @@ class MainWindow(QMainWindow):
 
     def onMouseMoveOnImage(self, change):
         display = ''
+        val = 0
         if change.new is not None:
             display = f'{change.new:f}'
+            val = change.new
         if change.name == 'mouse_xdata':
             self.mouse_x_label.setText(display)
+            self.current_x_coord = val
+            self.cursor_coords.set_img_x(change.new)
         elif change.name == 'mouse_ydata':
             self.mouse_y_label.setText(display)
+            self.current_y_coord = val
+            self.cursor_coords.set_img_y(change.new)
+        if display != '':
+            self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
+
 
     def readWindowSettings(self):
         settings = QSettings()
@@ -874,10 +948,14 @@ class MainWindow(QMainWindow):
         settings.setValue("pos", self.pos())
         settings.endGroup()
 
-        settings.setValue('geometry', self.saveGeometry())
-        settings.setValue('windowState', self.saveState())
+        settings.setValue('geometry',self.saveGeometry())
+        settings.setValue('windowState',self.saveState())
 
         self.headerWidget.writeSettings(settings)
+    def updateFitsInWidgets(self):
+        print("updateFitsInWidgets")
+        self.full_view_widget.updateFits(self.fits_image)
+        self.zoom_view_widget.updateFits(self.fits_image)
 
     def writeSlidersValues(self):
         settings = QSettings()
@@ -1032,7 +1110,6 @@ class HeaderTableWidget(QTableWidget):
             settings.setValue("pin", pin);
             i += 1
         settings.endArray();
-
 
 if __name__ == '__main__':
     import sys
