@@ -60,7 +60,7 @@ from painterComponent import PainterComponent
 from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
-from radialprofileIRAF import  IRAFRadialProfileWidget
+from radialprofileIRAF import IRAFRadialProfileWidget
 from fullViewWidget import FullViewWidget
 from zoomViewWidget import ZoomViewWidget
 from radialprofileIRAF import IRAFRadialProfileWidget
@@ -164,6 +164,8 @@ class MainWindow(QMainWindow):
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
         self.updateFitsInWidgets()
+
+        self.readSlidersValues()
 
         self.headerWidget.setHeader()
 
@@ -576,7 +578,14 @@ class MainWindow(QMainWindow):
         #                                                                      'max_iterations': self.zscale_miterations.value()}
         #                                                                       ))
 
-        self.zscale_contrast.valueChanged.connect(lambda changed: self.newChangeFitsParams('zscale', 'interval_zscale_contrast', self.zscale_contrast.value()))
+        self.zscale_contrast.valueChanged.connect(lambda changed: self.changeParams('interval_zscale_contrast',self.zscale_contrast.value(),
+                                                                                    self.stretch_dict,
+                                                                              {'nsamples': self.zscale_nsamples.value(),
+                                                                             'contrast': self.zscale_contrast.value() / 100,
+                                                                             'max_reject': self.zscale_mreject.value() / 100,
+                                                                             'min_npixels': self.zscale_minpixels.value(),
+                                                                             'krej': self.zscale_krej.value() / 10,
+                                                                             'max_iterations': self.zscale_miterations.value()} ))
         self.zscale_mreject.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
                                                                               {'nsamples': self.zscale_nsamples.value(),
                                                                              'contrast': self.zscale_contrast.value() / 100,
@@ -601,7 +610,9 @@ class MainWindow(QMainWindow):
                                                                              'krej': self.zscale_krej.value() / 10,
                                                                              'max_iterations': self.zscale_miterations.value()}
                                                                           ))
-        self.zscale_miterations.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
+        self.zscale_miterations.valueChanged.connect(lambda changed: self.changeParams('interval_zscale_maxiterations',
+                                                                                       self.zscale_miterations.value(),
+                                                                                       self.stretch_dict,
                                                                                   {'nsamples': self.zscale_nsamples.value(),
                                                                              'contrast': self.zscale_contrast.value() / 100,
                                                                              'max_reject': self.zscale_mreject.value() / 100,
@@ -646,52 +657,59 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.color_combobox)
 
         self.stretch_combobox.activated.connect(lambda activated: self.getSliders(self.stretch_combobox.currentIndex(), self.interval_combobox.currentIndex()))
-        self.interval_combobox.activated.connect(lambda activated: self.getSliders( self.stretch_combobox.currentIndex(), self.interval_combobox.currentIndex()))
+        self.interval_combobox.activated.connect(lambda activated: self.getSliders(self.stretch_combobox.currentIndex(), self.interval_combobox.currentIndex()))
         self.color_combobox.currentTextChanged.connect(lambda activated: self.changeColor(self.color_combobox.currentText()))
         return layout
 
     def getSliders(self, stretch_index, interval_index):
-        print(self.sliderValue.interval_combobox_value)
-        current_interval = self.interval_combobox.currentText()
-        print("-------")
-        print(current_interval)
-        self.sliderValue.interval_combobox_value = current_interval
+        print(self.stretch_combobox.currentText())
+        print(self.interval_combobox.currentText())
         self.stretchStackedLayout.setCurrentIndex(stretch_index)
         self.intervalStackedLayout.setCurrentIndex(interval_index)
-        # print(self.interval_combobox.currentText())
-        # # self.test.checkVars()
-        # self.plotNewFitsImage(self.stretch_combobox.currentText(), self.interval_combobox.currentText())
-
-    def testfunction(self, member, value):
-        print(member)
-        print(value)
-        setattr(self.sliderValue, member, value)
-
-    def plotNewFitsImage(self, stretch, interval):
-        if self.fits_image == None:
-            self.fits_image = FitsPlotter(fitsfile=fileName, stretch=stretch, interval=interval)
-            self.fits_image.plot()
-        else:
-            self.fits_image.set_normalization(stretch=stretch, interval=interval)
-        self.fits_image.invalidate()
 
     def newChangeFitsParams(self, param, value):
         print("New Change Fits params")
-        # print(self.sliderValue.interval_dictionary[member])
+        print(param)
         print(value)
+
         setattr(self.sliderValue, param, value)
-        print(self.sliderValue.interval_zscale_contrast)
+
+    def changeParams(self,param, value, stretch_dictionary, interval_dictionary):
+        #testowe
+        self.newChangeFitsParams(param, value)
+
+        print(self.stretch_combobox.currentText())
+        print(self.interval_combobox.currentText())
+        print("------------------")
+        print(stretch_dictionary)
+        print(interval_dictionary)
+        print(self.sliderValue.dictionary)
+
+        self.sliderValue.checkVars()
+        #
+        if self.stretch_dict != stretch_dictionary:
+            self.stretch_dict = stretch_dictionary
+        if self.interval_dict != interval_dictionary:
+            self.interval_dict = interval_dictionary
+        self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
+                                          interval=self.interval_combobox.currentText(),
+                                          stretchkwargs=stretch_dictionary,
+                                          intervalkwargs=interval_dictionary)
+
+        self.fits_image.invalidate()
+        self.updateFitsInWidgets()
 
     def createAsinhParamsSliders(self):
         widget = QWidget()
         layout = QGridLayout()
 
         self.asinh_a = QSlider(Qt.Horizontal)
-        self.asinh_a .setMinimum(1)
-        self.asinh_a .setMaximum(10)
+        self.asinh_a.setMinimum(1)
+        self.asinh_a.setMaximum(10)
 
         # self.asinh_a .valueChanged.connect(lambda changed: self.changeParams({'a': self.asinh_a .value()/10}, self.interval_dict))
-        self.asinh_a.valueChanged.connect(lambda changed: self.newChangeFitsParams('stretch_asinh_a', self.asinh_a.value()))
+        self.asinh_a.valueChanged.connect(lambda changed: self.changeParams('stretch_asinh_a',self.asinh_a.value(),
+                                                                            {'stretch_asinh_a': self.asinh_a.value()}, self.interval_dict))
         layout.addWidget(QLabel('a'), 0, 0)
         layout.addWidget(self.asinh_a , 0, 1)
         widget.setLayout(layout)
@@ -822,26 +840,6 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
         return widget
 
-    def changeParams(self, stretch_dictionary, interval_dictionary):
-        #testowe
-        print(self.stretch_combobox.currentText())
-        print(self.interval_combobox.currentText())
-        print("------------------")
-        print(stretch_dictionary)
-        print(interval_dictionary)
-        #
-        if self.stretch_dict != stretch_dictionary:
-            self.stretch_dict = stretch_dictionary
-        if self.interval_dict != interval_dictionary:
-            self.interval_dict = interval_dictionary
-        self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
-                                          interval=self.interval_combobox.currentText(),
-                                          stretchkwargs=stretch_dictionary,
-                                          intervalkwargs=interval_dictionary)
-
-        self.fits_image.invalidate()
-        self.updateFitsInWidgets()
-
     def changeColor(self, color):
         self.cmaps.set_active_color_map(color)
         # #testowe
@@ -952,6 +950,7 @@ class MainWindow(QMainWindow):
         settings.setValue('windowState',self.saveState())
 
         self.headerWidget.writeSettings(settings)
+
     def updateFitsInWidgets(self):
         print("updateFitsInWidgets")
         self.full_view_widget.updateFits(self.fits_image)
@@ -1005,7 +1004,7 @@ class MainWindow(QMainWindow):
         percentile_percentile_value = settings.value("percentile/percentile")
         percentile_nsamples_value = settings.value("percentile/nsamples")
         asymetric_lpercentile_value = settings.value("asymetric/lpercentile")
-        asymeric_upercentile_value = settings.value("asymetric/upercentile")
+        asymetric_upercentile_value = settings.value("asymetric/upercentile")
         asymetric_nsamples_value = settings.value("asymetric/nsamples")
         zscale_contrast_value = settings.value("zscale/contrast")
         zscale_nsamples_value = settings.value("zscale/nsamples")
@@ -1017,9 +1016,9 @@ class MainWindow(QMainWindow):
 
         if asinh_a_value:
             self.asinh_a.setValue(int(asinh_a_value))
+
         if zscale_contrast_value:
             self.zscale_contrast.setValue(int(zscale_contrast_value))
-            self.zscale_nsamples.setValue(int(zscale_nsamples_value))
 
 
 class HeaderTableWidget(QTableWidget):

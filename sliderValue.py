@@ -26,46 +26,28 @@ class SliderValue(HasTraits):
     interval_zscale_krej = Int(25)
     interval_zscale_maxiterations = Int(5)
 
-    interval_combobox_value = str
-    stretch_combobox_value = str
-
     def __init__(self):
-        # self.stretch_asinh_a = 2.5
-        # self.stretch_contrast_contrast = 20
-        # self.stretch_contrast_bias = 20
-        # self.stretch_linear_slope = 10
-        # self.stretch_linear_intercept = 1
-        # self.stretch_log_a = 1
-        # self.stretch_powerdist_a = 1
-        # self.stretch_power_a = 1
-        # self.stretch_sinh_a = 1
-        #
-        # self.interval_manual_vmin = 1
-        # self.interval_manual_vmax = 1
-        # self.interval_percentile_percentile = 1
-        # self.interval_percentile_nsamples = 1
-        # self.interval_asymetric_lpercentile = 1
-        # self.interval_asymetric_upercentile = 1
-        # self.interval_asymetric_nsamples = 1
-        # self.interval_zscale_nsamples = 1000
-        # self.interval_zscale_contrast = 50
-        # self.interval_zscale_maxreject = 5
-        # self.interval_zscale_minpixels = 5
-        # self.interval_zscale_krej = 25
-        # self.interval_zscale_maxiterations = 5
-        #
-        # x = dict(nsamples = interval_zscale_nsamples)
-        self.observe(self.func, names=['stretch_asinh_a'])
+        self.observe(self.func, names=['stretch_asinh_a','interval_zscale_contrast'])
+
+        self.dictionary = {
+            'zscale': {'contrast': self.interval_zscale_contrast}
+        }
 
     def func(self, change):
             print("SliderValue func")
             print(change['old'])
             print(change['new'])
+            self.update(self.dictionary)
 
     def checkVars(self):
-        print("-------------------")
+        print("-----Check_Vars-----")
         print(self.stretch_asinh_a)
-        print(self.stretch_contrast_contrast)
-        print(self.stretch_contrast_bias)
+        print(self.interval_zscale_maxiterations)
+        print(self.interval_zscale_nsamples)
         print(self.interval_zscale_contrast)
-        print("-------------------")
+        print("--------END---------")
+
+    def update(self, d):
+        print("Update")
+        d['zscale']['contrast'] = self.interval_zscale_contrast
+
