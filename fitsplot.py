@@ -21,6 +21,12 @@ class FitsPlotter(tr.HasTraits):
     mouse_ydata = tr.Float(allow_none=True)
     alpha = tr.Float(default_value=1.0, max=1.0, min=0.0)
 
+    viewX = tr.Float()
+    viewY = tr.Float()
+    viewW = tr.Float()
+    viewH = tr.Float()
+    viewBounaries_versionno = tr.Int()
+
     def __init__(self,
                  figure=None, ax=None,
                  interval=None, intervalkwargs=None,
@@ -222,9 +228,12 @@ class FitsPlotter(tr.HasTraits):
         ax.yaxis.set_major_locator(plt.NullLocator())
         ax.xaxis.set_major_locator(plt.NullLocator())
 
-        fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
-        fig.canvas.mpl_connect('figure_leave_event', lambda event: self.on_mouse_exit(event))
-        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_mouse_move(event))
+        self.zoomEvent = fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
+        self.mouseExitEvent = fig.canvas.mpl_connect('figure_leave_event', lambda event: self.on_mouse_exit(event))
+        self.mouseMoveEvent = fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_mouse_move(event))
+
+    def disconnectEvents(self):
+        self.figure.canvas.mpl_disconnect(self.zoomEvent)
 
     def on_mouse_exit(self, event):
         self.mouse_xdata = None
@@ -262,6 +271,7 @@ class FitsPlotter(tr.HasTraits):
             self.ax.set_ylim(self.calc_new_limits(cur_ylim, full_ylim, event.ydata, self.zoom))
 
             self.invalidate()  # force re-draw the next time the GUI refreshes
+            self.setCordsToTraitlets()
 
     def setZoom(self, zoom:float, reset_pos:bool):
         if reset_pos:
@@ -269,6 +279,7 @@ class FitsPlotter(tr.HasTraits):
             self.ax.set_ylim(self.full_ylim)
             self.zoom = 1.0
             self.invalidate()
+            self.setCordsToTraitlets()
             return
         min_zoom = 0.1
         max_zoom = 50
@@ -287,6 +298,16 @@ class FitsPlotter(tr.HasTraits):
             self.ax.set_xlim(self.calc_new_limits(cur_xlim, full_xlim, x, self.zoom))
             self.ax.set_ylim(self.calc_new_limits(cur_ylim, full_ylim, y, self.zoom))
             self.invalidate()
+            self.setCordsToTraitlets()
+
+    def setCordsToTraitlets(self):
+        cur_xlim = self.ax.get_xlim()
+        cur_ylim = self.ax.get_ylim()
+        self.viewX = cur_xlim[0]
+        self.viewY = cur_ylim[0]
+        self.viewW = cur_xlim[1] - cur_xlim[0]
+        self.viewH = cur_ylim[1] - cur_ylim[0]
+        self.viewBounaries_versionno += 1
 
     def moveToXYcordsWithZoom(self, x, y, zoom, fits, idle=True):
         self.get_ax()
@@ -298,6 +319,18 @@ class FitsPlotter(tr.HasTraits):
         newylim = y - ysize, y + ysize
         self.ax.set_xlim(newxlim)
         self.ax.set_ylim(newylim)
+        self.invalidate(idle)
+
+    def moveToXYcords(self, x, y, idle=True):
+        cur_xlim = self.ax.get_xlim()
+        cur_ylim = self.ax.get_ylim()
+        xsize = (cur_xlim[1] - cur_xlim[0])
+        ysize = (cur_ylim[1] - cur_ylim[0])
+        newxlim = x, x + xsize
+        newylim = y, y + ysize
+        self.ax.set_xlim(newxlim)
+        self.ax.set_ylim(newylim)
+        self.ax.figure.canvas.draw_idle()
         self.invalidate(idle)
 
     def center(self):

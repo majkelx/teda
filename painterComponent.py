@@ -1,5 +1,6 @@
 from painterShapes.circleShape import (CircleShape)
 from painterShapes.CircleCenterShape import (CircleCenterShape)
+from painterShapes.rectangleMinatureShape import (RectangleMiniatureShape)
 import matplotlib.pyplot as plt
 from traitlets import Float, Int, HasTraits
 from math import *
@@ -12,9 +13,16 @@ class PainterComponent(HasTraits):
     ccenter_y = Float()
     cradius = Float()
 
+    viewX = Float()
+    viewY = Float()
+
+    movingViewX = Float()
+    movingViewY = Float()
+
     def __init__(self, fits_plotter):
         self.shapes = []
         self.centerCircle = []
+        self.rectangleMiniature = []
         self.listOfPaintedShapes = []
         self.drs = []
         self.templine = None
@@ -28,7 +36,7 @@ class PainterComponent(HasTraits):
         self.fits_plotter = fits_plotter
 
 
-    def add(self, x, y, size = 10,type="circle"):
+    def add(self, x, y, size = 10,type="circle",size2=0):
         if type == "circle":
             c = CircleShape(x, y, size)
             self.shapes.append(c)
@@ -40,6 +48,11 @@ class PainterComponent(HasTraits):
             self.ccenter_y = newy
             self.cradius = size
             self.centerCircle.append(c)
+        if type == "rectangleMiniature":
+            self.rectangleMiniature = []
+            c = RectangleMiniatureShape(x, y, size, size2)
+            self.rectangleMiniature.append(c)
+
 
     def paintAllShapes(self, axes):
         axes.patches.clear()
@@ -53,6 +66,12 @@ class PainterComponent(HasTraits):
             dr.connect()
             self.drs.append(dr)
         for shape in self.centerCircle:
+            shap=shape.paintShape(axes)
+            self.listOfPaintedShapes.append(shap)
+            dr = DraggablePoint(shap, shape, self)
+            dr.connect()
+            self.drs.append(dr)
+        for shape in self.rectangleMiniature:
             shap=shape.paintShape(axes)
             self.listOfPaintedShapes.append(shap)
             dr = DraggablePoint(shap, shape, self)
@@ -72,6 +91,12 @@ class PainterComponent(HasTraits):
             self.drs.append(dr)
         for shape in self.centerCircle:
             shap = shape.paintShape(axes)
+            dr = DraggablePoint(shap, shape, self)
+            dr.connect()
+            self.drs.append(dr)
+        for shape in self.rectangleMiniature:
+            shap=shape.paintShape(axes)
+            self.listOfPaintedShapes.append(shap)
             dr = DraggablePoint(shap, shape, self)
             dr.connect()
             self.drs.append(dr)
@@ -124,6 +149,9 @@ class PainterComponent(HasTraits):
         self.tempcircle = None
         ax.lines = self.tempLines.copy()
         canvas.draw_idle()
+
+    def setCanvas(self, canvas):
+        self.tempCanvas = canvas
 
     def setCanvasEvents(self,canvas, mode):
         self.tempCanvas = canvas
@@ -200,6 +228,8 @@ class PainterComponent(HasTraits):
                 yli1, yli2 = ylim
                 ax.set_xlim(xli1 - self.dx, xli2 - self.dx)
                 ax.set_ylim(yli1 - self.dy, yli2 - self.dy)
+                self.movingViewX = xli1 - self.dx
+                self.movingViewY = yli1 - self.dy
                 self.tempCanvas.draw()
 
 
@@ -280,7 +310,10 @@ class DraggablePoint:
         if DraggablePoint.lock is not None: return
         contains, attrd = self.point.contains(event)
         if not contains: return
-        self.press = (self.point.center), event.xdata, event.ydata
+        if hasattr(self.point,'center'):
+            self.press = (self.point.center), event.xdata, event.ydata
+        elif hasattr(self.point, 'xy'):
+            self.press = (self.point.xy), event.xdata, event.ydata
         DraggablePoint.lock = self
 
         # draw everything but the selected and store the pixel buffer
@@ -303,12 +336,26 @@ class DraggablePoint:
         if DraggablePoint.lock is not self:
             return
         if event.inaxes != self.point.axes: return
-        self.point.center, xpress, ypress = self.press
+        if hasattr(self.point,'center'):
+            self.point.center, xpress, ypress = self.press
+        elif hasattr(self.point, 'xy'):
+            self.point.xy, xpress, ypress = self.press
         dx = event.xdata - xpress
         dy = event.ydata - ypress
-        self.point.center = (self.point.center[0]+dx, self.point.center[1]+dy)
-        self.painterElement.x = self.point.center[0]
-        self.painterElement.y = self.point.center[1]
+
+        if hasattr(self.point, 'center'):
+            self.point.center = (self.point.center[0]+dx, self.point.center[1]+dy)
+            self.painterElement.x = self.point.center[0]
+            self.painterElement.y = self.point.center[1]
+        elif hasattr(self.point, 'xy'):
+            self.point.xy = (self.point.xy[0] + dx, self.point.xy[1] + dy)
+            self.painterElement.x = self.point.xy[0]
+            self.painterElement.y = self.point.xy[1]
+
+        if hasattr(self.painterElement, 'shapeType'):
+            if self.painterElement.shapeType == 'rectangleMiniature':
+                self.paintComp.viewX = self.painterElement.x
+                self.paintComp.viewY = self.painterElement.y
 
         canvas = self.point.figure.canvas
         axes = self.point.axes

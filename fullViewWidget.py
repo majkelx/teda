@@ -32,13 +32,27 @@ class FullViewWidget(QWidget):
         self.setMaximumHeight(200)
 
         self.painterComponent = PainterComponent(self.fits_image)
+        self.painterComponent.setCanvas(self.canvas)
+        self.painterComponent.paintAllShapes(self.ax)
+        self.painterComponent.makeAllShapesDraggable(self.ax)
 
     def updateFits(self, fits):
         self.fits = fits
         self.fits_image.data = self.fits.data
         self.fits_image.copy_visualization_parameters(self.fits)
         self.fits_image.plot()
+        self.fits_image.disconnectEvents()
 
         # self.fits_image.plot_fits_data(self.fits.data,self.fits_image.figure.axes[0],1.0, self.fits.get_normalization(),self.fits.cmap)
         # #self.fits_image.figure.axes[0].images = self.fits.figure.axes[0].images
         # self.fig.canvas.draw_idle()
+
+    def updateMiniatureShape(self,x,y,size,size2):
+        self.painterComponent.add(x, y, size=size, type="rectangleMiniature", size2=size2)
+        self.painterComponent.paintAllShapes(self.ax)
+        self.painterComponent.makeAllShapesDraggable(self.ax)
+
+    def updateMiniatureShapeXYonly(self,x,y):
+        self.painterComponent.rectangleMiniature[0].repaintShapeXY(self.ax, x, y)
+        self.painterComponent.paintAllShapes(self.ax)
+        self.painterComponent.makeAllShapesDraggable(self.ax)
