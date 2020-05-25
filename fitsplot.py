@@ -25,6 +25,7 @@ class FitsPlotter(tr.HasTraits):
     viewY = tr.Float()
     viewW = tr.Float()
     viewH = tr.Float()
+    viewBounaries_versionno = tr.Int()
 
     def __init__(self,
                  figure=None, ax=None,
@@ -306,6 +307,7 @@ class FitsPlotter(tr.HasTraits):
         self.viewY = cur_ylim[0]
         self.viewW = cur_xlim[1] - cur_xlim[0]
         self.viewH = cur_ylim[1] - cur_ylim[0]
+        self.viewBounaries_versionno += 1
 
     def moveToXYcordsWithZoom(self, x, y, zoom, fits, idle=True):
         self.get_ax()

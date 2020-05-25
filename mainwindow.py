@@ -111,7 +111,7 @@ class MainWindow(QMainWindow):
         self.cmaps.observe(lambda change: self.on_colormap_change(change))
         self.full_view_widget.painterComponent.observe(lambda change: self.onRectangleInWidgetMove(change), ['viewX', 'viewY'])
         self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
-        self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewX', 'viewY', 'viewW','viewH'])
+        self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewBounaries_versionno'])
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
@@ -359,19 +359,19 @@ class MainWindow(QMainWindow):
         self.viewMenu.addAction(dock.toggleViewAction())
 
         #radial profiles
-        dock = QDockWidget("Radial Profile Curve", self)
-        dock.setObjectName("RADIAL_PROFILE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
-        self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
-        dock.setWidget(self.radial_profile_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-
         dock = QDockWidget("Radial Profile Fit", self)
         dock.setObjectName("RADIAL_PROFILE_IRAF")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.radial_profile_iraf_widget = IRAFRadialProfileWidget(self.fits_image.data)
         dock.setWidget(self.radial_profile_iraf_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        dock = QDockWidget("Radial Profile Curve", self)
+        dock.setObjectName("RADIAL_PROFILE")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.radial_profile_widget = RadialProfileWidget(self.fits_image.data)
+        dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
