@@ -52,7 +52,7 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
                                QComboBox, QMenu)
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from coordinates import CoordinatesModel
-from fitsplot import (FitsPlotter)
+from fitsplot_fitsfile import FitsPlotterFitsFile
 from fitsopen import (FitsOpen)
 from painterComponent import PainterComponent
 from matplotlib.figure import Figure
@@ -63,12 +63,14 @@ from fullViewWidget import FullViewWidget
 from zoomViewWidget import ZoomViewWidget
 from radialprofileIRAF import IRAFRadialProfileWidget
 from info import InfoWidget
+from cmaps import ColorMaps
 import console
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.cmaps = ColorMaps()
         self.combobox = QComboBox()
         self.filename = None
         self.cursor_coords = CoordinatesModel()
@@ -76,7 +78,7 @@ class MainWindow(QMainWindow):
         fig.tight_layout()
         fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
 
-        self.fits_image = FitsPlotter(figure=fig)
+        self.fits_image = FitsPlotterFitsFile(figure=fig, cmap=self.cmaps.get_active_color_map())
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
@@ -106,6 +108,7 @@ class MainWindow(QMainWindow):
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
         self.painterComponent.observe(lambda change: self.onCenterCircleRadiusChange(change), ['cradius'])
         self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
+        self.cmaps.observe(lambda change: self.on_colormap_change(change))
         self.full_view_widget.painterComponent.observe(lambda change: self.onRectangleInWidgetMove(change), ['viewX', 'viewY'])
         self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
 
@@ -155,7 +158,7 @@ class MainWindow(QMainWindow):
         """Opens specified FITS file and loads it to user interface"""
         self.filename = fileName
         self.fits_image.set_file(self.filename)
-        self.fits_image.plot_fits_file()
+        self.fits_image.plot()
         self.fits_image.invalidate()
 
         self.cursor_coords.set_wcs_from_fits(self.fits_image.header)
@@ -636,7 +639,7 @@ class MainWindow(QMainWindow):
         self.interval_combobox.addItems(['minmax', 'manual', 'percentile', 'asymetric', 'zscale'])
 
         self.color_combobox = QComboBox()
-        self.color_combobox.addItems(['green', 'red', 'blue'])
+        self.color_combobox.addItems(self.cmaps.colormaps.keys())
 
         layout.addWidget(self.stretch_combobox)
         layout.addWidget(self.interval_combobox)
@@ -655,7 +658,7 @@ class MainWindow(QMainWindow):
     def plotNewFitsImage(self, stretch, interval):
         if self.fits_image == None:
             self.fits_image = FitsPlotter(fitsfile=fileName, stretch=stretch, interval=interval)
-            self.fits_image.plot_fits_file()
+            self.fits_image.plot()
         else:
             self.fits_image.set_normalization(stretch=stretch, interval=interval)
         self.fits_image.invalidate()
@@ -829,39 +832,38 @@ class MainWindow(QMainWindow):
 
         self.fits_image.invalidate()
         self.updateFitsInWidgets()
-        # self.central_widget = FigureCanvas(self.fits_image.figure)
-        # widget = QWidget()
-        # layout = QVBoxLayout()
-        # layout.addWidget(self.toolbar)
-        # layout.addWidget(self.central_widget)
-        # widget.setLayout(layout)
-        # self.setCentralWidget(widget)
 
     def changeColor(self, color):
-        #testowe
-        print(self.stretch_combobox.currentText())
-        print(self.interval_combobox.currentText())
-        print(color)
-        print("------------------")
-        print(self.stretch_dict)
-        print(self.interval_dict)
+        self.cmaps.set_active_color_map(color)
+        # #testowe
+        # print(self.stretch_combobox.currentText())
+        # print(self.interval_combobox.currentText())
+        # print(color)
+        # print("------------------")
+        # print(self.stretch_dict)
+        # print(self.interval_dict)
+        # #
+        # if color == 'red':
+        #     self.fits_image.plot(color='r')
+        # elif color == 'green':
+        #     self.fits_image.plot(color='g')
+        # elif color == 'blue':
+        #     self.fits_image.plot(color='b')
         #
-        if color == 'red':
-            self.fits_image.plot_fits_file(color='r')
-        elif color == 'green':
-            self.fits_image.plot_fits_file(color='g')
-        elif color == 'blue':
-            self.fits_image.plot_fits_file(color='b')
+        # self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
+        #                                   interval=self.interval_combobox.currentText(),
+        #                                   stretchkwargs=self.stretch_dict,
+        #                                   intervalkwargs=self.interval_dict)
+        #
+        # self.fits_image.invalidate()
+        # self.updateFitsInWidgets()
+        # # self.central_widget = FigureCanvas(self.fits_image.figure)
+        # # self.setCentralWidget(self.central_widget)
 
-        self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
-                                          interval=self.interval_combobox.currentText(),
-                                          stretchkwargs=self.stretch_dict,
-                                          intervalkwargs=self.interval_dict)
-
-        self.fits_image.invalidate()
+    def on_colormap_change(self, change):
+        self.fits_image.cmap = self.cmaps.get_active_color_map()
+        self.fits_image.plot()
         self.updateFitsInWidgets()
-        # self.central_widget = FigureCanvas(self.fits_image.figure)
-        # self.setCentralWidget(self.central_widget)
 
     def createInfoWindow(self):
         dock = QDockWidget("FITS header", self)

@@ -206,12 +206,15 @@ class PainterComponent(HasTraits):
         if self.eventInShape(event):
             self.eventInShapeFlag = True
             return
-        ax = self.tempCanvas.figure.axes[0]
-        self.press = event.xdata, event.ydata
-        self.curr_lim = ax.get_xlim(), ax.get_ylim()
-        self.startMoving = True
-        self.dx = 0
-        self.dy = 0
+        try:
+            ax = self.tempCanvas.figure.axes[0]
+            self.press = event.xdata, event.ydata
+            self.curr_lim = ax.get_xlim(), ax.get_ylim()
+            self.startMoving = True
+            self.dx = 0
+            self.dy = 0
+        except LookupError:  # no axies :(
+            pass
 
     def onMovingMotion(self,event):
         if not self.eventInShapeFlag:

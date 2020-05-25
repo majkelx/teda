@@ -7,8 +7,6 @@ import traitlets as tr
 from numpy import *
 import math
 
-from astropy.io import fits
-from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU)
 import astropy.visualization as vis
 
 import matplotlib
@@ -21,19 +19,18 @@ class FitsPlotter(tr.HasTraits):
     # contrast = traitlets.Float()
     mouse_xdata = tr.Float(allow_none=True)
     mouse_ydata = tr.Float(allow_none=True)
-    fitsfile = tr.Unicode(allow_none=True)
+    alpha = tr.Float(default_value=1.0, max=1.0, min=0.0)
 
     viewX = tr.Float()
     viewY = tr.Float()
     viewW = tr.Float()
     viewH = tr.Float()
 
-    def __init__(self, fitsfile=None, hdu=0,
+    def __init__(self,
                  figure=None, ax=None,
                  interval=None, intervalkwargs=None,
-                 stretch=None, stretchkwargs=None):
-        self.fitsfile = fitsfile
-        self.hdu = 0
+                 stretch=None, stretchkwargs=None, cmap=None):
+        super().__init__()
         self.figure = figure
         self.ax = ax
         self.zoom = 1.0
@@ -41,35 +38,19 @@ class FitsPlotter(tr.HasTraits):
         self.interval_kwargs = intervalkwargs
         self.stretch = stretch
         self.stretch_kwargs = stretchkwargs
-        self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list('zielonka', ['w', 'g'], )
-        self._huds = None
+        if cmap is None:
+            self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list('zielonka', ['w', 'g'], )
+        else:
+            self.cmap = cmap
         self.img = None
-
-    def open(self):
-        if self._huds is None and self.fitsfile:
-            self._huds = fits.open(self.fitsfile, lazy_load_hdus=False)
-            self._huds.info()
-
-    def set_file(self, filename):
-        self._huds = None
-        self.fitsfile = filename
 
     @property
     def data(self):
-        self.open()
-        if self._huds is not None and \
-                (isinstance(self._huds[self.hdu], PrimaryHDU) or isinstance(self._huds[self.hdu], ImageHDU)):
-            return self._huds[self.hdu].data
-        else:
-            return None
+        return self._data
 
-    @property
-    def header(self):
-        self.open()
-        try:
-            return self._huds[self.hdu].header
-        except (TypeError, LookupError):
-            return None
+    @data.setter
+    def data(self, d):
+        self._data = d
 
     @property
     def full_xlim(self):
@@ -92,25 +73,22 @@ class FitsPlotter(tr.HasTraits):
         if self.img is not None:
             self.img.set_data(data)
             self.img.set_extent(extent)
+            self.img.set_norm(norm)
+            self.img.set_alpha(alpha)
+            self.img.set_cmap(cmap)
         else:
             self.img = ax.imshow(data, origin='lower', extent=extent,
                                  alpha=alpha, norm=norm, cmap=cmap, resample=False)
 
-    def plot_fits_data_old(self, data, ax, alpha, norm, cmap):
-        self.img = ax.imshow(data, origin='lower',
-                             alpha=alpha, norm=norm, cmap=cmap, resample=False)
 
-    def plot_fits_file(self, ax=None, alpha=1.0, color=None):
-        if color is not None:
-            self.changeCmap(color)
-        if ax is None:
-            ax = self.get_ax()
+    def plot(self):
+        # if color is not None:
+        #     self.changeCmap(color)
+        ax = self.get_ax()
         data = self.data;
         if data is not None:
-            self.plot_fits_data(data, ax, alpha, self.get_normalization(), self.cmap)
-
-    def changeCmap(self,color):
-        self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list('zielonka', ['w', color], )
+            self.plot_fits_data(data, ax, self.alpha, self.get_normalization(), self.cmap)
+            self.invalidate()
 
     def set_normalization(self, stretch=None, interval=None, stretchkwargs={}, intervalkwargs={}):
         if stretch is None:
@@ -119,31 +97,34 @@ class FitsPlotter(tr.HasTraits):
             else:
                 stretch = self.stretch
         if isinstance(stretch, str):
-            kwargs = self.prepare_kwargs(self.stretch_kws_defaults[stretch],
-                                         self.stretch_kwargs, stretchkwargs)
-            if stretch == 'asinh':  # arg: a=0.1
-                stretch = vis.AsinhStretch(**kwargs)
-            elif stretch == 'contrastbias':  # args: contrast, bias
-                stretch = vis.ContrastBiasStretch(**kwargs)
-            elif stretch == 'histogram':
-                stretch = vis.HistEqStretch(self.data, **kwargs)
-            elif stretch == 'linear':  # args: slope=1, intercept=0
-                # stretch = vis.LinearStretch(**kwargs)
-                stretch = vis.LinearStretch()
-            elif stretch == 'log':  # args: a=1000.0
-                stretch = vis.LogStretch(**kwargs)
-            elif stretch == 'powerdist':  # args: a=1000.0
-                stretch = vis.PowerDistStretch(**kwargs)
-            elif stretch == 'power':  # args: a
-                stretch = vis.PowerStretch(**kwargs)
-            elif stretch == 'sinh':  # args: a=0.33
-                stretch = vis.SinhStretch(**kwargs)
-            elif stretch == 'sqrt':
-                stretch = vis.SqrtStretch(**kwargs)
-            elif stretch == 'square':
-                stretch = vis.SquaredStretch(**kwargs)
+            if self.data is None:  # can not calculate objects yet
+                self.stretch_kwargs = stretchkwargs
             else:
-                raise ValueError('Unknown stretch:' + stretch)
+                kwargs = self.prepare_kwargs(self.stretch_kws_defaults[stretch],
+                                             self.stretch_kwargs, stretchkwargs)
+                if stretch == 'asinh':  # arg: a=0.1
+                    stretch = vis.AsinhStretch(**kwargs)
+                elif stretch == 'contrastbias':  # args: contrast, bias
+                    stretch = vis.ContrastBiasStretch(**kwargs)
+                elif stretch == 'histogram':
+                    stretch = vis.HistEqStretch(self.data, **kwargs)
+                elif stretch == 'linear':  # args: slope=1, intercept=0
+                    # stretch = vis.LinearStretch(**kwargs)
+                    stretch = vis.LinearStretch()
+                elif stretch == 'log':  # args: a=1000.0
+                    stretch = vis.LogStretch(**kwargs)
+                elif stretch == 'powerdist':  # args: a=1000.0
+                    stretch = vis.PowerDistStretch(**kwargs)
+                elif stretch == 'power':  # args: a
+                    stretch = vis.PowerStretch(**kwargs)
+                elif stretch == 'sinh':  # args: a=0.33
+                    stretch = vis.SinhStretch(**kwargs)
+                elif stretch == 'sqrt':
+                    stretch = vis.SqrtStretch()
+                elif stretch == 'square':
+                    stretch = vis.SquaredStretch()
+                else:
+                    raise ValueError('Unknown stretch:' + stretch)
         self.stretch = stretch
         if interval is None:
             if self.interval is None:
@@ -153,26 +134,35 @@ class FitsPlotter(tr.HasTraits):
         if isinstance(interval, str):
             kwargs = self.prepare_kwargs(self.interval_kws_defaults[interval],
                                          self.interval_kwargs, intervalkwargs)
-            if interval == 'minmax':
-                interval = vis.MinMaxInterval(**kwargs)
-            elif interval == 'manual':  # args: vmin, vmax
-                interval = vis.ManualInterval(**kwargs)
-            elif interval == 'percentile':  # args: percentile, n_samples
-                interval = vis.PercentileInterval(**kwargs)
-            elif interval == 'asymetric':  # args: lower_percentile, upper_percentile, n_samples
-                interval = vis.AsymmetricPercentileInterval(**kwargs)
-            elif interval == 'zscale':  # args: nsamples=1000, contrast=0.25, max_reject=0.5, min_npixels=5, krej=2.5, max_iterations=5
-                interval = vis.ZScaleInterval(**kwargs)
+            if self.data is None:
+                self.interval_kwargs = intervalkwargs
             else:
-                raise ValueError('Unknown interval:' + interval)
+                if interval == 'minmax':
+                    interval = vis.MinMaxInterval()
+                elif interval == 'manual':  # args: vmin, vmax
+                    interval = vis.ManualInterval(**kwargs)
+                elif interval == 'percentile':  # args: percentile, n_samples
+                    interval = vis.PercentileInterval(**kwargs)
+                elif interval == 'asymetric':  # args: lower_percentile, upper_percentile, n_samples
+                    interval = vis.AsymmetricPercentileInterval(**kwargs)
+                elif interval == 'zscale':  # args: nsamples=1000, contrast=0.25, max_reject=0.5, min_npixels=5, krej=2.5, max_iterations=5
+                    interval = vis.ZScaleInterval(**kwargs)
+                else:
+                    raise ValueError('Unknown interval:' + interval)
         self.interval = interval
         if self.img is not None:
             self.img.set_norm(vis.ImageNormalize(self.data, interval=self.interval, stretch=self.stretch, clip=True))
 
-    def get_normalization(self, stretch=None, interval=None,
-                          stretchkwargs={}, intervalkwargs={}):
-        self.set_normalization(stretch, interval, stretchkwargs, intervalkwargs)
+    def get_normalization(self):
+        if not isinstance(self.interval, vis.BaseInterval) or not isinstance(self.stretch, vis.BaseStretch):
+            self.set_normalization(self.stretch, self.interval)
         return vis.ImageNormalize(self.data, interval=self.interval, stretch=self.stretch, clip=True)
+
+    def copy_visualization_parameters(self, source):
+        self.cmap = source.cmap
+        self.alpha = source.alpha
+        self.set_normalization(source.stretch, source.interval)
+
 
     def prepare_kwargs(self, defaults, *specific):
         r = defaults.copy()
@@ -221,16 +211,22 @@ class FitsPlotter(tr.HasTraits):
             self.hdu = len(self._huds) - 1
 
         self.reset_ax()
-        self.plot_fits_file()
+        self.plot()
 
-    def invalidate(self):
-        print('Invalidate')
-        self.figure.canvas.draw_idle()
+    def invalidate(self, idle=True):
+        if idle:
+            self.figure.canvas.draw_idle()
+        else:
+            self.figure.canvas.draw()
 
     def setup_axies(self, ax):
+        fig = ax.get_figure()
+        fig.subplots_adjust(wspace=0)
+        ax.set_position([0.0, 0.0, 1.0, 1.0])
+
         ax.yaxis.set_major_locator(plt.NullLocator())
         ax.xaxis.set_major_locator(plt.NullLocator())
-        fig = ax.get_figure()
+
         fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
         fig.canvas.mpl_connect('figure_leave_event', lambda event: self.on_mouse_exit(event))
         fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_mouse_move(event))
@@ -270,14 +266,14 @@ class FitsPlotter(tr.HasTraits):
             self.ax.set_xlim(self.calc_new_limits(cur_xlim, full_xlim, event.xdata, self.zoom))
             self.ax.set_ylim(self.calc_new_limits(cur_ylim, full_ylim, event.ydata, self.zoom))
 
-            self.ax.figure.canvas.draw_idle()  # force re-draw the next time the GUI refreshes
+            self.invalidate()  # force re-draw the next time the GUI refreshes
 
     def setZoom(self, zoom:float, reset_pos:bool):
         if reset_pos:
             self.ax.set_xlim(self.full_xlim)
             self.ax.set_ylim(self.full_ylim)
-            self.ax.figure.canvas.draw_idle()
             self.zoom = 1.0
+            self.invalidate()
             return
         min_zoom = 0.1
         max_zoom = 50
@@ -295,9 +291,9 @@ class FitsPlotter(tr.HasTraits):
             y = cur_ylim[0]+((cur_ylim[1] - cur_ylim[0]) / 2)
             self.ax.set_xlim(self.calc_new_limits(cur_xlim, full_xlim, x, self.zoom))
             self.ax.set_ylim(self.calc_new_limits(cur_ylim, full_ylim, y, self.zoom))
-            self.ax.figure.canvas.draw_idle()
+            self.invalidate()
 
-    def moveToXYcordsWithZoom(self, x, y, zoom, fits):
+    def moveToXYcordsWithZoom(self, x, y, zoom, fits, idle=True):
         self.get_ax()
         full_xlim = fits.full_xlim
         full_ylim = fits.full_ylim
@@ -307,9 +303,9 @@ class FitsPlotter(tr.HasTraits):
         newylim = y - ysize, y + ysize
         self.ax.set_xlim(newxlim)
         self.ax.set_ylim(newylim)
-        self.ax.figure.canvas.draw_idle()
+        self.invalidate(idle)
 
-    def moveToXYcords(self, x, y):
+    def moveToXYcords(self, x, y, idle=True):
         cur_xlim = self.ax.get_xlim()
         cur_ylim = self.ax.get_ylim()
         xsize = (cur_xlim[1] - cur_xlim[0])
@@ -319,6 +315,7 @@ class FitsPlotter(tr.HasTraits):
         self.ax.set_xlim(newxlim)
         self.ax.set_ylim(newylim)
         self.ax.figure.canvas.draw_idle()
+        self.invalidate(idle)
 
     def center(self):
         cur_xlim = self.ax.get_xlim()
