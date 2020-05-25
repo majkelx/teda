@@ -35,6 +35,7 @@ class ZoomViewWidget(QWidget):
         self.fits_image.data = self.fits.data
         self.fits_image.copy_visualization_parameters(self.fits)
         self.fits_image.plot()
+        self.fits_image.disconnectEvents()
 
     def setXYofZoom(self, fits,x ,y ,zoom=1):
         self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits, idle=False)

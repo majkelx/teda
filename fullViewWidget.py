@@ -33,7 +33,6 @@ class FullViewWidget(QWidget):
 
         self.painterComponent = PainterComponent(self.fits_image)
         self.painterComponent.setCanvas(self.canvas)
-        self.painterComponent.add(10, 10, size = 100,type="rectangleMiniature",size2=100)
         self.painterComponent.paintAllShapes(self.ax)
         self.painterComponent.makeAllShapesDraggable(self.ax)
 
@@ -42,6 +41,7 @@ class FullViewWidget(QWidget):
         self.fits_image.data = self.fits.data
         self.fits_image.copy_visualization_parameters(self.fits)
         self.fits_image.plot()
+        self.fits_image.disconnectEvents()
 
         # self.fits_image.plot_fits_data(self.fits.data,self.fits_image.figure.axes[0],1.0, self.fits.get_normalization(),self.fits.cmap)
         # #self.fits_image.figure.axes[0].images = self.fits.figure.axes[0].images

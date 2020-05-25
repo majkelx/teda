@@ -111,6 +111,7 @@ class MainWindow(QMainWindow):
         self.cmaps.observe(lambda change: self.on_colormap_change(change))
         self.full_view_widget.painterComponent.observe(lambda change: self.onRectangleInWidgetMove(change), ['viewX', 'viewY'])
         self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
+        self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewX', 'viewY', 'viewW','viewH'])
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
@@ -290,6 +291,7 @@ class MainWindow(QMainWindow):
     def setZoomButton(self,zoom:float,reset:bool):
         if self.fits_image.ax!=None:
             self.fits_image.setZoom(zoom, reset)
+            self.full_view_widget.updateMiniatureShape(self.fits_image.viewX, self.fits_image.viewY, self.fits_image.viewW, self.fits_image.viewH)
 
     def changeAddCircleStatus(self):
         if self.BtnCircle.isChecked():
@@ -930,6 +932,12 @@ class MainWindow(QMainWindow):
         if display != '':
             self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
 
+    def onMouseZoomOnImage(self, change):
+        changed = False
+        if change.new is not None:
+            changed = True
+        if changed:
+            self.full_view_widget.updateMiniatureShape(self.fits_image.viewX,self.fits_image.viewY,self.fits_image.viewW,self.fits_image.viewH)
 
     def readWindowSettings(self):
         settings = QSettings()
