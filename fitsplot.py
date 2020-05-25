@@ -23,6 +23,11 @@ class FitsPlotter(tr.HasTraits):
     mouse_ydata = tr.Float(allow_none=True)
     fitsfile = tr.Unicode(allow_none=True)
 
+    viewX = tr.Float()
+    viewY = tr.Float()
+    viewW = tr.Float()
+    viewH = tr.Float()
+
     def __init__(self, fitsfile=None, hdu=0,
                  figure=None, ax=None,
                  interval=None, intervalkwargs=None,
@@ -300,6 +305,17 @@ class FitsPlotter(tr.HasTraits):
         ysize = ((full_ylim[1] - full_ylim[0]) / 2)/zoom
         newxlim = x - xsize, x + xsize
         newylim = y - ysize, y + ysize
+        self.ax.set_xlim(newxlim)
+        self.ax.set_ylim(newylim)
+        self.ax.figure.canvas.draw_idle()
+
+    def moveToXYcords(self, x, y):
+        cur_xlim = self.ax.get_xlim()
+        cur_ylim = self.ax.get_ylim()
+        xsize = (cur_xlim[1] - cur_xlim[0])
+        ysize = (cur_ylim[1] - cur_ylim[0])
+        newxlim = x, x + xsize
+        newylim = y, y + ysize
         self.ax.set_xlim(newxlim)
         self.ax.set_ylim(newylim)
         self.ax.figure.canvas.draw_idle()

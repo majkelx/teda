@@ -85,6 +85,11 @@ class MainWindow(QMainWindow):
         self.current_x_coord = 0
         self.current_y_coord = 0
 
+        self.fullWidgetXcord = 0
+        self.fullWidgetYcord = 0
+        self.centralWidgetcordX = 0
+        self.centralWidgetcordY = 0
+
         self.painterComponent = PainterComponent(self.fits_image)
         self.painterComponent.startMovingEvents(self.central_widget)
         self.createActions()
@@ -101,6 +106,8 @@ class MainWindow(QMainWindow):
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
         self.painterComponent.observe(lambda change: self.onCenterCircleRadiusChange(change), ['cradius'])
         self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
+        self.full_view_widget.painterComponent.observe(lambda change: self.onRectangleInWidgetMove(change), ['viewX', 'viewY'])
+        self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
@@ -881,6 +888,28 @@ class MainWindow(QMainWindow):
     def onCenterCircleRadiusChange(self, change):
         self.radial_profile_widget.set_radius(self.painterComponent.cradius)
         self.radial_profile_iraf_widget.set_radius(self.painterComponent.cradius)
+
+    def onRectangleInWidgetMove(self, change):
+        changed = False
+        if change.new is not None:
+            changed = True
+        if change.name == 'viewX':
+            self.fullWidgetXcord = change.new
+        elif change.name == 'viewY':
+            self.fullWidgetYcord = change.new
+        if changed:
+            self.fits_image.moveToXYcords(self.fullWidgetXcord,self.fullWidgetYcord)
+
+    def movingCentralWidget(self,change):
+        changed = False
+        if change.new is not None:
+            changed = True
+        if change.name == 'movingViewX':
+            self.centralWidgetcordX = change.new
+        elif change.name == 'movingViewY':
+            self.centralWidgetcordY = change.new
+        if changed:
+            self.full_view_widget.updateMiniatureShapeXYonly(self.centralWidgetcordX, self.centralWidgetcordY)
 
     def onMouseMoveOnImage(self, change):
         display = ''
