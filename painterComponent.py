@@ -96,7 +96,6 @@ class PainterComponent(HasTraits):
             self.drs.append(dr)
         for shape in self.rectangleMiniature:
             shap=shape.paintShape(axes)
-            self.listOfPaintedShapes.append(shap)
             dr = DraggablePoint(shap, shape, self)
             dr.connect()
             self.drs.append(dr)
@@ -186,7 +185,7 @@ class PainterComponent(HasTraits):
         if not self.eventInShapeFlag:
             if self.startpainting == 'true':
                 self.paintLine(self.tempCanvas,self.clicked['x'],event.xdata,self.clicked['y'],event.ydata)
-            self.tempCanvas.draw_idle()
+                self.tempCanvas.draw_idle()
 
 
     def onAddCircleRelease(self, event):
@@ -265,6 +264,18 @@ class PainterComponent(HasTraits):
             if contains:
                 inShapeClicked = True
         return inShapeClicked
+
+    def fillListOfPaintedShapes(self):
+        self.listOfPaintedShapes = []
+        for shape in self.shapes:
+            shap = shape.getShape()
+            self.listOfPaintedShapes.append(shap)
+        for shape in self.centerCircle:
+            shap = shape.getShape()
+            self.listOfPaintedShapes.append(shap)
+        for shape in self.rectangleMiniature:
+            shap = shape.getShape()
+            self.listOfPaintedShapes.append(shap)
 
     def centerRadialProfile(self, x, y, r):
         #self.tempCanvas w tym jest aktualny canvas
@@ -403,7 +414,7 @@ class DraggablePoint:
                 self.paintComp.cradius = self.painterElement.size
 
         self.point.figure.canvas.draw_idle()
-        self.paintComp.paintAllShapes(axes)
+        self.paintComp.fillListOfPaintedShapes()
         self.movingStart = False
 
     def disconnect(self):
