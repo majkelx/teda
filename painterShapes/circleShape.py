@@ -34,9 +34,12 @@ class CircleShape(object):
         return self.circle
 
     def refreshShape(self,axes):
-        self.circle.remove()
-        self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
-        axes.add_patch(self.circle)
+        #self.circle.remove()
+        #self.circle = plt.Circle((self.x, self.y), self.size, color=self.color, fill=False)
+        #axes.add_patch(self.circle)
+        self.circle.set_center((self.x, self.y))
+        self.circle.set_color(self.color)
+        self.circle.set_radius(self.size)
         return self.circle
 
     def paintAdditional(self):
@@ -63,4 +66,7 @@ class CircleShape(object):
     def deselect(self):
         self.selected = False
         self.color = self.originColor
+
+    def getShape(self):
+        return self.circle
 
