@@ -1,29 +1,29 @@
 from traitlets import HasTraits, Int, Float
 
 
-class SliderValue(HasTraits):
-    stretch_asinh_a = Int(1)
-    stretch_contrastbias_contrast = Int(20)
-    stretch_contrastbias_bias = Int(10)
-    stretch_linear_slope = Int(10)
-    stretch_linear_intercept = Int(0)
-    stretch_log_a = Int()
-    stretch_powerdist_a = Int()
-    stretch_power_a = Int()
-    stretch_sinh_a = Int()
+class ScalesModel(HasTraits):
+    stretch_asinh_a = Float(0.1)
+    stretch_contrastbias_contrast = Float(2.0)
+    stretch_contrastbias_bias = Float(1.0)
+    stretch_linear_slope = Float(1.0)
+    stretch_linear_intercept = Float(0.0)
+    stretch_log_a = Float(1000.0)
+    stretch_powerdist_a = Float(1000.0)
+    stretch_power_a = Float(1.0)
+    stretch_sinh_a = Float(0.33)
 
-    interval_manual_vmin = Int()
-    interval_manual_vmax = Int()
-    interval_percentile_percentile = Int()
-    interval_percentile_nsamples = Int()
-    interval_asymetric_lower_percentile = Int()
-    interval_asymetric_upper_percentile = Int()
-    interval_asymetric_nsamples = Int()
-    interval_zscale_nsamples = Int(100)
-    interval_zscale_contrast = Int(10)
-    interval_zscale_maxreject = Int(5)
+    interval_manual_vmin = Float(0.0)
+    interval_manual_vmax = Int(30000)
+    interval_percentile_percentile = Float(0.1)
+    interval_percentile_nsamples = Int(1000)
+    interval_asymetric_lower_percentile = Float(0.1)
+    interval_asymetric_upper_percentile = Float(0.2)
+    interval_asymetric_nsamples = Int(1000)
+    interval_zscale_nsamples = Int(1000)
+    interval_zscale_contrast = Float(0.25)
+    interval_zscale_maxreject = Float(0.5)
     interval_zscale_minpixels = Int(5)
-    interval_zscale_krej = Int(25)
+    interval_zscale_krej = Float(2.5)
     interval_zscale_maxiterations = Int(5)
 
     def __init__(self):
@@ -51,19 +51,20 @@ class SliderValue(HasTraits):
                                        'interval_zscale_maxiterations'])
 
         self.dictionary = {
+            'sqrt': {},
+            'square': {},
+            'minmax': {},
+            'histogram': {},
             'asinh': {'a': self.stretch_asinh_a},
             'contrastbias': {'contrast': self.stretch_contrastbias_contrast,
                              'bias': self.stretch_contrastbias_bias},
-            'histogram': {},
             'linear': {'slope': self.stretch_linear_slope,
                        'intercept': self.stretch_linear_intercept},
             'log': {'a': self.stretch_log_a},
             'powerdist': {'a': self.stretch_powerdist_a},
             'power': {'a': self.stretch_power_a},
             'sinh': {'a': self.stretch_sinh_a},
-            'sqrt': {},
-            'square': {},
-            'minmax': {},
+
             'manual': {'vmin': self.interval_manual_vmin,
                        'vmax': self.interval_manual_vmax},
             'percentile': {'percentile': self.interval_percentile_percentile,
@@ -80,37 +81,35 @@ class SliderValue(HasTraits):
         }
 
     def func(self, change):
-            print("SliderValue func")
-            print(change['old'])
-            print(change['new'])
             self.update(self.dictionary, change.name, change.new)
 
-    def checkVars(self):
-        print("-----Check_Vars-----")
-        print(self.stretch_asinh_a)
-        print(self.interval_zscale_maxiterations)
-        print(self.interval_zscale_nsamples)
-        print(self.interval_zscale_contrast)
-        print("--------END---------")
 
     def update(self, kw, args, value):
-        print("Update")
         params = args.split("_")
-        print(params)
-        if params[1] == 'percentile' or params[1] == 'asymetric':
-            if params[2] == 'nsamples':
+        if params[1] == 'percentile':
+            if params[2] != 'nsamples':
+                kw[params[1]][params[2]] = value
+            else:
+                kw[params[1]]['n_samples'] = value
+        elif params[1] == 'asymetric':
+            if params[2] == 'upper':
+                kw[params[1]]['upper_percentile'] = value
+            elif params[2] == 'lower':
+                kw[params[1]]['lower_percentile'] = value
+            elif params[2] == 'nsamples':
                 kw[params[1]]['n_samples'] = value
             else:
                 kw[params[1]][params[2]] = value
         elif params[1] == 'zscale':
             if params[2] == 'maxreject':
                 kw[params[1]]['max_reject'] = value
-            if params[2] == 'minpixels':
-                kw[params[1]]['mmin_npixels'] = value
-            if params[2] == 'maxiterations':
+            elif params[2] == 'minpixels':
+                kw[params[1]]['min_npixels'] = value
+            elif params[2] == 'maxiterations':
                 kw[params[1]]['max_iterations'] = value
             else:
                 kw[params[1]][params[2]] = value
         else:
             kw[params[1]][params[2]] = value
+
 
