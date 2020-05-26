@@ -48,11 +48,21 @@ class FullViewWidget(QWidget):
         # self.fig.canvas.draw_idle()
 
     def updateMiniatureShape(self,x,y,size,size2):
-        self.painterComponent.add(x, y, size=size, type="rectangleMiniature", size2=size2)
-        self.painterComponent.paintAllShapes(self.ax)
-        self.painterComponent.makeAllShapesDraggable(self.ax)
+        if self.painterComponent.rectangleMiniature.__len__()==0:
+            self.painterComponent.add(x, y, size=size, type="rectangleMiniature", size2=size2)
+            self.painterComponent.paintAllShapes(self.ax)
+        else:
+            self.painterComponent.rectangleMiniature[0].repaintShape(self.ax, x, y, size, self.painterComponent.rectangleMiniature[0].color, size2)
+            self.painterComponent.tempCanvas.draw_idle()
+        #self.painterComponent.paintAllShapes(self.ax)
+        #self.painterComponent.makeAllShapesDraggable(self.ax)
 
     def updateMiniatureShapeXYonly(self,x,y):
-        self.painterComponent.rectangleMiniature[0].repaintShapeXY(self.ax, x, y)
-        self.painterComponent.paintAllShapes(self.ax)
-        self.painterComponent.makeAllShapesDraggable(self.ax)
+        if self.painterComponent.rectangleMiniature.__len__() == 0:
+            self.painterComponent.add(x, y, size=self.ax.viewLim.width, type="rectangleMiniature", size2=self.ax.viewLim.height)
+            self.painterComponent.paintAllShapes(self.ax)
+        else:
+            self.painterComponent.rectangleMiniature[0].repaintShapeXY(self.ax, x, y)
+            self.painterComponent.tempCanvas.draw_idle()
+        #self.painterComponent.paintAllShapes(self.ax)
+        #self.painterComponent.makeAllShapesDraggable(self.ax)
