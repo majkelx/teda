@@ -36,7 +36,7 @@ class PainterComponent(HasTraits):
         self.fits_plotter = fits_plotter
 
 
-    def add(self, x, y, size = 10,type="circle",size2=0):
+    def add(self, x, y, size = 15,type="circle",size2=0):
         if type == "circle":
             c = CircleShape(x, y, size)
             self.shapes.append(c)
