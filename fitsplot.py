@@ -205,7 +205,7 @@ class FitsPlotter(tr.HasTraits):
         if relative:
             self.hdu = self.hdu + val
         else:
-            self.hdu = val;
+            self.hdu = val
         if self.hdu < 0:
             self.hdu = 0
         elif self.hdu > len(self._huds) - 1:

@@ -51,6 +51,8 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
                                QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem,
                                QComboBox, QMenu)
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+from fitsplot import (FitsPlotter)
+from scalesModel import (ScalesModel)
 from coordinates import CoordinatesModel
 from fitsplot_fitsfile import FitsPlotterFitsFile
 from fitsopen import (FitsOpen)
@@ -58,7 +60,7 @@ from painterComponent import PainterComponent
 from matplotlib.figure import Figure
 from math import *
 from radialprofile import RadialProfileWidget
-from radialprofileIRAF import  IRAFRadialProfileWidget
+from radialprofileIRAF import IRAFRadialProfileWidget
 from fullViewWidget import FullViewWidget
 from zoomViewWidget import ZoomViewWidget
 from radialprofileIRAF import IRAFRadialProfileWidget
@@ -76,6 +78,8 @@ class MainWindow(QMainWindow):
         self.cursor_coords = CoordinatesModel()
         fig = Figure(figsize=(14, 10))
         fig.tight_layout()
+        self.scalesModel = ScalesModel()
+        self.fits_image = FitsPlotter(figure=fig)
         fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
 
         self.fits_image = FitsPlotterFitsFile(figure=fig, cmap=self.cmaps.get_active_color_map())
@@ -115,6 +119,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
+        self.writeSlidersValues()
         super().closeEvent(event)
 
     def print_(self):
@@ -160,16 +165,18 @@ class MainWindow(QMainWindow):
         self.filename = fileName
         self.fits_image.set_file(self.filename)
         self.fits_image.plot()
-        self.fits_image.invalidate()
 
         self.cursor_coords.set_wcs_from_fits(self.fits_image.header)
 
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
-        self.updateFitsInWidgets()
+        self.adjustSliders()
 
         self.headerWidget.setHeader()
 
+    def adjustSliders(self):
+        self.getSliders(0, 0)
+        self.readSlidersValues()
 
     def undo(self):
         document = self.textEdit.document()
@@ -405,22 +412,22 @@ class MainWindow(QMainWindow):
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
-        asinhSlider = self.createAsinhParamsSliders()
-        contrastbiasSliders = self.createContrastbiasParamsSliders()
-        histogram = QLabel("histogram") #do zmiany
+        asinh = self.createAsinhParamsSliders()
+        contrastbias = self.createContrastbiasParamsSliders()
+        histogram = QLabel("")
         linear = self.createLinearSliders()
         log = self.createLogSliders()
         powerdist = self.createPowerdistSliders()
         power = self.createPowerSliders()
         sinh = self.createSinhSliders()
-        sqrt = QLabel("sqrt") #do zmiany
-        square = QLabel("square") #do zmiany
-        self.stretchStackedLayout.addWidget(asinhSlider)
-        self.stretchStackedLayout.addWidget(contrastbiasSliders)
+        sqrt = QLabel("")
+        square = QLabel("")
+        self.stretchStackedLayout.addWidget(powerdist)
+        self.stretchStackedLayout.addWidget(asinh)
+        self.stretchStackedLayout.addWidget(contrastbias)
         self.stretchStackedLayout.addWidget(histogram)
         self.stretchStackedLayout.addWidget(linear)
         self.stretchStackedLayout.addWidget(log)
-        self.stretchStackedLayout.addWidget(powerdist)
         self.stretchStackedLayout.addWidget(power)
         self.stretchStackedLayout.addWidget(sinh)
         self.stretchStackedLayout.addWidget(sqrt)
@@ -435,36 +442,34 @@ class MainWindow(QMainWindow):
         percentile = self.createPercentileParamsSliders()
         asymetric = self.createAsymetricParamsSliders()
         zscale = self.createZscaleParamsSliders()
-        self.intervalStackedLayout.addWidget(QLabel("minmax")) #do zmiany
+        self.intervalStackedLayout.addWidget(zscale)
+        self.intervalStackedLayout.addWidget(QLabel(""))
         self.intervalStackedLayout.addWidget(manual)
         self.intervalStackedLayout.addWidget(percentile)
         self.intervalStackedLayout.addWidget(asymetric)
-        self.intervalStackedLayout.addWidget(zscale)
 
         return self.intervalStackedLayout
 
     def createManualParamsSliders(self):
         widget = QWidget()
         layout = QGridLayout()
-        vminSlider = QSlider(Qt.Horizontal)
-        vminSlider.setMinimum(0)
-        vminSlider.setMaximum(10000)
+        self.manual_vmin = QSlider(Qt.Horizontal)
+        self.manual_vmin.setMinimum(0)
+        self.manual_vmin.setMaximum(10000)
 
-        vmaxSlider = QSlider(Qt.Horizontal)
-        vmaxSlider.setMinimum(10000)
-        vmaxSlider.setMaximum(50000)
+        self.manual_vmax = QSlider(Qt.Horizontal)
+        self.manual_vmax.setMinimum(10000)
+        self.manual_vmax.setMaximum(50000)
 
-        vminSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                          {'vmin': vminSlider.value()/10,
-                                                                          'vmax': vmaxSlider.value()}))
-        vmaxSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                          {'vmin': vminSlider.value(),
-                                                                          'vmax': vmaxSlider.value()}))
+        self.manual_vmin.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_manual_vmin',
+                                                                                       self.manual_vmin.value() / 10))
+        self.manual_vmax.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_manual_vmax',
+                                                                                       self.manual_vmax.value()))
 
         layout.addWidget(QLabel('vmin'), 0, 0)
-        layout.addWidget(vminSlider, 0, 1)
+        layout.addWidget(self.manual_vmin, 0, 1)
         layout.addWidget(QLabel('vmax'), 1, 0)
-        layout.addWidget(vmaxSlider, 1, 1)
+        layout.addWidget(self.manual_vmax, 1, 1)
         widget.setLayout(layout)
 
         return widget
@@ -472,25 +477,23 @@ class MainWindow(QMainWindow):
     def createPercentileParamsSliders(self):
         widget = QWidget()
         layout = QGridLayout()
-        percentileSlider = QSlider(Qt.Horizontal)
-        percentileSlider.setMinimum(10)
-        percentileSlider.setMaximum(100)
+        self.percentile_percentile = QSlider(Qt.Horizontal)
+        self.percentile_percentile.setMinimum(1)
+        self.percentile_percentile.setMaximum(10)
 
-        samplesSlider = QSlider(Qt.Horizontal)
-        samplesSlider.setMinimum(100)
-        samplesSlider.setMaximum(2000)
+        self.percentile_nsamples = QSlider(Qt.Horizontal)
+        self.percentile_nsamples.setMinimum(500)
+        self.percentile_nsamples.setMaximum(1500)
 
-        percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                {'percentile': percentileSlider.value()/100,
-                                                                                'n_samples': samplesSlider.value()}))
-        samplesSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                             {'percentile': percentileSlider.value()/100,
-                                                                             'n_samples': samplesSlider.value()}))
+        self.percentile_percentile.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_percentile_percentile',
+                                                                                                 self.percentile_percentile.value() / 10))
+        self.percentile_nsamples.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_percentile_nsamples',
+                                                                                               self.percentile_nsamples.value()))
 
         layout.addWidget(QLabel('percentile'), 0, 0)
-        layout.addWidget(percentileSlider, 0, 1)
+        layout.addWidget(self.percentile_percentile, 0, 1)
         layout.addWidget(QLabel('samples'), 1, 0)
-        layout.addWidget(samplesSlider, 1, 1)
+        layout.addWidget(self.percentile_nsamples, 1, 1)
         widget.setLayout(layout)
 
         return widget
@@ -499,38 +502,31 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        l_percentileSlider = QSlider(Qt.Horizontal)
-        l_percentileSlider.setMinimum(10)
-        l_percentileSlider.setMaximum(100)
+        self.asymetric_lpercentile = QSlider(Qt.Horizontal)
+        self.asymetric_lpercentile.setMinimum(1)
+        self.asymetric_lpercentile.setMaximum(10)
 
-        u_percentileSlider = QSlider(Qt.Horizontal)
-        u_percentileSlider.setMinimum(20)
-        u_percentileSlider.setMaximum(100)
+        self.asymetric_upercentile = QSlider(Qt.Horizontal)
+        self.asymetric_upercentile.setMinimum(2)
+        self.asymetric_upercentile.setMaximum(20)
 
-        samplesSlider = QSlider(Qt.Horizontal)
-        samplesSlider.setMinimum(100)
-        samplesSlider.setMaximum(2000)
-        #connects
+        self.asymetric_nsamples = QSlider(Qt.Horizontal)
+        self.asymetric_nsamples.setMinimum(500)
+        self.asymetric_nsamples.setMaximum(1500)
 
-        l_percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                  {'lower_percentile': l_percentileSlider.value()/100,
-                                                                                  'upper_percentile': u_percentileSlider.value()/100,
-                                                                                  'n_samples': samplesSlider.value()}))
-        u_percentileSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                  {'lower_percentile': l_percentileSlider.value()/100,
-                                                                                  'upper_percentile': u_percentileSlider.value()/100,
-                                                                                  'n_samples': samplesSlider.value()}))
-        samplesSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                             {'lower_percentile': l_percentileSlider.value()/100,
-                                                                                  'upper_percentile': u_percentileSlider.value()/100,
-                                                                                  'n_samples': samplesSlider.value()}))
+        self.asymetric_lpercentile.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_asymetric_lower_percentile',
+                                                                                                 self.asymetric_lpercentile.value() / 10))
+        self.asymetric_upercentile.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_asymetric_upper_percentile',
+                                                                                                 self.asymetric_upercentile.value() / 10))
+        self.asymetric_nsamples.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_asymetric_nsamples',
+                                                                                              self.asymetric_nsamples.value()))
 
         layout.addWidget(QLabel("l_percentile"), 0, 0)
-        layout.addWidget(l_percentileSlider, 0, 1)
+        layout.addWidget(self.asymetric_lpercentile, 0, 1)
         layout.addWidget(QLabel("u_percentile"), 1, 0)
-        layout.addWidget(u_percentileSlider, 1, 1)
+        layout.addWidget(self.asymetric_upercentile, 1, 1)
         layout.addWidget(QLabel("samples"), 2, 0)
-        layout.addWidget(samplesSlider, 2, 1)
+        layout.addWidget(self.asymetric_nsamples, 2, 1)
         widget.setLayout(layout)
 
         return widget
@@ -539,91 +535,55 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        samplesSlider = QSlider(Qt.Horizontal)
-        samplesSlider.setMinimum(100)
-        samplesSlider.setMaximum(2000)
+        self.zscale_nsamples = QSlider(Qt.Horizontal)
+        self.zscale_nsamples.setMinimum(500)
+        self.zscale_nsamples.setMaximum(1500)
 
-        contrastSlider = QSlider(Qt.Horizontal)
-        contrastSlider.setMinimum(1)
-        contrastSlider.setMaximum(100)
+        self.zscale_contrast = QSlider(Qt.Horizontal)
+        self.zscale_contrast.setMinimum(10)
+        self.zscale_contrast.setMaximum(50)
 
-        m_rejectSlider = QSlider(Qt.Horizontal)
-        m_rejectSlider.setMinimum(1)
-        m_rejectSlider.setMaximum(100)
+        self.zscale_mreject = QSlider(Qt.Horizontal)
+        self.zscale_mreject.setMinimum(1)
+        self.zscale_mreject.setMaximum(20)
 
-        min_pixelsSlider = QSlider(Qt.Horizontal)
-        min_pixelsSlider.setMinimum(1)
-        min_pixelsSlider.setMaximum(10)
+        self.zscale_minpixels = QSlider(Qt.Horizontal)
+        self.zscale_minpixels.setMinimum(1)
+        self.zscale_minpixels.setMaximum(10)
 
-        krejSlider = QSlider(Qt.Horizontal)
-        krejSlider.setMinimum(10)
-        krejSlider.setMaximum(50)
+        self.zscale_krej = QSlider(Qt.Horizontal)
+        self.zscale_krej.setMinimum(10)
+        self.zscale_krej.setMaximum(50)
 
-        m_iterationsSlider = QSlider(Qt.Horizontal)
-        m_iterationsSlider.setMinimum(1)
-        m_iterationsSlider.setMaximum(10)
+        self.zscale_miterations = QSlider(Qt.Horizontal)
+        self.zscale_miterations.setMinimum(1)
+        self.zscale_miterations.setMaximum(10)
 
-        samplesSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                             {'nsamples': samplesSlider.value(),
-                                                                             'contrast': contrastSlider.value()/100,
-                                                                             'max_reject': m_rejectSlider.value()/100,
-                                                                             'min_npixels': min_pixelsSlider.value(),
-                                                                             'krej': krejSlider.value()/10,
-                                                                             'max_iterations': m_iterationsSlider.value()}
-                                                                             ))
-        contrastSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                              {'nsamples': samplesSlider.value(),
-                                                                             'contrast': contrastSlider.value() / 100,
-                                                                             'max_reject': m_rejectSlider.value() / 100,
-                                                                             'min_npixels': min_pixelsSlider.value(),
-                                                                             'krej': krejSlider.value() / 10,
-                                                                             'max_iterations': m_iterationsSlider.value()}
-                                                                              ))
-        m_rejectSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                              {'nsamples': samplesSlider.value(),
-                                                                             'contrast': contrastSlider.value() / 100,
-                                                                             'max_reject': m_rejectSlider.value() / 100,
-                                                                             'min_npixels': min_pixelsSlider.value(),
-                                                                             'krej': krejSlider.value() / 10,
-                                                                             'max_iterations': m_iterationsSlider.value()}
-                                                                              ))
-        min_pixelsSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                {'nsamples': samplesSlider.value(),
-                                                                             'contrast': contrastSlider.value()/100,
-                                                                             'max_reject': m_rejectSlider.value()/100,
-                                                                             'min_npixels': min_pixelsSlider.value(),
-                                                                             'krej': krejSlider.value()/10,
-                                                                             'max_iterations': m_iterationsSlider.value()}
-                                                                                ))
-        krejSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                          {'nsamples': samplesSlider.value(),
-                                                                             'contrast': contrastSlider.value() / 100,
-                                                                             'max_reject': m_rejectSlider.value() / 100,
-                                                                             'min_npixels': min_pixelsSlider.value(),
-                                                                             'krej': krejSlider.value() / 10,
-                                                                             'max_iterations': m_iterationsSlider.value()}
-                                                                          ))
-        m_iterationsSlider.valueChanged.connect(lambda changed: self.changeParams(self.stretch_dict,
-                                                                                  {'nsamples': samplesSlider.value(),
-                                                                             'contrast': contrastSlider.value() / 100,
-                                                                             'max_reject': m_rejectSlider.value() / 100,
-                                                                             'min_npixels': min_pixelsSlider.value(),
-                                                                             'krej': krejSlider.value() / 10,
-                                                                             'max_iterations': m_iterationsSlider.value()}
-                                                                                  ))
+        self.zscale_nsamples.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_nsamples',
+                                                                                           self.zscale_nsamples.value()))
+        self.zscale_contrast.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_contrast',
+                                                                                           self.zscale_contrast.value() / 100))
+        self.zscale_mreject.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_maxreject',
+                                                                                          self.zscale_mreject.value() / 10))
+        self.zscale_minpixels.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_minpixels',
+                                                                                            self.zscale_minpixels.value()))
+        self.zscale_krej.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_krej',
+                                                                                       self.zscale_krej.value() / 10))
+        self.zscale_miterations.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_maxiterations',
+                                                                                              self.zscale_miterations.value()))
 
         layout.addWidget(QLabel("samples"), 0, 0)
-        layout.addWidget(samplesSlider, 0, 1)
+        layout.addWidget(self.zscale_nsamples, 0, 1)
         layout.addWidget(QLabel("contrast"), 1, 0)
-        layout.addWidget(contrastSlider, 1, 1)
+        layout.addWidget(self.zscale_contrast, 1, 1)
         layout.addWidget(QLabel("max reject"), 2, 0)
-        layout.addWidget(m_rejectSlider, 2, 1)
+        layout.addWidget(self.zscale_mreject, 2, 1)
         layout.addWidget(QLabel("pixels"), 3, 0)
-        layout.addWidget(min_pixelsSlider, 3, 1)
+        layout.addWidget(self.zscale_minpixels, 3, 1)
         layout.addWidget(QLabel("krej"), 4, 0)
-        layout.addWidget(krejSlider, 4, 1)
+        layout.addWidget(self.zscale_krej, 4, 1)
         layout.addWidget(QLabel("m_iterations"), 5, 0)
-        layout.addWidget(m_iterationsSlider, 5, 1)
+        layout.addWidget(self.zscale_miterations, 5, 1)
 
         widget.setLayout(layout)
 
@@ -633,12 +593,12 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout()
 
         self.stretch_combobox = QComboBox()
-        self.stretch_combobox.addItems(['asinh', 'contrastbias', 'histogram', 'linear',
-                                        'log', 'powerdist', 'power', 'sinh', 'sqrt', 'square'])
+        self.stretch_combobox.addItems(['powerdist', 'asinh', 'contrastbias', 'histogram', 'linear',
+                                        'log', 'power', 'sinh', 'sqrt', 'square'])
 
 
         self.interval_combobox = QComboBox()
-        self.interval_combobox.addItems(['minmax', 'manual', 'percentile', 'asymetric', 'zscale'])
+        self.interval_combobox.addItems(['zscale','minmax', 'manual', 'percentile', 'asymetric'])
 
         self.color_combobox = QComboBox()
         self.color_combobox.addItems(self.cmaps.colormaps.keys())
@@ -655,31 +615,42 @@ class MainWindow(QMainWindow):
     def getSliders(self, stretch_index, interval_index):
         self.stretchStackedLayout.setCurrentIndex(stretch_index)
         self.intervalStackedLayout.setCurrentIndex(interval_index)
-        self.plotNewFitsImage(self.stretch_combobox.currentText(), self.interval_combobox.currentText())
+        self.fitsNormalization(self.stretch_combobox.currentText(), self.interval_combobox.currentText())
 
-    def plotNewFitsImage(self, stretch, interval):
-        if self.fits_image == None:
-            self.fits_image = FitsPlotter(fitsfile=fileName, stretch=stretch, interval=interval)
-            self.fits_image.plot()
-        else:
-            self.fits_image.set_normalization(stretch=stretch, interval=interval)
+    def fitsNormalization(self, stretch, interval):
+        self.fits_image.set_normalization(stretch=stretch,
+                                          interval=interval,
+                                          stretchkwargs=self.scalesModel.dictionary[stretch],
+                                          intervalkwargs=self.scalesModel.dictionary[interval])
+
         self.fits_image.invalidate()
         self.updateFitsInWidgets()
-        # self.central_widget = FigureCanvas(self.fits_image.figure)
-        # self.setCentralWidget(self.central_widget)
+
+    def changeSlidersParams(self, param, value):
+
+        setattr(self.scalesModel, param, value)
+
+        current_stretch = self.stretch_combobox.currentText()
+        current_interval = self.interval_combobox.currentText()
+
+        print(self.scalesModel.dictionary[current_stretch])
+        print(self.scalesModel.dictionary[current_interval])
+        print("------------------")
+        print(self.scalesModel.dictionary)
+
+        self.fitsNormalization(current_stretch, current_interval)
 
     def createAsinhParamsSliders(self):
         widget = QWidget()
         layout = QGridLayout()
 
-        aSlider = QSlider(Qt.Horizontal)
-        aSlider.setMinimum(1)
-        aSlider.setMaximum(10)
+        self.asinh_a = QSlider(Qt.Horizontal)
+        self.asinh_a.setMinimum(1)
+        self.asinh_a.setMaximum(10)
 
-        aSlider.valueChanged.connect(lambda changed: self.changeParams({'a': aSlider.value() / 10}, self.interval_dict))
-
+        self.asinh_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_asinh_a', self.asinh_a.value() / 10))
         layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(aSlider, 0, 1)
+        layout.addWidget(self.asinh_a , 0, 1)
         widget.setLayout(layout)
 
         return widget
@@ -689,29 +660,22 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        contrastSlider = QSlider(Qt.Horizontal)
-        contrastSlider.setMinimum(1)
-        contrastSlider.setMaximum(30)
+        self.contrast_contrast = QSlider(Qt.Horizontal)
+        self.contrast_contrast.setMinimum(1)
+        self.contrast_contrast.setMaximum(30)
 
-        biasSlider = QSlider(Qt.Horizontal)
-        biasSlider.setMinimum(1)
-        biasSlider.setMaximum(30)
+        self.contrast_bias = QSlider(Qt.Horizontal)
+        self.contrast_bias.setMinimum(1)
+        self.contrast_bias.setMaximum(20)
 
-        contrastSlider.valueChanged.connect(
-            lambda checked: self.changeParams(
-                {'contrast': contrastSlider.value()/10,
-                 'bias': biasSlider.value()/10},
-                self.interval_dict))
-        biasSlider.valueChanged.connect(
-            lambda checked: self.changeParams(
-                {'contrast': contrastSlider.value()/10,
-                 'bias': biasSlider.value()/10},
-                self.interval_dict))
-
+        self.contrast_contrast.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_contrastbias_contrast',
+                                                                                             self.contrast_contrast.value() / 10))
+        self.contrast_bias.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_contrastbias_bias',
+                                                                                         self.contrast_bias.value() / 10))
         layout.addWidget(QLabel('contrast'), 0, 0)
-        layout.addWidget(contrastSlider, 0, 1)
+        layout.addWidget(self.contrast_contrast, 0, 1)
         layout.addWidget(QLabel('bias'), 1, 0)
-        layout.addWidget(biasSlider, 1, 1)
+        layout.addWidget(self.contrast_bias, 1, 1)
 
         widget.setLayout(layout)
 
@@ -721,30 +685,24 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        slopeSlider = QSlider(Qt.Horizontal)
-        slopeSlider.setMinimum(1)
-        slopeSlider.setMaximum(10)
+        self.linear_slope = QSlider(Qt.Horizontal)
+        self.linear_slope.setMinimum(1)
+        self.linear_slope.setMaximum(20)
 
-        interceptSlider = QSlider(Qt.Horizontal)
-        interceptSlider.setMinimum(0)
-        interceptSlider.setMaximum(10)
+        self.linear_intercept = QSlider(Qt.Horizontal)
+        self.linear_intercept.setMinimum(0)
+        self.linear_intercept.setMaximum(20)
 
         #connects
-        slopeSlider.valueChanged.connect(
-            lambda changed: self.changeParams(
-                {'slope': slopeSlider.value()/10,
-                 'intercept': interceptSlider.value()/10},
-                self.interval_dict))
-        interceptSlider.valueChanged.connect(
-            lambda changed: self.changeParams(
-                {'slope': slopeSlider.value()/10,
-                 'intercept': interceptSlider.value()/10},
-                self.interval_dict))
+        self.linear_slope.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_linear_slope',
+                                                                                        self.linear_slope.value() / 10))
+        self.linear_intercept.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_linear_intercept',
+                                                                                            self.linear_intercept.value() / 10))
 
         layout.addWidget(QLabel("slope"), 0, 0)
-        layout.addWidget(slopeSlider, 0, 1)
+        layout.addWidget(self.linear_slope, 0, 1)
         layout.addWidget(QLabel("intercept"), 1, 0)
-        layout.addWidget(interceptSlider, 1, 1)
+        layout.addWidget(self.linear_intercept, 1, 1)
 
         widget.setLayout(layout)
 
@@ -754,14 +712,14 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        aSlider = QSlider(Qt.Horizontal)
-        aSlider.setMinimum(10)
-        aSlider.setMaximum(20000)
-        aSlider.valueChanged.connect(lambda changed: self.changeParams({'a': aSlider.value() / 10},
-                                                                       self.interval_dict))
+        self.log_a = QSlider(Qt.Horizontal)
+        self.log_a.setMinimum(5000)
+        self.log_a.setMaximum(15000)
+        self.log_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_log_a',
+                                                                                 self.log_a.value() / 10))
 
         layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(aSlider, 0, 1)
+        layout.addWidget(self.log_a, 0, 1)
         widget.setLayout(layout)
 
         return widget
@@ -770,14 +728,14 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        aSlider = QSlider(Qt.Horizontal)
-        aSlider.setMinimum(10)
-        aSlider.setMaximum(20000)
-        aSlider.valueChanged.connect(lambda changed: self.changeParams({'a': aSlider.value() / 10},
-                                                                       self.interval_dict))
+        self.powerdist_a = QSlider(Qt.Horizontal)
+        self.powerdist_a.setMinimum(5000)
+        self.powerdist_a.setMaximum(15000)
+        self.powerdist_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_powerdist_a',
+                                                                                       self.powerdist_a.value() / 10))
 
         layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(aSlider, 0, 1)
+        layout.addWidget(self.powerdist_a, 0, 1)
         widget.setLayout(layout)
         return widget
 
@@ -785,16 +743,15 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        aSlider = QSlider(Qt.Horizontal)
-        aSlider.setMinimum(1)
-        aSlider.setMaximum(10)
+        self.power_a = QSlider(Qt.Horizontal)
+        self.power_a.setMinimum(1)
+        self.power_a.setMaximum(20)
 
-        # connects
-        aSlider.valueChanged.connect(lambda changed: self.changeParams({'a': aSlider.value() / 10},
-                                                                       self.interval_dict))
+        self.power_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_power_a',
+                                                                                   self.power_a.value() / 10))
 
         layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(aSlider, 0, 1)
+        layout.addWidget(self.power_a, 0, 1)
         widget.setLayout(layout)
         return widget
 
@@ -802,65 +759,20 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QGridLayout()
 
-        aSlider = QSlider(Qt.Horizontal)
-        aSlider.setMinimum(1)
-        aSlider.setMaximum(10)
+        self.sinh_a = QSlider(Qt.Horizontal)
+        self.sinh_a.setMinimum(10)
+        self.sinh_a.setMaximum(100)
 
-        # connects
-        aSlider.valueChanged.connect(lambda changed: self.changeParams({'a': aSlider.value() / 10},
-                                                                       self.interval_dict))
+        self.sinh_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_sinh_a',
+                                                                                  self.sinh_a.value() / 100))
 
         layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(aSlider, 0, 1)
+        layout.addWidget(self.sinh_a, 0, 1)
         widget.setLayout(layout)
         return widget
 
-    def changeParams(self, stretch_dictionary, interval_dictionary):
-        #testowe
-        print(self.stretch_combobox.currentText())
-        print(self.interval_combobox.currentText())
-        print("------------------")
-        print(stretch_dictionary)
-        print(interval_dictionary)
-        #
-        if self.stretch_dict != stretch_dictionary:
-            self.stretch_dict = stretch_dictionary
-        if self.interval_dict != interval_dictionary:
-            self.interval_dict = interval_dictionary
-        self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
-                                          interval=self.interval_combobox.currentText(),
-                                          stretchkwargs=stretch_dictionary,
-                                          intervalkwargs=interval_dictionary)
-
-        self.fits_image.invalidate()
-        self.updateFitsInWidgets()
-
     def changeColor(self, color):
         self.cmaps.set_active_color_map(color)
-        # #testowe
-        # print(self.stretch_combobox.currentText())
-        # print(self.interval_combobox.currentText())
-        # print(color)
-        # print("------------------")
-        # print(self.stretch_dict)
-        # print(self.interval_dict)
-        # #
-        # if color == 'red':
-        #     self.fits_image.plot(color='r')
-        # elif color == 'green':
-        #     self.fits_image.plot(color='g')
-        # elif color == 'blue':
-        #     self.fits_image.plot(color='b')
-        #
-        # self.fits_image.set_normalization(stretch=self.stretch_combobox.currentText(),
-        #                                   interval=self.interval_combobox.currentText(),
-        #                                   stretchkwargs=self.stretch_dict,
-        #                                   intervalkwargs=self.interval_dict)
-        #
-        # self.fits_image.invalidate()
-        # self.updateFitsInWidgets()
-        # # self.central_widget = FigureCanvas(self.fits_image.figure)
-        # # self.setCentralWidget(self.central_widget)
 
     def on_colormap_change(self, change):
         self.fits_image.cmap = self.cmaps.get_active_color_map()
@@ -878,7 +790,7 @@ class MainWindow(QMainWindow):
         self.headerWidget.setColumnCount(2)
         self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
         self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
-        self.headerWidget.horizontalHeader().setStretchLastSection(1);
+        self.headerWidget.horizontalHeader().setStretchLastSection(1)
         self.headerWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         dock.setWidget(self.headerWidget)
 
@@ -978,6 +890,154 @@ class MainWindow(QMainWindow):
         print("updateFitsInWidgets")
         self.full_view_widget.updateFits(self.fits_image)
         self.zoom_view_widget.updateFits(self.fits_image)
+
+    def writeSlidersValues(self):
+        settings = QSettings()
+        settings.beginGroup("Sliders")
+        settings.setValue("asinh/a", self.scalesModel.stretch_asinh_a)
+        settings.setValue("contrast/contrast", self.scalesModel.stretch_contrastbias_contrast)
+        settings.setValue("contrast/bias", self.scalesModel.stretch_contrastbias_bias)
+        settings.setValue("linear/slope", self.scalesModel.stretch_linear_slope)
+        settings.setValue("linear/intercept", self.scalesModel.stretch_linear_intercept)
+        settings.setValue("log/a", self.scalesModel.stretch_log_a)
+        settings.setValue("powerdist/a", self.scalesModel.stretch_powerdist_a)
+        settings.setValue("power/a", self.scalesModel.stretch_power_a)
+        settings.setValue("sinh/a", self.scalesModel.stretch_sinh_a)
+
+        settings.setValue("manual/vmin", self.scalesModel.interval_manual_vmin)
+        settings.setValue("manual/vmax", self.scalesModel.interval_manual_vmax)
+        settings.setValue("percentile/percentile", self.scalesModel.interval_percentile_percentile)
+        settings.setValue("percentile/nsamples", self.scalesModel.interval_percentile_nsamples)
+        settings.setValue("asymetric/lpercentile", self.scalesModel.interval_asymetric_lower_percentile)
+        settings.setValue("asymetric/upercentile", self.scalesModel.interval_asymetric_upper_percentile)
+        settings.setValue("asymetric/nsamples", self.scalesModel.interval_asymetric_nsamples)
+        settings.setValue("zscale/contrast", self.scalesModel.interval_zscale_contrast)
+        settings.setValue("zscale/nsamples", self.scalesModel.interval_zscale_nsamples)
+        settings.setValue("zscale/maxreject", self.scalesModel.interval_zscale_maxreject)
+        settings.setValue("zscale/minpixels", self.scalesModel.interval_zscale_minpixels)
+        settings.setValue("zscale/krej", self.scalesModel.interval_zscale_krej)
+        settings.setValue("zscale/maxiterations", self.scalesModel.interval_zscale_maxiterations)
+
+        settings.endGroup()
+
+    def readSlidersValues(self):
+        settings = QSettings()
+        settings.beginGroup("Sliders")
+
+        asinh_a_value = settings.value("asinh/a")
+        contrast_contrast_value = settings.value("contrast/contrast")
+        contrast_bias_value = settings.value("contrast/bias")
+        linear_slope_value = settings.value("linear/slope")
+        linear_intercept_value = settings.value("linear/intercept")
+        log_a_value = settings.value("log/a")
+        powerdist_a_value = settings.value("powerdist/a")
+        power_a_value = settings.value("power/a")
+        sinh_a_value = settings.value("sinh/a")
+
+        manual_vmin_value = settings.value("manual/vmin")
+        manual_vmax_value = settings.value("manual/vmax")
+        percentile_percentile_value = settings.value("percentile/percentile")
+        percentile_nsamples_value = settings.value("percentile/nsamples")
+        asymetric_lpercentile_value = settings.value("asymetric/lpercentile")
+        asymetric_upercentile_value = settings.value("asymetric/upercentile")
+        asymetric_nsamples_value = settings.value("asymetric/nsamples")
+        zscale_contrast_value = settings.value("zscale/contrast")
+        zscale_nsamples_value = settings.value("zscale/nsamples")
+        zscale_maxreject_value = settings.value("zscale/maxreject")
+        zscale_minpixels_value = settings.value("zscale/minpixels")
+        zscale_krej_value = settings.value("zscale/krej")
+        zscale_maxiterations_value = settings.value("zscale/maxiterations")
+        settings.endGroup()
+
+        if asinh_a_value:
+            self.asinh_a.setValue(float(asinh_a_value)*10)
+        else:
+            self.asinh_a.setValue(self.scalesModel.stretch_asinh_a * 10)
+        if contrast_contrast_value:
+            self.contrast_contrast.setValue(float(contrast_contrast_value) * 10)
+        else:
+            self.contrast_contrast.setValue(self.scalesModel.stretch_contrastbias_contrast * 10)
+        if contrast_bias_value:
+            self.contrast_bias.setValue(float(contrast_bias_value) * 10)
+        else:
+            self.contrast_bias.setValue(self.scalesModel.stretch_contrastbias_bias * 10)
+        if linear_slope_value:
+            self.linear_slope.setValue(float(linear_slope_value) * 10)
+        else:
+            self.linear_slope.setValue(self.scalesModel.stretch_linear_slope * 10)
+        if linear_intercept_value:
+            self.linear_intercept.setValue(float(linear_intercept_value) * 10)
+        else:
+            self.linear_intercept.setValue(self.scalesModel.stretch_linear_intercept * 10)
+        if log_a_value:
+            self.log_a.setValue(float(log_a_value) * 10)
+        else:
+            self.log_a.setValue(self.scalesModel.stretch_log_a * 10)
+        if powerdist_a_value:
+            self.powerdist_a.setValue(float(powerdist_a_value) * 10)
+        else:
+            self.powerdist_a.setValue(self.scalesModel.stretch_powerdist_a * 10)
+        if power_a_value:
+            self.power_a.setValue(float(power_a_value) * 10)
+        else:
+            self.power_a.setValue(self.scalesModel.stretch_power_a * 10)
+        if sinh_a_value:
+            self.sinh_a.setValue(float(sinh_a_value) * 100)
+        else:
+            self.sinh_a.setValue(self.scalesModel.stretch_sinh_a * 100)
+
+        if manual_vmin_value:
+            self.manual_vmin.setValue(float(manual_vmin_value) * 10)
+        else:
+            self.manual_vmin.setValue(self.scalesModel.interval_manual_vmin * 10)
+        if manual_vmax_value:
+            self.manual_vmax.setValue(int(manual_vmax_value))
+        else:
+            self.manual_vmax.setValue(self.scalesModel.interval_manual_vmax)
+        if percentile_percentile_value:
+            self.percentile_percentile.setValue(float(percentile_percentile_value) * 10)
+        else:
+            self.percentile_percentile.setValue(self.scalesModel.interval_percentile_percentile * 10)
+        if percentile_nsamples_value:
+            self.percentile_nsamples.setValue(float(percentile_nsamples_value) * 10)
+        else:
+            self.percentile_nsamples.setValue(self.scalesModel.interval_percentile_nsamples * 10)
+        if asymetric_lpercentile_value:
+            self.asymetric_lpercentile.setValue(float(asymetric_lpercentile_value) * 10)
+        else:
+            self.asymetric_lpercentile.setValue(self.scalesModel.interval_asymetric_lower_percentile * 10)
+        if asymetric_upercentile_value:
+            self.asymetric_upercentile.setValue(float(asymetric_upercentile_value) * 10)
+        else:
+            self.asymetric_upercentile.setValue(self.scalesModel.interval_asymetric_upper_percentile * 10)
+        if asymetric_nsamples_value:
+            self.asymetric_nsamples.setValue(int(asymetric_nsamples_value))
+        else:
+            self.asymetric_nsamples.setValue(self.scalesModel.interval_asymetric_nsamples)
+        if zscale_nsamples_value:
+            self.zscale_nsamples.setValue(int(zscale_nsamples_value))
+        else:
+            self.zscale_nsamples.setValue(self.scalesModel.interval_zscale_nsamples)
+        if zscale_contrast_value:
+            self.zscale_contrast.setValue(float(zscale_contrast_value) * 100)
+        else:
+            self.zscale_contrast.setValue(self.scalesModel.interval_zscale_contrast * 100)
+        if zscale_maxreject_value:
+            self.zscale_mreject.setValue(float(zscale_maxreject_value) * 10)
+        else:
+            self.zscale_mreject.setValue(self.scalesModel.interval_zscale_maxreject * 10)
+        if zscale_minpixels_value:
+            self.zscale_minpixels.setValue(int(zscale_minpixels_value))
+        else:
+            self.zscale_minpixels.setValue(self.scalesModel.interval_zscale_minpixels)
+        if zscale_krej_value:
+            self.zscale_krej.setValue(float(zscale_krej_value) * 10)
+        else:
+            self.zscale_krej.setValue(self.scalesModel.interval_zscale_krej * 10)
+        if zscale_maxiterations_value:
+            self.zscale_miterations.setValue(int(zscale_maxiterations_value))
+        else:
+            self.zscale_miterations.setValue(self.scalesModel.interval_zscale_maxiterations)
 
 
 class HeaderTableWidget(QTableWidget):
