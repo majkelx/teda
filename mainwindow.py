@@ -103,6 +103,7 @@ class MainWindow(QMainWindow):
         self.createToolBars()
         self.createStatusBar()
         self.createInfoWindow()
+        self.readSlidersValues()
         self.createDockWindows()
         # self.defineButtonsActions()
         self.setWindowTitle("TeDa")
@@ -188,8 +189,32 @@ class MainWindow(QMainWindow):
         self.headerWidget.setHeader()
 
     def adjustSliders(self):
-        self.getSliders(0, 0)
-        self.readSlidersValues()
+        self.getSliders(self.stretchStackedLayout.currentIndex(), self.intervalStackedLayout.currentIndex())
+        self.stretch_sliders_widget.setEnabled(True)
+        self.interval_sliders_widget.setEnabled(True)
+        self.combobox_widget.setEnabled(True)
+        self.manual_vmin.setValue(self.scalesModel.interval_manual_vmin * 10)
+        self.manual_vmax.setValue(self.scalesModel.interval_manual_vmax)
+        self.percentile_percentile.setValue(self.scalesModel.interval_percentile_percentile * 10)
+        self.percentile_nsamples.setValue(self.scalesModel.interval_percentile_nsamples)
+        self.asymetric_lpercentile.setValue(self.scalesModel.interval_asymetric_lower_percentile * 10)
+        self.asymetric_upercentile.setValue(self.scalesModel.interval_asymetric_upper_percentile * 10)
+        self.asymetric_nsamples.setValue(self.scalesModel.interval_asymetric_nsamples)
+        self.zscale_nsamples.setValue(self.scalesModel.interval_zscale_nsamples)
+        self.zscale_contrast.setValue(self.scalesModel.interval_zscale_contrast * 100)
+        self.zscale_mreject.setValue(self.scalesModel.interval_zscale_maxreject * 10)
+        self.zscale_minpixels.setValue(self.scalesModel.interval_zscale_minpixels)
+        self.zscale_krej.setValue(self.scalesModel.interval_zscale_krej * 10)
+        self.zscale_miterations.setValue(self.scalesModel.interval_zscale_maxiterations)
+        self.asinh_a.setValue(self.scalesModel.stretch_asinh_a * 10)
+        self.contrast_contrast.setValue(self.scalesModel.stretch_contrastbias_contrast * 10)
+        self.contrast_bias.setValue(self.scalesModel.stretch_contrastbias_bias * 10)
+        self.linear_slope.setValue(self.scalesModel.stretch_linear_slope * 10)
+        self.linear_intercept.setValue(self.scalesModel.stretch_linear_intercept * 10)
+        self.log_a.setValue(self.scalesModel.stretch_log_a * 10)
+        self.powerdist_a.setValue(self.scalesModel.stretch_powerdist_a * 10)
+        self.power_a.setValue(self.scalesModel.stretch_power_a * 10)
+        self.sinh_a.setValue(self.scalesModel.stretch_sinh_a * 100)
 
     def undo(self):
         document = self.textEdit.document()
@@ -354,6 +379,7 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout()
         self.combobox_widget = QWidget()
+        self.combobox_widget.setEnabled(False)
         self.combobox_layout = self.createComboboxes()
         self.combobox_widget.setLayout(self.combobox_layout)
         # self.combobox_widget.setMaximumHeight(40)
@@ -362,6 +388,7 @@ class MainWindow(QMainWindow):
         #Stretch
         self.stretch_sliders_widget = QWidget()
         self.stretch_sliders_layout = self.createStretchStackedLayout()
+        self.stretch_sliders_widget.setEnabled(False)
         self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
         # self.stretch_sliders_widget.setMaximumHeight(50)
         layout.addWidget(self.stretch_sliders_widget)
@@ -369,6 +396,7 @@ class MainWindow(QMainWindow):
         #Interval
         self.interval_sliders_widget = QWidget()
         self.interval_sliders_layout = self.createIntervalStackedLayout()
+        self.interval_sliders_widget.setEnabled(False)
         self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
         # self.interval_sliders_widget.setMaximumHeight(125)
         layout.addWidget(self.interval_sliders_widget)
@@ -640,16 +668,9 @@ class MainWindow(QMainWindow):
         self.updateFitsInWidgets()
 
     def changeSlidersParams(self, param, value):
-
         setattr(self.scalesModel, param, value)
-
         current_stretch = self.stretch_combobox.currentText()
         current_interval = self.interval_combobox.currentText()
-
-        print(self.scalesModel.dictionary[current_stretch])
-        print(self.scalesModel.dictionary[current_interval])
-        print("------------------")
-        print(self.scalesModel.dictionary)
 
         self.fitsNormalization(current_stretch, current_interval)
 
@@ -728,6 +749,7 @@ class MainWindow(QMainWindow):
         self.log_a = QSlider(Qt.Horizontal)
         self.log_a.setMinimum(5000)
         self.log_a.setMaximum(15000)
+
         self.log_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_log_a',
                                                                                  self.log_a.value() / 10))
 
@@ -744,6 +766,7 @@ class MainWindow(QMainWindow):
         self.powerdist_a = QSlider(Qt.Horizontal)
         self.powerdist_a.setMinimum(5000)
         self.powerdist_a.setMaximum(15000)
+
         self.powerdist_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_powerdist_a',
                                                                                        self.powerdist_a.value() / 10))
 
@@ -962,96 +985,51 @@ class MainWindow(QMainWindow):
         zscale_maxiterations_value = settings.value("zscale/maxiterations")
         settings.endGroup()
 
-        if asinh_a_value is not None:
-            self.asinh_a.setValue(float(asinh_a_value)*10)
-        else:
-            self.asinh_a.setValue(self.scalesModel.stretch_asinh_a * 10)
-        if contrast_contrast_value is not None:
-            self.contrast_contrast.setValue(float(contrast_contrast_value) * 10)
-        else:
-            self.contrast_contrast.setValue(self.scalesModel.stretch_contrastbias_contrast * 10)
-        if contrast_bias_value is not None:
-            self.contrast_bias.setValue(float(contrast_bias_value) * 10)
-        else:
-            self.contrast_bias.setValue(self.scalesModel.stretch_contrastbias_bias * 10)
-        if linear_slope_value is not None:
-            self.linear_slope.setValue(float(linear_slope_value) * 10)
-        else:
-            self.linear_slope.setValue(self.scalesModel.stretch_linear_slope * 10)
-        if linear_intercept_value is not None:
-            self.linear_intercept.setValue(float(linear_intercept_value) * 10)
-        else:
-            self.linear_intercept.setValue(self.scalesModel.stretch_linear_intercept * 10)
-        if log_a_value is not None:
-            self.log_a.setValue(float(log_a_value) * 10)
-        else:
-            self.log_a.setValue(self.scalesModel.stretch_log_a * 10)
-        if powerdist_a_value is not None:
-            self.powerdist_a.setValue(float(powerdist_a_value) * 10)
-        else:
-            self.powerdist_a.setValue(self.scalesModel.stretch_powerdist_a * 10)
-        if power_a_value is not None:
-            self.power_a.setValue(float(power_a_value) * 10)
-        else:
-            self.power_a.setValue(self.scalesModel.stretch_power_a * 10)
-        if sinh_a_value is not None:
-            self.sinh_a.setValue(float(sinh_a_value) * 100)
-        else:
-            self.sinh_a.setValue(self.scalesModel.stretch_sinh_a * 100)
+        if asinh_a_value:
+            self.scalesModel.stretch_asinh_a = float(asinh_a_value)
+        if contrast_contrast_value:
+            self.scalesModel.stretch_contrastbias_contrast = float(contrast_contrast_value)
+        if contrast_bias_value:
+            self.scalesModel.stretch_contrastbias_bias = float(contrast_bias_value)
+        if linear_slope_value:
+            self.scalesModel.stretch_linear_slope = float(linear_slope_value)
+        if linear_intercept_value:
+            self.scalesModel.stretch_linear_intercept = float(linear_intercept_value)
+        if log_a_value:
+            self.scalesModel.stretch_log_a = float(log_a_value)
+        if powerdist_a_value:
+            self.scalesModel.stretch_powerdist_a = float(powerdist_a_value)
+        if power_a_value:
+            self.scalesModel.stretch_power_a = float(power_a_value)
+        if sinh_a_value:
+            self.scalesModel.stretch_sinh_a = float(sinh_a_value)
 
-        if manual_vmin_value is not None:
-            self.manual_vmin.setValue(float(manual_vmin_value) * 10)
-        else:
-            self.manual_vmin.setValue(self.scalesModel.interval_manual_vmin * 10)
-        if manual_vmax_value is not None:
-            self.manual_vmax.setValue(int(manual_vmax_value))
-        else:
-            self.manual_vmax.setValue(self.scalesModel.interval_manual_vmax)
-        if percentile_percentile_value is not None:
-            self.percentile_percentile.setValue(float(percentile_percentile_value) * 10)
-        else:
-            self.percentile_percentile.setValue(self.scalesModel.interval_percentile_percentile * 10)
-        if percentile_nsamples_value is not None:
-            self.percentile_nsamples.setValue(float(percentile_nsamples_value) * 10)
-        else:
-            self.percentile_nsamples.setValue(self.scalesModel.interval_percentile_nsamples * 10)
-        if asymetric_lpercentile_value is not None:
-            self.asymetric_lpercentile.setValue(float(asymetric_lpercentile_value) * 10)
-        else:
-            self.asymetric_lpercentile.setValue(self.scalesModel.interval_asymetric_lower_percentile * 10)
-        if asymetric_upercentile_value is not None:
-            self.asymetric_upercentile.setValue(float(asymetric_upercentile_value) * 10)
-        else:
-            self.asymetric_upercentile.setValue(self.scalesModel.interval_asymetric_upper_percentile * 10)
-        if asymetric_nsamples_value is not None:
-            self.asymetric_nsamples.setValue(int(asymetric_nsamples_value))
-        else:
-            self.asymetric_nsamples.setValue(self.scalesModel.interval_asymetric_nsamples)
-        if zscale_nsamples_value is not None:
-            self.zscale_nsamples.setValue(int(zscale_nsamples_value))
-        else:
-            self.zscale_nsamples.setValue(self.scalesModel.interval_zscale_nsamples)
-        if zscale_contrast_value is not None:
-            self.zscale_contrast.setValue(float(zscale_contrast_value) * 100)
-        else:
-            self.zscale_contrast.setValue(self.scalesModel.interval_zscale_contrast * 100)
-        if zscale_maxreject_value is not None:
-            self.zscale_mreject.setValue(float(zscale_maxreject_value) * 10)
-        else:
-            self.zscale_mreject.setValue(self.scalesModel.interval_zscale_maxreject * 10)
-        if zscale_minpixels_value is not None:
-            self.zscale_minpixels.setValue(int(zscale_minpixels_value))
-        else:
-            self.zscale_minpixels.setValue(self.scalesModel.interval_zscale_minpixels)
-        if zscale_krej_value is not None:
-            self.zscale_krej.setValue(float(zscale_krej_value) * 10)
-        else:
-            self.zscale_krej.setValue(self.scalesModel.interval_zscale_krej * 10)
-        if zscale_maxiterations_value is not None:
-            self.zscale_miterations.setValue(int(zscale_maxiterations_value))
-        else:
-            self.zscale_miterations.setValue(self.scalesModel.interval_zscale_maxiterations)
-
+        if manual_vmin_value:
+            self.scalesModel.interval_manual_vmin = float(manual_vmin_value)
+        if manual_vmax_value:
+            self.scalesModel.interval_manual_vmax = int(manual_vmax_value)
+        if percentile_percentile_value:
+            self.scalesModel.interval_percentile_percentile = float(percentile_percentile_value)
+        if percentile_nsamples_value:
+            self.scalesModel.interval_percentile_nsamples = int(percentile_nsamples_value)
+        if asymetric_lpercentile_value:
+            self.scalesModel.interval_asymetric_lower_percentile = float(asymetric_lpercentile_value)
+        if asymetric_upercentile_value:
+            self.scalesModel.interval_asymetric_upper_percentile = float(asymetric_upercentile_value)
+        if asymetric_nsamples_value:
+            self.scalesModel.interval_asymetric_nsamples = int(asymetric_nsamples_value)
+        if zscale_nsamples_value:
+            self.scalesModel.interval_zscale_nsamples = int(zscale_nsamples_value)
+        if zscale_contrast_value:
+            self.scalesModel.interval_zscale_contrast = float(zscale_contrast_value)
+        if zscale_maxreject_value:
+            self.scalesModel.interval_zscale_maxreject = float(zscale_maxreject_value)
+        if zscale_minpixels_value:
+            self.scalesModel.interval_zscale_minpixels = int(zscale_minpixels_value)
+        if zscale_krej_value:
+            self.scalesModel.interval_zscale_krej = float(zscale_krej_value)
+        if zscale_maxiterations_value:
+            self.scalesModel.interval_zscale_maxiterations = int(zscale_maxiterations_value)
 
 class HeaderTableWidget(QTableWidget):
 
