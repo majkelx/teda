@@ -124,12 +124,12 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
     def keyPressEvent(self, e):
-        if e.key() == Qt.Key_F5:
-            self.close()
         if e.key() == Qt.Key_Delete:
             self.deleteSelected()
         if e.key() == Qt.Key_R:
-
+            action = self.dockRadialFit.toggleViewAction()
+            if not action.isChecked():
+                action.trigger()
             if (self.cursor_coords.img_x != 0 and self.cursor_coords.img_x != None) and (self.cursor_coords.img_y != 0 and self.cursor_coords.img_y != None):
                 self.painterComponent.add(self.cursor_coords.img_x, self.cursor_coords.img_y, type="circleCenter")
                 self.painterComponent.paintAllShapes(self.central_widget.figure.axes[0])
@@ -412,6 +412,7 @@ class MainWindow(QMainWindow):
         dock.setWidget(self.radial_profile_iraf_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+        self.dockRadialFit = dock
 
         dock = QDockWidget("Radial Profile Curve", self)
         dock.setObjectName("RADIAL_PROFILE")
