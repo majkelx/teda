@@ -503,7 +503,7 @@ class MainWindow(QMainWindow):
         self.manual_vmax.setMaximum(50000)
 
         self.manual_vmin.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_manual_vmin',
-                                                                                       self.manual_vmin.value() / 10))
+                                                                                       self.manual_vmin.value() / 10.0))
         self.manual_vmax.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_manual_vmax',
                                                                                        self.manual_vmax.value()))
 
@@ -527,7 +527,7 @@ class MainWindow(QMainWindow):
         self.percentile_nsamples.setMaximum(1500)
 
         self.percentile_percentile.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_percentile_percentile',
-                                                                                                 self.percentile_percentile.value() / 10))
+                                                                                                 self.percentile_percentile.value() / 10.0))
         self.percentile_nsamples.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_percentile_nsamples',
                                                                                                self.percentile_nsamples.value()))
 
@@ -556,9 +556,9 @@ class MainWindow(QMainWindow):
         self.asymetric_nsamples.setMaximum(1500)
 
         self.asymetric_lpercentile.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_asymetric_lower_percentile',
-                                                                                                 self.asymetric_lpercentile.value() / 10))
+                                                                                                 self.asymetric_lpercentile.value() / 10.0))
         self.asymetric_upercentile.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_asymetric_upper_percentile',
-                                                                                                 self.asymetric_upercentile.value() / 10))
+                                                                                                 self.asymetric_upercentile.value() / 10.0))
         self.asymetric_nsamples.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_asymetric_nsamples',
                                                                                               self.asymetric_nsamples.value()))
 
@@ -603,7 +603,7 @@ class MainWindow(QMainWindow):
         self.zscale_nsamples.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_nsamples',
                                                                                            self.zscale_nsamples.value()))
         self.zscale_contrast.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_contrast',
-                                                                                           self.zscale_contrast.value() / 100))
+                                                                                           self.zscale_contrast.value() / 100.0))
         self.zscale_mreject.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_maxreject',
                                                                                           self.zscale_mreject.value() / 10))
         self.zscale_minpixels.valueChanged.connect(lambda changed: self.changeSlidersParams('interval_zscale_minpixels',
@@ -682,7 +682,7 @@ class MainWindow(QMainWindow):
         self.asinh_a.setMinimum(1)
         self.asinh_a.setMaximum(10)
 
-        self.asinh_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_asinh_a', self.asinh_a.value() / 10))
+        self.asinh_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_asinh_a', self.asinh_a.value() / 10.0))
         layout.addWidget(QLabel('a'), 0, 0)
         layout.addWidget(self.asinh_a , 0, 1)
         widget.setLayout(layout)
@@ -703,9 +703,9 @@ class MainWindow(QMainWindow):
         self.contrast_bias.setMaximum(20)
 
         self.contrast_contrast.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_contrastbias_contrast',
-                                                                                             self.contrast_contrast.value() / 10))
+                                                                                             self.contrast_contrast.value() / 10.0))
         self.contrast_bias.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_contrastbias_bias',
-                                                                                         self.contrast_bias.value() / 10))
+                                                                                         self.contrast_bias.value() / 10.0))
         layout.addWidget(QLabel('contrast'), 0, 0)
         layout.addWidget(self.contrast_contrast, 0, 1)
         layout.addWidget(QLabel('bias'), 1, 0)
@@ -720,18 +720,19 @@ class MainWindow(QMainWindow):
         layout = QGridLayout()
 
         self.linear_slope = QSlider(Qt.Horizontal)
-        self.linear_slope.setMinimum(1)
-        self.linear_slope.setMaximum(20)
+        self.linear_slope.setTickPosition(QSlider.TicksAbove)
+        self.linear_slope.setMinimum(1) # 0.1
+        self.linear_slope.setMaximum(30) # 3.0
 
         self.linear_intercept = QSlider(Qt.Horizontal)
-        self.linear_intercept.setMinimum(0)
-        self.linear_intercept.setMaximum(20)
+        self.linear_intercept.setMinimum(-10) # -1.0
+        self.linear_intercept.setMaximum(10) # 1.0
 
         #connects
         self.linear_slope.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_linear_slope',
-                                                                                        self.linear_slope.value() / 10))
+                                                                                        self.linear_slope.value() / 10.0))
         self.linear_intercept.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_linear_intercept',
-                                                                                            self.linear_intercept.value() / 10))
+                                                                                            self.linear_intercept.value() / 10.0))
 
         layout.addWidget(QLabel("slope"), 0, 0)
         layout.addWidget(self.linear_slope, 0, 1)
@@ -751,7 +752,7 @@ class MainWindow(QMainWindow):
         self.log_a.setMaximum(15000)
 
         self.log_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_log_a',
-                                                                                 self.log_a.value() / 10))
+                                                                                 self.log_a.value() / 10.0))
 
         layout.addWidget(QLabel('a'), 0, 0)
         layout.addWidget(self.log_a, 0, 1)
@@ -768,7 +769,7 @@ class MainWindow(QMainWindow):
         self.powerdist_a.setMaximum(15000)
 
         self.powerdist_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_powerdist_a',
-                                                                                       self.powerdist_a.value() / 10))
+                                                                                       self.powerdist_a.value() / 10.0))
 
         layout.addWidget(QLabel('a'), 0, 0)
         layout.addWidget(self.powerdist_a, 0, 1)
@@ -784,7 +785,7 @@ class MainWindow(QMainWindow):
         self.power_a.setMaximum(20)
 
         self.power_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_power_a',
-                                                                                   self.power_a.value() / 10))
+                                                                                   self.power_a.value() / 10.0))
 
         layout.addWidget(QLabel('a'), 0, 0)
         layout.addWidget(self.power_a, 0, 1)
@@ -800,7 +801,7 @@ class MainWindow(QMainWindow):
         self.sinh_a.setMaximum(100)
 
         self.sinh_a.valueChanged.connect(lambda changed: self.changeSlidersParams('stretch_sinh_a',
-                                                                                  self.sinh_a.value() / 100))
+                                                                                  self.sinh_a.value() / 100.0))
 
         layout.addWidget(QLabel('a'), 0, 0)
         layout.addWidget(self.sinh_a, 0, 1)
@@ -923,7 +924,7 @@ class MainWindow(QMainWindow):
         self.headerWidget.writeSettings(settings)
 
     def updateFitsInWidgets(self):
-        print("updateFitsInWidgets")
+        # print("updateFitsInWidgets")
         self.full_view_widget.updateFits(self.fits_image)
         self.zoom_view_widget.updateFits(self.fits_image)
 
