@@ -27,11 +27,14 @@ class FitsPlotter(tr.HasTraits):
     viewH = tr.Float()
     viewBounaries_versionno = tr.Int()
 
+    plot_grid = tr.Bool(default_value=False)
+
     def __init__(self,
                  figure=None, ax=None,
                  interval=None, intervalkwargs=None,
                  stretch=None, stretchkwargs=None, cmap=None):
         super().__init__()
+        self.wcs = None
         self.figure = figure
         self.ax = ax
         self.zoom = 1.0
@@ -65,7 +68,10 @@ class FitsPlotter(tr.HasTraits):
         if self.ax is None:
             if self.figure is None:
                 self.figure = plt.figure(figsize=figsize)
-            self.ax = self.figure.add_subplot(111)
+            if self.wcs is not None:
+                self.ax = self.figure.add_subplot(111, projection=self.wcs)
+            else:
+                self.ax = self.figure.add_subplot(111)
             self.setup_axies(self.ax)
         return self.ax
 

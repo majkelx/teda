@@ -175,9 +175,11 @@ class MainWindow(QMainWindow):
         """Opens specified FITS file and loads it to user interface"""
         self.filename = fileName
         self.fits_image.set_file(self.filename)
+        self.cursor_coords.set_wcs_from_fits(self.fits_image.header)  # TODO: one up and extract and set wcs in fits_image before plot
+        self.fits_image.set_wcs(self.cursor_coords.wcs)
+
         self.fits_image.plot()
 
-        self.cursor_coords.set_wcs_from_fits(self.fits_image.header)
 
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)

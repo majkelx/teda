@@ -46,4 +46,11 @@ class FitsPlotterFitsFile(FitsPlotter):
         except (TypeError, LookupError):
             return None
 
+    def set_wcs(self, wcs):
+        self.wcs = wcs
+        try:
+            self.ax.reset_wcs(wcs)
+        except AttributeError: # ax is None or not WCSAxies
+            pass
+
 
