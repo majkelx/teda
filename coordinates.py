@@ -26,7 +26,7 @@ class CoordinatesModel(HasTraits):
             try:
                 wcs = WCS(fits_header, translate_units='sdh')
             except InvalidTransformError:  # Remove scamp distortion
-                h = fits_header.header.copy()
+                h = fits_header.copy()
                 for i in range(11):
                     for pv in ['PV1_{:d}', 'PV2_{:d}']:
                         h.remove(pv.format(i), ignore_missing=True, remove_all=True)
