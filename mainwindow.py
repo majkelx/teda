@@ -374,7 +374,7 @@ class MainWindow(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
 
         #comboboxes
-        widget = QWidget()
+        widget = QWidgetCustom()
         layout = QVBoxLayout()
         self.combobox_widget = QWidget()
         self.combobox_widget.setEnabled(False)
@@ -1118,6 +1118,15 @@ class HeaderTableWidget(QTableWidget):
             settings.setValue("pin", pin);
             i += 1
         settings.endArray();
+
+    def leaveEvent(self, e):
+        self.clearFocus()
+
+class QWidgetCustom(QWidget):
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
+    def leaveEvent(self, e):
+        self.clearFocus()
 
 if __name__ == '__main__':
     import sys
