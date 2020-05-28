@@ -635,14 +635,17 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout()
 
         self.stretch_combobox = QComboBox()
+        self.stretch_combobox.setFocusPolicy(Qt.NoFocus)
         self.stretch_combobox.addItems(['powerdist', 'asinh', 'contrastbias', 'histogram', 'linear',
                                         'log', 'power', 'sinh', 'sqrt', 'square'])
 
 
         self.interval_combobox = QComboBox()
+        self.interval_combobox.setFocusPolicy(Qt.NoFocus)
         self.interval_combobox.addItems(['zscale','minmax', 'manual', 'percentile', 'asymetric'])
 
         self.color_combobox = QComboBox()
+        self.color_combobox.setFocusPolicy(Qt.NoFocus)
         self.color_combobox.addItems(self.cmaps.colormaps.keys())
 
         layout.addWidget(self.stretch_combobox)
