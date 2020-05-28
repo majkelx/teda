@@ -339,6 +339,8 @@ class DraggablePoint:
 
         # now redraw just the selected
         axes.draw_artist(self.point)
+        if hasattr(self.painterElement, 'repaintAdditional'):
+            self.painterElement.repaintAdditional(axes)
 
         # and blit just the redrawn area
         canvas.blit(axes.bbox)
@@ -404,14 +406,17 @@ class DraggablePoint:
         if self.movingStart == False:
             self.painterElement.selectDeselect()
             self.point = self.painterElement.refreshShape(axes)
-        if hasattr(self.painterElement, 'shapeType'):
-            if self.painterElement.shapeType == 'centerCircle':
-                newx, newy = self.paintComp.centerRadialProfile(self.painterElement.x, self.painterElement.y, self.painterElement.size)
-                self.painterElement.x = newx
-                self.painterElement.y = newy
-                self.paintComp.ccenter_x = self.painterElement.x
-                self.paintComp.ccenter_y = self.painterElement.y
-                self.paintComp.cradius = self.painterElement.size
+
+        if self.movingStart == True:
+            if hasattr(self.painterElement, 'shapeType'):
+                if self.painterElement.shapeType == 'centerCircle':
+                    newx, newy = self.paintComp.centerRadialProfile(self.painterElement.x, self.painterElement.y, self.painterElement.size)
+                    self.painterElement.x = newx
+                    self.painterElement.y = newy
+                    self.paintComp.ccenter_x = self.painterElement.x
+                    self.paintComp.ccenter_y = self.painterElement.y
+                    self.paintComp.cradius = self.painterElement.size
+                    self.point = self.painterElement.refreshShape(axes)
 
         self.point.figure.canvas.draw_idle()
         self.paintComp.fillListOfPaintedShapes()
