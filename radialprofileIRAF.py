@@ -29,11 +29,11 @@ class IRAFRadialProfileWidget(QWidget):
 
         self.plotted_profile = self.ax.plot([1,2,3,4],[1,4,6,8], '.', ms=1)[0]
         self.gaussian = self.ax.plot([1,2,3,4],[1,4,6,8], ':', alpha=0.5)[0]
-        self.rms_legend = self.ax.text(1,0.99, 'Gauss RMS: <?> ',
-                                       horizontalalignment='right',
-                                       verticalalignment='top',
-                                       transform=self.ax.transAxes
-                                       )
+        # self.rms_legend = self.ax.text(1,0.99, 'Gauss RMS: <?> ',
+        #                                horizontalalignment='right',
+        #                                verticalalignment='top',
+        #                                transform=self.ax.transAxes
+        #                                )
 
         figure_layout.addWidget(canvas)
         self.setLayout(figure_layout)
@@ -93,7 +93,7 @@ class IRAFRadialProfileWidget(QWidget):
             rad, val, rmse, fwhm, sky = self.fit_gaussian(rad, val, self.radius)
             self.gaussian.set_xdata(rad)
             self.gaussian.set_ydata(val)
-            self.rms_legend.set_text(f'Fit RMSE: {rmse:.3f} FWHM: {fwhm:.2f} sky: {sky:.2f} ')
+            self.rms_legend.set_text(f'rms={rmse:.2f} fwhm={fwhm:.2f} sky={sky:.2f} ')
         except Exception:
             pass
 

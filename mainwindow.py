@@ -216,6 +216,13 @@ class MainWindow(QMainWindow):
     def on_console_show(self):
         console.show(ax=self.fits_image.ax, window=self, data=self.fits_image.data, header=self.fits_image.header, wcs=self.cursor_coords.wcs)
 
+    def on_sex_toggle(self):
+        print('sex toggled to :', self.wcsSexAct.isChecked())
+        self.cursor_coords.wcs_sexagesimal = self.wcsSexAct.isChecked()
+
+    def on_grid_toggle(self):
+        self.fits_image.plot_grid = self.wcsGridAct.isChecked()
+
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
@@ -227,12 +234,26 @@ class MainWindow(QMainWindow):
         self.qtConsoleAct = QAction('Python Console', self,
                                     statusTip="Open IPython console window", triggered=self.on_console_show)
 
+        self.wcsSexAct = QAction('Sexagesimal', self,
+                                 statusTip="Format WCS coordinates as sexagesimal (RA in hour angle) instead of decimal deg",
+                                 triggered=self.on_sex_toggle)
+        self.wcsSexAct.setCheckable(True)
+        self.wcsGridAct = QAction('Show Grid', self,
+                                 statusTip="Overlay WCS coordinates grid over image",
+                                 triggered=self.on_grid_toggle)
+        self.wcsGridAct.setCheckable(True)
+
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAct)
 
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.quitAct)
+
+        self.WcsMenu = self.menuBar().addMenu("W&CS")
+        self.WcsMenu.addAction(self.wcsSexAct)
+        self.WcsMenu.addSeparator()
+        self.WcsMenu.addAction(self.wcsGridAct)
 
         self.viewMenu = self.menuBar().addMenu("&View")
         self.viewMenu.addAction(self.qtConsoleAct)
@@ -346,7 +367,7 @@ class MainWindow(QMainWindow):
 
     def createDockWindows(self):
         # Scale
-        dock = QDockWidget("Scale", self)
+        dock = QDockWidget("Dynamic Scale", self)
         dock.setObjectName("SCALE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.scaleWidget = ScaleWidget(self)
@@ -373,7 +394,7 @@ class MainWindow(QMainWindow):
         self.viewMenu.addAction(dock.toggleViewAction())
 
         #info panel
-        dock = QDockWidget("info", self)
+        dock = QDockWidget("Info", self)
         dock.setObjectName("INFO_PANEL")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.info_widget = InfoWidget(self)

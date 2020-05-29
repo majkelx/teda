@@ -47,6 +47,7 @@ class FitsPlotter(tr.HasTraits):
         else:
             self.cmap = cmap
         self.img = None
+        self.observe(lambda change: self.on_show_grid(change), ['plot_grid'])
 
     @property
     def data(self):
@@ -72,7 +73,7 @@ class FitsPlotter(tr.HasTraits):
                 self.ax = self.figure.add_subplot(111, projection=self.wcs)
             else:
                 self.ax = self.figure.add_subplot(111)
-            self.setup_axies(self.ax)
+            self.setup_axies()
         return self.ax
 
     def plot_fits_data(self, data, ax, alpha, norm, cmap):
@@ -100,7 +101,7 @@ class FitsPlotter(tr.HasTraits):
     def set_normalization(self, stretch=None, interval=None, stretchkwargs={}, intervalkwargs={}):
         if stretch is None:
             if self.stretch is None:
-                stretch = 'powerdist'
+                stretch = 'linear'
             else:
                 stretch = self.stretch
         if isinstance(stretch, str):
@@ -227,20 +228,33 @@ class FitsPlotter(tr.HasTraits):
         else:
             self.figure.canvas.draw()
 
-    def setup_axies(self, ax):
-        fig = ax.get_figure()
+    def setup_axies(self):
+        fig = self.ax.get_figure()
         fig.subplots_adjust(wspace=0)
-        ax.set_position([0.0, 0.0, 1.0, 1.0])
-
-        ax.yaxis.set_major_locator(plt.NullLocator())
-        ax.xaxis.set_major_locator(plt.NullLocator())
+        self.set_axies_margins()
 
         self.zoomEvent = fig.canvas.mpl_connect('scroll_event', lambda event: self.on_zoom(event))
         self.mouseExitEvent = fig.canvas.mpl_connect('figure_leave_event', lambda event: self.on_mouse_exit(event))
         self.mouseMoveEvent = fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_mouse_move(event))
 
+    def set_axies_margins(self):
+        if self.plot_grid:
+            self.ax.set_position([0.1, 0.1, 0.9, 0.9])
+            # self.ax
+        else:
+            self.ax.set_position([0.0, 0.0, 1.0, 1.0])
+            locator = self.ax.yaxis.get_major_locator()
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+            self.ax.xaxis.set_major_locator(plt.NullLocator())
+
     def disconnectEvents(self):
         self.figure.canvas.mpl_disconnect(self.zoomEvent)
+
+    def on_show_grid(self, change):
+        self.set_axies_margins()
+        self.ax.grid(change.new)
+        self.invalidate()
+
 
     def on_mouse_exit(self, event):
         self.mouse_xdata = None
