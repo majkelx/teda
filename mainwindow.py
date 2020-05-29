@@ -118,6 +118,9 @@ class MainWindow(QMainWindow):
         self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
         self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewBounaries_versionno'])
 
+        #open last fits
+        self.openLastFits()
+
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
         self.scaleWidget.writeSlidersValues()
@@ -187,6 +190,21 @@ class MainWindow(QMainWindow):
         self.scaleWidget.adjustSliders()
 
         self.headerWidget.setHeader()
+        self.saveLastFits()
+
+    def saveLastFits(self):
+        settings = QSettings()
+        settings.beginGroup("Files")
+        settings.setValue("lastFile", self.filename)
+        settings.endGroup()
+
+    def openLastFits(self):
+        settings = QSettings()
+        settings.beginGroup("Files")
+        filename = settings.value("lastFile")
+        settings.endGroup()
+        if filename:
+            self.open_fits(filename)
 
 
 
