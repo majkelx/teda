@@ -34,6 +34,7 @@ class ScanToolbar(QWidget):
         self.BtnResume.setVisible(False)
         self.layout.addWidget(self.BtnResume)
 
+        #buttony do wywoływania ręcznie ich akcji , na click nie działa self.worker.startWork
         self.BtnStartScan = QPushButton("StartScan")
         self.BtnStartScan.setVisible(False)
         self.layout.addWidget(self.BtnStartScan)
@@ -59,7 +60,8 @@ class ScanToolbar(QWidget):
             self.BtnScan.setVisible(False)
             self.BtnStop.setVisible(True)
             self.BtnPause.setVisible(True)
-            #self.worker.setActive(True)
+            #self.worker_thread.start() #powinno tu być ale jest w create
+            self.worker.setActive(True)
             self.activeScan = True
             self.worker.setFileName(fileName)
             self.BtnStartScan.click()
@@ -71,19 +73,20 @@ class ScanToolbar(QWidget):
         self.BtnPause.setVisible(False)
         self.BtnResume.setVisible(False)
         self.activeScan = False
-        self.forceWorkerReset()
+        self.BtnStopScan.click()
 
     def pauseScan(self):
         #self.worker.setActive(False)
         self.BtnPause.setVisible(False)
         self.BtnResume.setVisible(True)
         self.activeScan = False
-        self.forceWorkerReset()
+        self.BtnPauseScan.click()
 
     def resumeScan(self):
-        #self.worker.setActive(True)
+        self.worker.setActive(True)
         self.BtnPause.setVisible(True)
         self.BtnResume.setVisible(False)
+        #self.worker_thread.start()
         self.activeScan = True
         self.BtnResumeScan.click()
 
@@ -98,24 +101,26 @@ class ScanToolbar(QWidget):
         self.worker = WorkerObject()
         self.worker_thread = QtCore.QThread()
         self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start()
+        self.worker_thread.start() # powinno być na przyciskach ale i tak nie ubijam tego threada
 
         # Connect any worker signals
         self.worker.signalStatus.connect(self.updateStatus)
         self.BtnStartScan.clicked.connect(self.worker.startWork)
         self.BtnResumeScan.clicked.connect(self.worker.startWork)
+        self.BtnStopScan.clicked.connect(self.forceWorkerStop)
+        self.BtnPauseScan.clicked.connect(self.forceWorkerStop)
 
 
-    def forceWorkerReset(self):
+    def forceWorkerStop(self):
+        #self.worker.stopWork()
         if self.worker_thread.isRunning():
-            print('Terminating thread.')
-            #self.worker_thread.quit()
-            #del (self.worker_thread)
+            self.worker.setActive(False)
+            #nie udaje mi sie ubić tego worker_thread
+            #print('Terminating thread.')
+            #self.worker_thread.terminate() #lub quit
             #print('Waiting for thread termination.')
             #self.worker_thread.wait()
 
-            #print('building new working object.')
-            #self.createWorkerThread()
 
 
     def forceWorkerQuit(self):
@@ -125,7 +130,7 @@ class ScanToolbar(QWidget):
 
     @QtCore.Slot(str)
     def updateStatus(self, status):
-        if self.activeScan:
+        if self.activeScan: # Wprowadzona flaga by ignorować sygnał gdy skan zatrzymany
             time.sleep(1)
             print(status)
             try:
@@ -148,22 +153,32 @@ class WorkerObject(QtCore.QObject):
     def setFileName(self,filename):
         self.filename = filename
 
+    def setActive(self, val):
+        self.active = val
+        #chciałem tu zatrzymać obserwer by thread zatrzymać ale nie działąło
+        #if not val:
+        #    self.observer.stop()
+
+
     @QtCore.Slot()
     def startWork(self):
-
-        observer = Observer()
-        observer.schedule(self.event_handler, path=self.filename, recursive=False)
-        observer.start()
-
+        self.observer = Observer()
+        self.observer.schedule(self.event_handler, path=self.filename, recursive=False)
+        self.observer.start()
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            observer.stop()
-        observer.join()
+            self.observer.stop()
+        self.observer.join()
+
+    @QtCore.Slot()
+    def stopWork(self):
+        self.observer.stop()
 
 class MyHandler(FileSystemEventHandler):
     def __init__(self, signal):
+        FileSystemEventHandler.__init__(self)
         self.signal = signal
 
     def on_created(self, event):
