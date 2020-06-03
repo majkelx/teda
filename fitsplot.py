@@ -34,6 +34,7 @@ class FitsPlotter(tr.HasTraits):
                  interval=None, intervalkwargs=None,
                  stretch=None, stretchkwargs=None, cmap=None):
         super().__init__()
+        self._data = None
         self.wcs = None
         self.figure = figure
         self.ax = ax
@@ -209,19 +210,6 @@ class FitsPlotter(tr.HasTraits):
         'square': {},
     }
 
-    def changeHDU(self, relative, val):
-        if relative:
-            self.hdu = self.hdu + val
-        else:
-            self.hdu = val
-        if self.hdu < 0:
-            self.hdu = 0
-        elif self.hdu > len(self._huds) - 1:
-            self.hdu = len(self._huds) - 1
-
-        self.reset_ax()
-        self.plot()
-
     def invalidate(self, idle=True):
         if idle:
             self.figure.canvas.draw_idle()
@@ -251,9 +239,10 @@ class FitsPlotter(tr.HasTraits):
         self.figure.canvas.mpl_disconnect(self.zoomEvent)
 
     def on_show_grid(self, change):
-        self.set_axies_margins()
-        self.ax.grid(change.new)
-        self.invalidate()
+        if self.ax:
+            self.set_axies_margins()
+            self.ax.grid(change.new)
+            self.invalidate()
 
 
     def on_mouse_exit(self, event):

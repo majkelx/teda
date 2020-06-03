@@ -2,18 +2,20 @@ from astropy.io import fits
 from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU)
 import traitlets as tr
 
-from fitsplot import FitsPlotter
+from fitsplotcontrolled import FitsPlotterControlled
 
-class FitsPlotterFitsFile(FitsPlotter):
+
+class FitsPlotterFitsFile(FitsPlotterControlled):
 
     fitsfile = tr.Unicode(allow_none=True)
 
     def __init__(self, fitsfile=None, hdu=0, figure=None, ax=None, interval=None, intervalkwargs=None, stretch=None,
-                 stretchkwargs=None, cmap=None):
-        super().__init__(figure, ax, interval, intervalkwargs, stretch, stretchkwargs, cmap=cmap)
+                 stretchkwargs=None, cmap=None, scale_model=None):
         self.fitsfile = fitsfile
         self.hdu = hdu
         self._huds = None
+        super().__init__(figure, ax, interval, intervalkwargs, stretch, stretchkwargs,
+                         cmap=cmap, scale_model=scale_model)
 
 
     @property
@@ -37,6 +39,19 @@ class FitsPlotterFitsFile(FitsPlotter):
     @data.setter
     def data(self, d):
         raise TypeError('Can not set data directly in FitsPlotterFitsFile. Set fits file instead')
+
+    def changeHDU(self, relative, val):
+        if relative:
+            self.hdu = self.hdu + val
+        else:
+            self.hdu = val
+        if self.hdu < 0:
+            self.hdu = 0
+        elif self.hdu > len(self._huds) - 1:
+            self.hdu = len(self._huds) - 1
+
+        self.reset_ax()
+        self.plot()
 
     @property
     def header(self):

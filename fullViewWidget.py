@@ -3,7 +3,7 @@ import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from fitsplot import (FitsPlotter)
+from fitsplotcontrolled import (FitsPlotterControlled)
 from painterComponent import PainterComponent
 
 
@@ -18,7 +18,7 @@ class FullViewWidget(QWidget):
         #self.fig.tight_layout()
         self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
 
-        self.fits_image = FitsPlotter(figure=self.fig)
+        self.fits_image = FitsPlotterControlled(figure=self.fig)
         self.canvas = FigureCanvas(self.fig)
 
         self.ax = self.fig.add_subplot(111)
@@ -39,7 +39,7 @@ class FullViewWidget(QWidget):
     def updateFits(self, fits):
         self.fits = fits
         self.fits_image.data = self.fits.data
-        self.fits_image.copy_visualization_parameters(self.fits)
+        # self.fits_image.copy_visualization_parameters(self.fits)
         self.fits_image.plot()
         self.fits_image.disconnectEvents()
 

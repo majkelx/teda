@@ -33,7 +33,7 @@ class ZoomViewWidget(QWidget):
     def updateFits(self, fits):
         self.fits = fits
         self.fits_image.data = self.fits.data
-        self.fits_image.copy_visualization_parameters(self.fits)
+        # self.fits_image.copy_visualization_parameters(self.fits)
         self.fits_image.plot()
         self.fits_image.disconnectEvents()
 

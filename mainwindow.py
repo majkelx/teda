@@ -67,6 +67,7 @@ from headerTableWidget import HeaderTableWidget
 from scaleWidget import ScaleWidget
 from info import InfoWidget
 from cmaps import ColorMaps
+from scalesModel import ScalesModel
 import console
 
 
@@ -77,12 +78,15 @@ class MainWindow(QMainWindow):
         self.combobox = QComboBox()
         self.filename = None
         self.cursor_coords = CoordinatesModel()
+        self.scales_model = ScalesModel()
         fig = Figure(figsize=(14, 10))
         fig.tight_layout()
         self.fits_image = FitsPlotter(figure=fig)
         fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
 
-        self.fits_image = FitsPlotterFitsFile(figure=fig, cmap=self.cmaps.get_active_color_map())
+        self.fits_image = FitsPlotterFitsFile(figure=fig, cmap=self.cmaps.get_active_color_map(),
+                                              scale_model=self.scales_model
+                                              )
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
@@ -109,11 +113,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("TeDa")
 
         self.readWindowSettings()
+        self.readAppState()
 
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
         self.painterComponent.observe(lambda change: self.onCenterCircleRadiusChange(change), ['cradius'])
         self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
-        self.cmaps.observe(lambda change: self.on_colormap_change(change))
+        # self.cmaps.observe(lambda change: self.on_colormap_change(change))
         self.full_view_widget.painterComponent.observe(lambda change: self.onRectangleInWidgetMove(change), ['viewX', 'viewY'])
         self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
         self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewBounaries_versionno'])
@@ -122,6 +127,7 @@ class MainWindow(QMainWindow):
         self.openLastFits()
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
+        self.writeAppState()
         self.writeWindowSettings()
         self.scaleWidget.writeSlidersValues()
         super().closeEvent(event)
@@ -184,12 +190,14 @@ class MainWindow(QMainWindow):
 
         self.fits_image.plot()
 
-
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
-        self.scaleWidget.adjustSliders()
+        # self.scaleWidget.adjustSliders()
 
         self.headerWidget.setHeader()
+
+        self.zoom_view_widget.updateFits(self.fits_image)
+        self.full_view_widget.updateFits(self.fits_image)
         self.saveLastFits()
 
     def saveLastFits(self):
@@ -206,7 +214,23 @@ class MainWindow(QMainWindow):
         if filename:
             self.open_fits(filename)
 
+    def readAppState(self):
+        settings = QSettings()
 
+        settings.beginGroup("WCS")
+        self.wcsSexAct.setChecked(settings.value("sexagesimal", True))
+        self.wcsGridAct.setChecked(settings.value("grid", False))
+        settings.endGroup()
+
+
+
+    def writeAppState(self):
+        settings = QSettings()
+
+        settings.beginGroup("WCS")
+        settings.setValue("sexagesimal", self.wcsSexAct.isChecked())
+        settings.setValue("grid", self.wcsGridAct.isChecked())
+        settings.endGroup()
 
     def undo(self):
         document = self.textEdit.document()
@@ -253,13 +277,14 @@ class MainWindow(QMainWindow):
                                     statusTip="Open IPython console window", triggered=self.on_console_show)
 
         self.wcsSexAct = QAction('Sexagesimal', self,
-                                 statusTip="Format WCS coordinates as sexagesimal (RA in hour angle) instead of decimal deg",
-                                 triggered=self.on_sex_toggle)
+                                 statusTip="Format WCS coordinates as sexagesimal (RA in hour angle) instead of decimal deg")
+        self.wcsSexAct.toggled.connect(self.on_sex_toggle)
         self.wcsSexAct.setCheckable(True)
+
         self.wcsGridAct = QAction('Show Grid', self,
-                                 statusTip="Overlay WCS coordinates grid over image",
-                                 triggered=self.on_grid_toggle)
+                                 statusTip="Overlay WCS coordinates grid over image",)
         self.wcsGridAct.setCheckable(True)
+        self.wcsGridAct.toggled.connect(self.on_grid_toggle)
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
@@ -388,7 +413,7 @@ class MainWindow(QMainWindow):
         dock = QDockWidget("Dynamic Scale", self)
         dock.setObjectName("SCALE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
-        self.scaleWidget = ScaleWidget(self)
+        self.scaleWidget = ScaleWidget(self, scales_model=self.scales_model)
         dock.setWidget(self.scaleWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -425,6 +450,7 @@ class MainWindow(QMainWindow):
         dock.setObjectName("FULL_VIEW")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.full_view_widget = FullViewWidget(self.fits_image)
+        self.full_view_widget.fits_image.set_scale_model(self.scales_model)
         dock.setWidget(self.full_view_widget)
         self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -433,6 +459,7 @@ class MainWindow(QMainWindow):
         dock.setObjectName("ZOOM_VIEW")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.zoom_view_widget = ZoomViewWidget(self.fits_image)
+        self.zoom_view_widget.fits_image.set_scale_model(self.scales_model)
         dock.setWidget(self.zoom_view_widget)
         self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -457,10 +484,10 @@ class MainWindow(QMainWindow):
     def changeColor(self, color):
         self.cmaps.set_active_color_map(color)
 
-    def on_colormap_change(self, change):
-        self.fits_image.cmap = self.cmaps.get_active_color_map()
-        self.fits_image.plot()
-        self.updateFitsInWidgets()
+    # def on_colormap_change(self, change):
+    #     self.fits_image.cmap = self.cmaps.get_active_color_map()
+    #     self.fits_image.plot()
+    #     self.updateFitsInWidgets()
 
 
     def onCenterCircleChange(self, change):
@@ -552,10 +579,10 @@ class MainWindow(QMainWindow):
 
         self.headerWidget.writeSettings(settings)
 
-    def updateFitsInWidgets(self):
-        # print("updateFitsInWidgets")
-        self.full_view_widget.updateFits(self.fits_image)
-        self.zoom_view_widget.updateFits(self.fits_image)
+    # def updateFitsInWidgets(self):
+    #     # print("updateFitsInWidgets")
+    #     self.full_view_widget.updateFits(self.fits_image)
+    #     self.zoom_view_widget.updateFits(self.fits_image)
 
 class QWidgetCustom(QWidget):
     #nakładka na QWidget dla eventu leave

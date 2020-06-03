@@ -4,7 +4,8 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 
 class ColorMaps(HasTraits):
-    cmap_idx = Unicode(default_value='bone')
+    default = 'bone'
+    cmap_idx = Unicode(default_value=default)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

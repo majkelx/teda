@@ -1,4 +1,4 @@
-from traitlets import HasTraits, Int, Float
+from traitlets import HasTraits, Int, Float, Unicode
 
 
 class ScalesModel(HasTraits):
@@ -25,6 +25,10 @@ class ScalesModel(HasTraits):
     interval_zscale_minpixels = Int(5)
     interval_zscale_krej = Float(2.5)
     interval_zscale_maxiterations = Int(5)
+
+    selected_cmap = Unicode('bone')  # TODO: move out of here
+    selected_stretch = Unicode('linear')
+    selected_interval = Unicode('zscale')
 
     def __init__(self):
         self.observe(self.func, names=['stretch_asinh_a',
