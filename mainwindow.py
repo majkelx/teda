@@ -65,6 +65,7 @@ from zoomViewWidget import ZoomViewWidget
 from radialprofileIRAF import IRAFRadialProfileWidget
 from headerTableWidget import HeaderTableWidget
 from scaleWidget import ScaleWidget
+from scanToolbar import ScanToolbar
 from info import InfoWidget
 from cmaps import ColorMaps
 import console
@@ -119,7 +120,11 @@ class MainWindow(QMainWindow):
         self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewBounaries_versionno'])
 
         #open last fits
-        self.openLastFits()
+        try:
+            self.openLastFits()
+        except FileNotFoundError:
+            print('Błąd w odczycie lub brak ostatio wczytanego pliku')
+
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeWindowSettings()
@@ -270,6 +275,10 @@ class MainWindow(QMainWindow):
         self.hduToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
         self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
 
+        self.scanToolBar = self.addToolBar("Scan Toolbar")
+        self.scanwidget = ScanToolbar(self)
+        self.scanToolBar.addWidget(self.scanwidget)
+
         self.infoToolBar = self.addToolBar("Info Toolbar")
         self.mouse_x_label = QLabel('100.1')
         self.mouse_y_label = QLabel('100.145')
@@ -303,6 +312,7 @@ class MainWindow(QMainWindow):
 
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
+        self.viewMenu.addAction(self.scanToolBar.toggleViewAction())
         self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
         self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
         self.viewMenu.addSeparator()
