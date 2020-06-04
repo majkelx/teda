@@ -99,6 +99,11 @@ class FitsPlotter(tr.HasTraits):
             self.plot_fits_data(data, ax, self.alpha, self.get_normalization(), self.cmap)
             self.invalidate()
 
+    def set_cmap(self, cmap):
+        self.cmap = cmap
+        if self.img is not None:
+            self.img.set_cmap(cmap)
+
     def set_normalization(self, stretch=None, interval=None, stretchkwargs={}, intervalkwargs={}):
         if stretch is None:
             if self.stretch is None:

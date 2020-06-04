@@ -31,8 +31,8 @@ class FitsPlotterControlled(FitsPlotter):
     def cmap_from_model(self):
         if self.cmap_model is None:
             return
-        self.cmap = self.cmap_model.get_active_color_map()
-        self.plot()
+        self.set_cmap(self.cmap_model.get_active_color_map())
+        self.invalidate()
 
     def set_scale_model(self, scale_model):
         self.scale_model = scale_model
