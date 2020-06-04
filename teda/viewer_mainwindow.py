@@ -218,8 +218,8 @@ class MainWindow(QMainWindow):
         settings = QSettings()
 
         settings.beginGroup("WCS")
-        self.wcsSexAct.setChecked(settings.value("sexagesimal", True))
-        self.wcsGridAct.setChecked(settings.value("grid", False))
+        self.wcsSexAct.setChecked(bool(settings.value("sexagesimal", True)))
+        self.wcsGridAct.setChecked(bool(settings.value("grid", False)))
         settings.endGroup()
 
 
