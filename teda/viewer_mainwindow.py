@@ -52,6 +52,7 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
+from teda.version import __version__
 from teda.views.fitsplot import FitsPlotter
 from teda.views.fitsplot_fitsfile import FitsPlotterFitsFile
 from teda.models.coordinates import CoordinatesModel
@@ -246,6 +247,7 @@ class MainWindow(QMainWindow):
 
     def about(self):
         QMessageBox.about(self, "TeDa FITS Viewer",
+                          f"TeDa FITS Viewer {__version__} <br/>"
                           "Authors: <ul> "
                           "<li>Michał Brodniak</li>"
                           "<li>Konrad Górski</li>"

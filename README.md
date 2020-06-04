@@ -6,7 +6,7 @@ Observatory optimized SAO DS9 replacement
 * Flexible layout
 * WCS support
 * Radial Profile with gaussoide fit
-* Scan mode: reloads
+* Scan mode: observes directory for changes and automatically opens new FITS 
 
 ## Development version install:
 ``` bash

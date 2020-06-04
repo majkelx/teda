@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 """
 TeDa FITS Viewer application
 
@@ -7,7 +7,8 @@ by Akond Lab
 from PySide2.QtWidgets import QApplication
 from teda.viewer_mainwindow import MainWindow
 
-if __name__ == '__main__':
+
+def main():
     import sys
 
     app = QApplication(sys.argv)
@@ -19,3 +20,7 @@ if __name__ == '__main__':
     mainWin.show()
 
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()
