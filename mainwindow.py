@@ -85,14 +85,12 @@ class MainWindow(QMainWindow):
         self.fits_image = FitsPlotter(figure=fig)
         fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
 
-        self.fits_image = FitsPlotterFitsFile(figure=fig, cmap=self.cmaps.get_active_color_map(),
+        self.fits_image = FitsPlotterFitsFile(figure=fig, cmap_model=self.cmaps,
                                               scale_model=self.scales_model
                                               )
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
-        self.stretch_dict = {}
-        self.interval_dict = {}
         self.current_x_coord = 0
         self.current_y_coord = 0
 
@@ -423,7 +421,7 @@ class MainWindow(QMainWindow):
         dock = QDockWidget("Dynamic Scale", self)
         dock.setObjectName("SCALE")
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
-        self.scaleWidget = ScaleWidget(self, scales_model=self.scales_model)
+        self.scaleWidget = ScaleWidget(self, scales_model=self.scales_model, cmap_model=self.cmaps)
         dock.setWidget(self.scaleWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -461,6 +459,7 @@ class MainWindow(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.full_view_widget = FullViewWidget(self.fits_image)
         self.full_view_widget.fits_image.set_scale_model(self.scales_model)
+        self.full_view_widget.fits_image.set_cmap_model(self.cmaps)
         dock.setWidget(self.full_view_widget)
         self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -470,6 +469,7 @@ class MainWindow(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.zoom_view_widget = ZoomViewWidget(self.fits_image)
         self.zoom_view_widget.fits_image.set_scale_model(self.scales_model)
+        self.zoom_view_widget.fits_image.set_cmap_model(self.cmaps)
         dock.setWidget(self.zoom_view_widget)
         self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -491,8 +491,8 @@ class MainWindow(QMainWindow):
         self.headerWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         dock.setWidget(self.headerWidget)
 
-    def changeColor(self, color):
-        self.cmaps.set_active_color_map(color)
+    # def changeColor(self, color):
+    #     self.cmaps.set_active_color_map(color)
 
     # def on_colormap_change(self, change):
     #     self.fits_image.cmap = self.cmaps.get_active_color_map()

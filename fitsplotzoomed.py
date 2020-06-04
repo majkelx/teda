@@ -5,10 +5,10 @@ from fitsplotcontrolled import FitsPlotterControlled
 class FitsPlotterZoomed(FitsPlotterControlled):
 
     def __init__(self, figure=None, ax=None, interval=None, intervalkwargs=None, stretch=None, stretchkwargs=None,
-                 cmap=None, scale_model=None):
+                 cmap_model=None, scale_model=None):
         self.mouse_box = None
         super().__init__(figure, ax, interval, intervalkwargs, stretch, stretchkwargs,
-                         cmap=cmap, scale_model=scale_model)
+                         cmap_model=cmap_model, scale_model=scale_model)
 
     def plot_fits_data(self, data, ax, alpha, norm, cmap):
 

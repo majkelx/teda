@@ -26,11 +26,11 @@ class ScalesModel(HasTraits):
     interval_zscale_krej = Float(2.5)
     interval_zscale_maxiterations = Int(5)
 
-    selected_cmap = Unicode('bone')  # TODO: move out of here
     selected_stretch = Unicode('linear')
     selected_interval = Unicode('zscale')
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.observe(self.func, names=['stretch_asinh_a',
                                        'stretch_contrastbias_contrast',
                                        'stretch_contrastbias_bias',

@@ -14,6 +14,9 @@ class ScanToolbar(QWidget):
         self.parent = parent
         self.activeScan=False
 
+        self.worker = None
+        self.worker_thread = None
+
         self.layout = QHBoxLayout(self)
         self.BtnScan = QPushButton("Scan")
         self.BtnScan.clicked.connect(self.startScan)
@@ -49,7 +52,7 @@ class ScanToolbar(QWidget):
         self.layout.addWidget(self.BtnResumeScan)
 
         # Create a new worker thread.
-        self.createWorkerThread()
+        # self.createWorkerThread()
         # Make any cross object connections.
         self._connectSignals()
 
@@ -57,6 +60,7 @@ class ScanToolbar(QWidget):
         fileName = QFileDialog.getExistingDirectory(self, 'Select directory')
 
         if fileName:
+            self.createWorkerThread()
             self.BtnScan.setVisible(False)
             self.BtnStop.setVisible(True)
             self.BtnPause.setVisible(True)
@@ -96,19 +100,19 @@ class ScanToolbar(QWidget):
 
 
     def createWorkerThread(self):
+        if self.worker is None:
+            # Setup the worker object and the worker_thread.
+            self.worker = WorkerObject()
+            self.worker_thread = QtCore.QThread()
+            self.worker.moveToThread(self.worker_thread)
+            self.worker_thread.start() # powinno być na przyciskach ale i tak nie ubijam tego threada
 
-        # Setup the worker object and the worker_thread.
-        self.worker = WorkerObject()
-        self.worker_thread = QtCore.QThread()
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start() # powinno być na przyciskach ale i tak nie ubijam tego threada
-
-        # Connect any worker signals
-        self.worker.signalStatus.connect(self.updateStatus)
-        self.BtnStartScan.clicked.connect(self.worker.startWork)
-        self.BtnResumeScan.clicked.connect(self.worker.startWork)
-        self.BtnStopScan.clicked.connect(self.forceWorkerStop)
-        self.BtnPauseScan.clicked.connect(self.forceWorkerStop)
+            # Connect any worker signals
+            self.worker.signalStatus.connect(self.updateStatus)
+            self.BtnStartScan.clicked.connect(self.worker.startWork)
+            self.BtnResumeScan.clicked.connect(self.worker.startWork)
+            self.BtnStopScan.clicked.connect(self.forceWorkerStop)
+            self.BtnPauseScan.clicked.connect(self.forceWorkerStop)
 
 
     def forceWorkerStop(self):

@@ -168,11 +168,10 @@ class FitsPlotter(tr.HasTraits):
             self.set_normalization(self.stretch, self.interval)
         return vis.ImageNormalize(self.data, interval=self.interval, stretch=self.stretch, clip=True)
 
-    def copy_visualization_parameters(self, source):
-        self.cmap = source.cmap
-        self.alpha = source.alpha
-        self.set_normalization(source.stretch, source.interval)
-
+    # def copy_visualization_parameters(self, source):
+    #     self.cmap = source.cmap
+    #     self.alpha = source.alpha
+    #     self.set_normalization(source.stretch, source.interval)
 
     def prepare_kwargs(self, defaults, *specific):
         r = defaults.copy()

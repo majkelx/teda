@@ -10,12 +10,12 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
     fitsfile = tr.Unicode(allow_none=True)
 
     def __init__(self, fitsfile=None, hdu=0, figure=None, ax=None, interval=None, intervalkwargs=None, stretch=None,
-                 stretchkwargs=None, cmap=None, scale_model=None):
+                 stretchkwargs=None, cmap_model=None, scale_model=None):
         self.fitsfile = fitsfile
         self.hdu = hdu
         self._huds = None
         super().__init__(figure, ax, interval, intervalkwargs, stretch, stretchkwargs,
-                         cmap=cmap, scale_model=scale_model)
+                         cmap_model=cmap_model, scale_model=scale_model)
 
 
     @property

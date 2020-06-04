@@ -10,10 +10,11 @@ class ScaleWidget(QWidget):
     intervals_list = ['zscale','minmax', 'manual', 'percentile', 'asymetric']
 
 
-    def __init__(self, parent, scales_model):
+    def __init__(self, parent, scales_model, cmap_model):
         QWidget.__init__(self, parent)
         self.parent = parent
         self.scalesModel = scales_model
+        self.cmapModel = cmap_model
         self.ignore_signals = False
 
         # comboboxes
@@ -44,9 +45,11 @@ class ScaleWidget(QWidget):
         self.setMaximumHeight(350)
 
         self.adjustCombos()
+        self.adjustCmapCombo()
         self.adjustSliders()
 
-        self.scalesModel.observe(lambda change: self.onModelChange(change))
+        self.scalesModel.observe(lambda change: self.onScaleModelChange(change))
+        self.cmapModel.observe(lambda change: self.onCmapModelChange(change))
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
@@ -93,11 +96,13 @@ class ScaleWidget(QWidget):
         layout = QGridLayout()
         self.manual_vmin = QSlider(Qt.Horizontal)
         self.manual_vmin.setMinimum(0)
-        self.manual_vmin.setMaximum(10000)
+        self.manual_vmin.setMaximum(30000)
+        self.manual_vmin.setSingleStep(100)
 
         self.manual_vmax = QSlider(Qt.Horizontal)
         self.manual_vmax.setMinimum(10000)
-        self.manual_vmax.setMaximum(50000)
+        self.manual_vmax.setMaximum(60000)
+        self.manual_vmax.setSingleStep(100)
 
         self.manual_vmin.valueChanged.connect(lambda changed: self.onSliderChange('interval_manual_vmin',
                                                                                   self.manual_vmin.value() / 10.0))
@@ -241,8 +246,8 @@ class ScaleWidget(QWidget):
 
         self.color_combobox = QComboBox()
         self.color_combobox.setFocusPolicy(Qt.NoFocus)
-        self.color_combobox.addItems(self.parent.cmaps.colormaps.keys())
-        self.color_combobox.setCurrentText(self.parent.cmaps.default)
+        self.color_combobox.addItems(self.cmapModel.colormaps.keys())
+        self.color_combobox.setCurrentText(self.cmapModel.cmap_idx)
 
         layout.addWidget(self.stretch_combobox)
         layout.addWidget(self.interval_combobox)
@@ -250,7 +255,7 @@ class ScaleWidget(QWidget):
 
         self.stretch_combobox.activated.connect(lambda activated: self.on_select_stretch())
         self.interval_combobox.activated.connect(lambda activated: self.on_select_interval())
-        self.color_combobox.currentIndexChanged.connect(lambda activated: self.parent.changeColor(self.color_combobox.currentText()))
+        self.color_combobox.activated.connect(lambda activated: self.on_select_cmap())
         return layout
 
 
@@ -413,11 +418,14 @@ class ScaleWidget(QWidget):
         # self.fitsNormalization(current_stretch, current_interval)
 
 
-    def onModelChange(self, change):
+    def onScaleModelChange(self, change):
         if self.ignore_signals:  # avoid selfupdate on moving sliders
             return
         self.adjustCombos()
         self.adjustSliders()
+
+    def onCmapModelChange(self, change):
+        self.adjustCmapCombo()
 
     def on_select_stretch(self):
         self.scalesModel.selected_stretch = self.stretch_combobox.currentText()
@@ -425,8 +433,11 @@ class ScaleWidget(QWidget):
     def on_select_interval(self):
         self.scalesModel.selected_interval = self.interval_combobox.currentText()
 
+    def on_select_cmap(self):
+        self.cmapModel.cmap_idx = self.color_combobox.currentText()
+
     def adjustCombos(self):
-        """Select layout page from model"""
+        """Select layout page from model and set scale combos value"""
         self.stretch_combobox.setCurrentText(self.scalesModel.selected_stretch)
         self.interval_combobox.setCurrentText(self.scalesModel.selected_interval)
         try:
@@ -440,6 +451,10 @@ class ScaleWidget(QWidget):
         except ValueError:
             pass
         # self.fitsNormalization(self.stretch_combobox.currentText(), self.interval_combobox.currentText())
+
+    def adjustCmapCombo(self):
+        """Set combo value"""
+        self.color_combobox.setCurrentText(self.cmapModel.cmap_idx)
 
     def adjustSliders(self):
         ignore_signals = self.ignore_signals
@@ -503,7 +518,7 @@ class ScaleWidget(QWidget):
         settings.setValue("zscale/krej", self.scalesModel.interval_zscale_krej)
         settings.setValue("zscale/maxiterations", self.scalesModel.interval_zscale_maxiterations)
 
-        settings.setValue("cmap", self.scalesModel.selected_cmap)
+        settings.setValue("cmap", self.cmapModel.cmap_idx)
         settings.setValue("stretch", self.scalesModel.selected_stretch)
         settings.setValue("interval", self.scalesModel.selected_interval)
         # settings.setValue("cmap", self.color_combobox.currentIndex())
@@ -514,7 +529,7 @@ class ScaleWidget(QWidget):
         settings = QSettings()
         settings.beginGroup("Sliders")
 
-        self.setModelValue('selected_cmap', settings.value("cmap"))
+        self.setModelValue('cmap_idx', settings.value("cmap"), model=self.cmapModel)
         self.setModelValue('selected_stretch', settings.value("stretch"))
         self.setModelValue('selected_interval', settings.value("interval"))
         # self.color_combobox.setCurrentIndex(settings.value("cmap", 3))
@@ -544,9 +559,11 @@ class ScaleWidget(QWidget):
         self.setModelValue('interval_zscale_maxiterations', settings.value('zscale/maxiterations'))
         settings.endGroup()
 
-    def setModelValue(self, model_key, value):
+    def setModelValue(self, model_key, value, model=None):
+        if model is None:
+            model = self.scalesModel
         try:
-            setattr(self.scalesModel, model_key, value)
+            setattr(model, model_key, value)
             pass
         except TraitError:
             print(f'Attempt to set {model_key} := {value} caused exception. Ignored')
