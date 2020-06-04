@@ -1,10 +1,11 @@
-from painterShapes.circleShape import (CircleShape)
-from painterShapes.CircleCenterShape import (CircleCenterShape)
-from painterShapes.rectangleMinatureShape import (RectangleMiniatureShape)
+from .painterShapes.circleShape import (CircleShape)
+from .painterShapes.CircleCenterShape import (CircleCenterShape)
+from .painterShapes.rectangleMinatureShape import (RectangleMiniatureShape)
 import matplotlib.pyplot as plt
 from traitlets import Float, Int, HasTraits
 from math import *
-from fitting import fit_gauss_2d_c
+
+from .fitting import fit_gauss_2d_c
 
 class PainterComponent(HasTraits):
     """Painter"""

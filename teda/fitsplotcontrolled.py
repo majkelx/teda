@@ -1,5 +1,5 @@
 from matplotlib import patches
-from fitsplot import FitsPlotter
+from .fitsplot import FitsPlotter
 
 class FitsPlotterControlled(FitsPlotter):
     """Extend FitsPlotter for MVC Controller functionality to connect to the model"""

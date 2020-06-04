@@ -2,8 +2,13 @@ import PySide2
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QWidget, QSlider, QLabel, QHBoxLayout
 
-
 class FloatSlider(QWidget):
+    """
+    Slider with value
+
+    Not used, finished yet
+    TODO: Finish and use in place of current sliders
+    """
 
     def __init__(self, parent = None,
                  f = None):

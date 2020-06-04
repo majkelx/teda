@@ -3,7 +3,7 @@ import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from fitsplotzoomed import FitsPlotterZoomed
+from .fitsplotzoomed import FitsPlotterZoomed
 
 
 class ZoomViewWidget(QWidget):

@@ -50,26 +50,29 @@ from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidg
                                QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QPushButton,
                                QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem,
                                QComboBox, QMenu)
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
-from fitsplot import (FitsPlotter)
-from coordinates import CoordinatesModel
-from fitsplot_fitsfile import FitsPlotterFitsFile
-from fitsopen import (FitsOpen)
-from painterComponent import PainterComponent
-from matplotlib.figure import Figure
+
 from math import *
-from radialprofile import RadialProfileWidget
-from radialprofileIRAF import IRAFRadialProfileWidget
-from fullViewWidget import FullViewWidget
-from zoomViewWidget import ZoomViewWidget
-from radialprofileIRAF import IRAFRadialProfileWidget
-from headerTableWidget import HeaderTableWidget
-from scaleWidget import ScaleWidget
-from scanToolbar import ScanToolbar
-from info import InfoWidget
-from cmaps import ColorMaps
-from scalesModel import ScalesModel
-import console
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+
+from .fitsplot import FitsPlotter
+from .coordinates import CoordinatesModel
+from .fitsplot_fitsfile import FitsPlotterFitsFile
+from .fitsopen import FitsOpen
+from .painterComponent import PainterComponent
+from .radialprofile import RadialProfileWidget
+from .radialprofileIRAF import IRAFRadialProfileWidget
+from .fullViewWidget import FullViewWidget
+from .zoomViewWidget import ZoomViewWidget
+from .radialprofileIRAF import IRAFRadialProfileWidget
+from .headerTableWidget import HeaderTableWidget
+from .scaleWidget import ScaleWidget
+from .scanToolbar import ScanToolbar
+from .info import InfoWidget
+from .cmaps import ColorMaps
+from .scalesModel import ScalesModel
+from . import console
 
 
 class MainWindow(QMainWindow):
@@ -159,7 +162,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Ready", 2000)
 
     def open_dialog(self):
-        fileName, _ = QFileDialog.getOpenFileName(mainWin, "Open Image", ".", "Fits files (*.fits)")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Open Image", ".", "Fits files (*.fits)")
         # fileName = QFileDialog.getOpenFileName(mainWin, "Open Image", "/home/akond/Pulpit/fits files", "Fits files (*.fits)")[0]
         if fileName:
             self.open_fits(fileName)
@@ -602,15 +605,3 @@ class QWidgetCustom(QWidget):
     def leaveEvent(self, e):
         self.clearFocus()
 
-if __name__ == '__main__':
-    import sys
-
-    app = QApplication(sys.argv)
-    QApplication.setOrganizationName('Akond Lab')
-    QApplication.setOrganizationDomain('akond.com')
-    QApplication.setApplicationName('TeDa FITS Viewer')
-    mainWin = MainWindow()
-    # mainWin.resize(800, 600)   # now in config, see: MainWindow.readWindowSettings
-    mainWin.show()
-
-    sys.exit(app.exec_())

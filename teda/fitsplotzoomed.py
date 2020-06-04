@@ -1,5 +1,5 @@
 from matplotlib import patches
-from fitsplotcontrolled import FitsPlotterControlled
+from .fitsplotcontrolled import FitsPlotterControlled
 
 
 class FitsPlotterZoomed(FitsPlotterControlled):

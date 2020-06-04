@@ -1,7 +1,6 @@
 
 from PySide2.QtCore import Qt, QSettings
 from PySide2.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QComboBox)
-from scalesModel import (ScalesModel)
 from traitlets import TraitError
 
 class ScaleWidget(QWidget):

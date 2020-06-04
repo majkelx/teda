@@ -2,7 +2,7 @@ from astropy.io import fits
 from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU)
 import traitlets as tr
 
-from fitsplotcontrolled import FitsPlotterControlled
+from .fitsplotcontrolled import FitsPlotterControlled
 
 
 class FitsPlotterFitsFile(FitsPlotterControlled):

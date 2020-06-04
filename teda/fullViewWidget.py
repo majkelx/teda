@@ -3,8 +3,8 @@ import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from fitsplotcontrolled import (FitsPlotterControlled)
-from painterComponent import PainterComponent
+from .fitsplotcontrolled import (FitsPlotterControlled)
+from .painterComponent import PainterComponent
 
 
 class FullViewWidget(QWidget):
