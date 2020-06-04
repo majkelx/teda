@@ -1,10 +1,8 @@
-import numpy as np
-import PySide2
 from PySide2.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from .fitsplotcontrolled import (FitsPlotterControlled)
-from .painterComponent import PainterComponent
+from teda.views.fitsplotcontrolled import (FitsPlotterControlled)
+from teda.painterComponent import PainterComponent
 
 
 class FullViewWidget(QWidget):

@@ -42,36 +42,30 @@
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
 import PySide2
 from PySide2 import QtWidgets
-from PySide2.QtCore import QDate, QFile, Qt, QTextStream, QSize, QSettings
-from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat, QPixmap,
-                           QTextCursor, QTextTableFormat)
+from PySide2.QtCore import QFile, Qt, QTextStream, QSettings
+from PySide2.QtGui import (QFont, QIcon, QKeySequence)
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
-from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QSlider, QStackedLayout,
-                               QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QPushButton,
-                               QFileDialog, QListWidget, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem,
-                               QComboBox, QMenu)
-
-from math import *
+from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QWidget, QPushButton,
+                               QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem,
+                               QComboBox)
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-from .fitsplot import FitsPlotter
-from .coordinates import CoordinatesModel
-from .fitsplot_fitsfile import FitsPlotterFitsFile
-from .fitsopen import FitsOpen
+from teda.views.fitsplot import FitsPlotter
+from teda.views.fitsplot_fitsfile import FitsPlotterFitsFile
+from teda.models.coordinates import CoordinatesModel
 from .painterComponent import PainterComponent
-from .radialprofile import RadialProfileWidget
-from .radialprofileIRAF import IRAFRadialProfileWidget
-from .fullViewWidget import FullViewWidget
-from .zoomViewWidget import ZoomViewWidget
-from .radialprofileIRAF import IRAFRadialProfileWidget
-from .headerTableWidget import HeaderTableWidget
-from .scaleWidget import ScaleWidget
-from .scanToolbar import ScanToolbar
-from .info import InfoWidget
-from .cmaps import ColorMaps
-from .scalesModel import ScalesModel
+from teda.widgets.radialprofile import RadialProfileWidget
+from teda.widgets.fullViewWidget import FullViewWidget
+from teda.widgets.zoomViewWidget import ZoomViewWidget
+from teda.widgets.radialprofileIRAF import IRAFRadialProfileWidget
+from teda.widgets.headerTableWidget import HeaderTableWidget
+from teda.widgets.scaleWidget import ScaleWidget
+from teda.widgets.scanToolbar import ScanToolbar
+from teda.widgets.info import InfoWidget
+from teda.models.cmaps import ColorMaps
+from teda.models.scalesModel import ScalesModel
 from . import console
 
 

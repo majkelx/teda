@@ -1,6 +1,14 @@
+# TeDa FITS Viewer
 
+Observatory optimized SAO DS9 replacement
 
-## Development version:
+## Key Features
+* Flexible layout
+* WCS support
+* Radial Profile with gaussoide fit
+* Scan mode: reloads
+
+## Development version install:
 ``` bash
 
     git clone git@github.com:majkelx/teda.git
@@ -8,7 +16,4 @@
     python -m venv venv
     source ./venv/bin/activate
     pip install -r requirements.txt
-
 ```
-
-Information about Virtual Machine for development: https://intranet.akond.com/jira/browse/OD-31
