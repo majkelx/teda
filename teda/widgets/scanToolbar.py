@@ -64,7 +64,7 @@ class ScanToolbar(QWidget):
             self.BtnScan.setVisible(False)
             self.BtnStop.setVisible(True)
             self.BtnPause.setVisible(True)
-            #self.worker_thread.start() #powinno tu być ale jest w create
+            self.worker_thread.start() #powinno tu być ale jest w create
             self.worker.setActive(True)
             self.activeScan = True
             self.worker.setFileName(fileName)
@@ -105,7 +105,7 @@ class ScanToolbar(QWidget):
             self.worker = WorkerObject()
             self.worker_thread = QtCore.QThread()
             self.worker.moveToThread(self.worker_thread)
-            self.worker_thread.start() # powinno być na przyciskach ale i tak nie ubijam tego threada
+            #self.worker_thread.start() # powinno być na przyciskach ale i tak nie ubijam tego threada
 
             # Connect any worker signals
             self.worker.signalStatus.connect(self.updateStatus)
@@ -136,13 +136,14 @@ class ScanToolbar(QWidget):
     def updateStatus(self, status):
         if self.activeScan: # Wprowadzona flaga by ignorować sygnał gdy skan zatrzymany
             time.sleep(1)
-            print(status)
-            try:
-                self.parent.open_fits(status)
-            except FileNotFoundError:
-                print('Błąd w odczycie pliku')
-            except OSError:
-                print('Pusty lub błedny format pliku')
+            if self.parent.fits_image.isFitsFile(status):
+                print(status)
+                try:
+                    self.parent.open_fits(status)
+                except FileNotFoundError:
+                    print('Błąd w odczycie pliku')
+                except OSError:
+                    print('Pusty lub błedny format pliku')
 
 class WorkerObject(QtCore.QObject):
 

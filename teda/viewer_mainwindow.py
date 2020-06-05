@@ -103,7 +103,6 @@ class MainWindow(QMainWindow):
         self.createMenus()
         self.createToolBars()
         self.createStatusBar()
-        self.createInfoWindow()
         self.createDockWindows()
         self.scaleWidget.readSlidersValues()
         # self.defineButtonsActions()
@@ -321,6 +320,7 @@ class MainWindow(QMainWindow):
         self.scanToolBar = self.addToolBar("Scan Toolbar")
         self.scanwidget = ScanToolbar(self)
         self.scanToolBar.addWidget(self.scanwidget)
+        self.scanToolBar.hide()
 
         self.infoToolBar = self.addToolBar("Info Toolbar")
         self.mouse_x_label = QLabel('100.1')
@@ -329,6 +329,7 @@ class MainWindow(QMainWindow):
         self.infoToolBar.addWidget(self.mouse_x_label)
         self.infoToolBar.addWidget(QLabel('y:'))
         self.infoToolBar.addWidget(self.mouse_y_label)
+        self.infoToolBar.hide()
 
         self.zoomToolBar = self.addToolBar("Zoom Toolbar")
         self.zoomToolBar.addAction("x4").triggered.connect(self.setZoomButton4)
@@ -424,6 +425,9 @@ class MainWindow(QMainWindow):
         dock.setWidget(self.scaleWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+        dock.setFloating(True)
+        dock.hide()
+
 
         #radial profiles
         dock = QDockWidget("Radial Profile Fit", self)
@@ -442,6 +446,7 @@ class MainWindow(QMainWindow):
         dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+        dock.hide()
 
         #info panel
         dock = QDockWidget("Info", self)
@@ -449,8 +454,23 @@ class MainWindow(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.info_widget = InfoWidget(self)
         dock.setWidget(self.info_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+
+        # FITS headers
+        dock = QDockWidget("FITS header", self)
+        dock.setObjectName("FTIS_DATA")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.addDockWidget(Qt.TopDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+        self.headerWidget = HeaderTableWidget(self)
+        self.headerWidget.setColumnCount(2)
+        self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
+        self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
+        self.headerWidget.horizontalHeader().setStretchLastSection(1)
+        self.headerWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.headerWidget.clearFocus()
+        dock.setWidget(self.headerWidget)
 
         # full
         dock = QDockWidget("Full view", self)
@@ -475,20 +495,6 @@ class MainWindow(QMainWindow):
 
         self.viewMenu.addSeparator()
 
-    def createInfoWindow(self):
-        dock = QDockWidget("FITS header", self)
-        dock.setObjectName("FTIS_DATA")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
-
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-        self.headerWidget = HeaderTableWidget(self)
-        self.headerWidget.setColumnCount(2)
-        self.headerWidget.setHorizontalHeaderItem(0, QTableWidgetItem("KEY"))
-        self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
-        self.headerWidget.horizontalHeader().setStretchLastSection(1)
-        self.headerWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
-        dock.setWidget(self.headerWidget)
 
     # def changeColor(self, color):
     #     self.cmaps.set_active_color_map(color)
