@@ -469,6 +469,7 @@ class MainWindow(QMainWindow):
         self.headerWidget.setHorizontalHeaderItem(1, QTableWidgetItem("VALUE"))
         self.headerWidget.horizontalHeader().setStretchLastSection(1)
         self.headerWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.headerWidget.clearFocus()
         dock.setWidget(self.headerWidget)
 
         # full
