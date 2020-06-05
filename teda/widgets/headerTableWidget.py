@@ -8,6 +8,7 @@ class HeaderTableWidget(QTableWidget):
         QTableWidget.__init__(self, parent)
         self.pinnedItems = []
         self.parent = parent
+        self.clearFocus()
 
 
     def contextMenuEvent(self, event):
@@ -94,3 +95,6 @@ class HeaderTableWidget(QTableWidget):
 
     def leaveEvent(self, e):
         self.clearFocus()
+
+    def enterEvent(self, e):
+        self.setFocus()
