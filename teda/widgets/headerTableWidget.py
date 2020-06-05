@@ -1,5 +1,6 @@
 from PySide2.QtWidgets import (QTableWidget, QTableWidgetItem, QMenu)
 from PySide2.QtGui import (QIcon)
+from PySide2.QtCore import Qt
 import PySide2
 
 class HeaderTableWidget(QTableWidget):
@@ -8,7 +9,7 @@ class HeaderTableWidget(QTableWidget):
         QTableWidget.__init__(self, parent)
         self.pinnedItems = []
         self.parent = parent
-        self.clearFocus()
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
 
     def contextMenuEvent(self, event):
@@ -22,6 +23,7 @@ class HeaderTableWidget(QTableWidget):
                 self.changePinAction(row, column)
 
             self.setHeader()
+            self.clearFocus()
 
     def changePinAction(self, row, column):
         cell = self.item(row, 0);
@@ -31,6 +33,7 @@ class HeaderTableWidget(QTableWidget):
         except ValueError:
             self.pinnedItems.append(cell.text())
         print(self.pinnedItems)
+        self.clearFocus()
 
     def createRow(self, pos, key, val, pin):
         newKeyItem = QTableWidgetItem()
@@ -96,5 +99,6 @@ class HeaderTableWidget(QTableWidget):
     def leaveEvent(self, e):
         self.clearFocus()
 
-    def enterEvent(self, e):
-        self.setFocus()
+    def viewOptions(self) -> PySide2.QtWidgets.QStyleOptionViewItem:
+        return super().viewOptions()
+

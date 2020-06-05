@@ -15,7 +15,7 @@ class RadialProfileWidget(QWidget):
         self.y = 675
         self.radius = 20
         figure_layout = QHBoxLayout()
-        self.fig = Figure(figsize=(6, 4))
+        self.fig = Figure(figsize=(2, 2))
         # self.fig.tight_layout()
 
         canvas = FigureCanvas(self.fig)

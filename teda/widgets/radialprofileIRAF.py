@@ -18,7 +18,7 @@ class IRAFRadialProfileWidget(QWidget):
         self.y = 675
         self.radius = 20
         figure_layout = QHBoxLayout()
-        self.fig = Figure(figsize=(6, 4))
+        self.fig = Figure(figsize=(2, 2))
         # self.fig.tight_layout()
 
         canvas = FigureCanvas(self.fig)
@@ -55,9 +55,7 @@ class IRAFRadialProfileWidget(QWidget):
                 return f'{v/1000.0:.0f}k'
             if v >= 1000:
                 return f'{v/1000.0:.1f}k'
-            if v >= 10:
-                return f'{v:.0f}'
-            return f'{v:4f}'
+            return f'{v:4g}'
 
         ax.yaxis.set_major_formatter(formatter)
 
@@ -97,9 +95,9 @@ class IRAFRadialProfileWidget(QWidget):
         except Exception:
             pass
 
-        self.ax.autoscale(tight=True)
+        # self.ax.autoscale()
         self.ax.relim()
-        self.ax.autoscale(tight=True)
+        self.ax.autoscale()
         # self.ax.plot(rad,val)
         self.fig.canvas.draw_idle()
 
