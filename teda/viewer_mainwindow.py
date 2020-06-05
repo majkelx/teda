@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
-        self.openAct = QAction(QIcon.fromTheme('document-open'), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
+        self.openAct = QAction(QIcon.fromTheme('document-new', QIcon(':/images/new.png')), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
