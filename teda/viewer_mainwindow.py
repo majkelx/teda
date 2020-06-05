@@ -71,8 +71,9 @@ from . import console
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, tedaCommandLine):
         super().__init__()
+        self.tedaCommandLine = tedaCommandLine
         self.cmaps = ColorMaps()
         self.combobox = QComboBox()
         self.filename = None
@@ -207,10 +208,13 @@ class MainWindow(QMainWindow):
         settings.endGroup()
 
     def openLastFits(self):
-        settings = QSettings()
-        settings.beginGroup("Files")
-        filename = settings.value("lastFile")
-        settings.endGroup()
+        if (self.tedaCommandLine.openFile is None):
+            settings = QSettings()
+            settings.beginGroup("Files")
+            filename = settings.value("lastFile")
+            settings.endGroup()
+        else:
+            filename = self.tedaCommandLine.openFile
         if filename:
             self.open_fits(filename)
 
