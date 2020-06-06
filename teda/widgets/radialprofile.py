@@ -10,12 +10,13 @@ class RadialProfileWidget(QWidget):
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.is_on = True
         self.data = data
         self.x = 500
         self.y = 675
         self.radius = 20
         figure_layout = QHBoxLayout()
-        self.fig = Figure(figsize=(2, 2))
+        self.fig = Figure(figsize=(2.5, 2.5))
         # self.fig.tight_layout()
 
         canvas = FigureCanvas(self.fig)
@@ -30,6 +31,15 @@ class RadialProfileWidget(QWidget):
         # import matplotlib.pyplot as plt
         # axes = plt.axes()
         # axes.set_ylim([0, 1])
+
+    def showEvent(self, event: PySide2.QtGui.QShowEvent):
+        super().showEvent(event)
+        # self.turn_on()
+        self.invalidate()
+
+    # def hideEvent(self, event: PySide2.QtGui.QHideEvent):
+    #     super().hideEvent(event)
+    #     self.turn_off()
 
     def set_centroid(self, x, y, radius=None):
         self.x = x
@@ -46,7 +56,16 @@ class RadialProfileWidget(QWidget):
         self.data = data
         self.invalidate()
 
+    # def turn_off(self):
+    #     self.is_on = False
+    #
+    # def turn_on(self):
+    #     self.is_on = True
+    #     self.invalidate()
+
     def invalidate(self):
+        if not self.isVisible() or self.data is None:
+            return
         rad, val = self.calc_profile()
         self.plotted_profile.set_xdata(rad)
         self.plotted_profile.set_ydata(val)

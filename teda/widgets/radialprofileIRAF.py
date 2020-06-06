@@ -18,7 +18,7 @@ class IRAFRadialProfileWidget(QWidget):
         self.y = 675
         self.radius = 20
         figure_layout = QHBoxLayout()
-        self.fig = Figure(figsize=(2, 2))
+        self.fig = Figure(figsize=(2.5, 2.5))
         # self.fig.tight_layout()
 
         canvas = FigureCanvas(self.fig)
@@ -27,8 +27,10 @@ class IRAFRadialProfileWidget(QWidget):
         self.setup_axies(self.ax)
 
 
-        self.plotted_profile = self.ax.plot([1,2,3,4],[1,4,6,8], '.', ms=1)[0]
-        self.gaussian = self.ax.plot([1,2,3,4],[1,4,6,8], ':', alpha=0.5)[0]
+        # self.gaussian = self.ax.fill_between([1,2,3,4],[1,4,6,8], alpha=0.5)
+        self.plotted_profile = self.ax.plot([1,2,3,4],[1,4,6,8], '.', alpha=0.6,ms=1)[0]
+        self.gaussian = self.ax.plot([1,2,3,4],[1,4,6,8], alpha=0.9, lw=0.5)[0]
+
         # self.rms_legend = self.ax.text(1,0.99, 'Gauss RMS: <?> ',
         #                                horizontalalignment='right',
         #                                verticalalignment='top',
@@ -44,8 +46,11 @@ class IRAFRadialProfileWidget(QWidget):
         # axes.set_ylim([0, 1])
 
     def setup_axies(self, ax: Axes):
-        ax.tick_params()
-        ax.yaxis.set_tick_params(direction='in')
+        # ax.tick_params()
+        # ax.yaxis.set_tick_params(direction='in')
+        self.ax.tick_params(axis='both', labelsize='small', direction='in')
+        # self.ax.tick_params(axis='both', labelsize='small')
+
 
         @ticker.FuncFormatter
         def formatter(v, pos):
@@ -91,13 +96,16 @@ class IRAFRadialProfileWidget(QWidget):
             rad, val, rmse, fwhm, sky = self.fit_gaussian(rad, val, self.radius)
             self.gaussian.set_xdata(rad)
             self.gaussian.set_ydata(val)
-            self.rms_legend.set_text(f'rms={rmse:.2f} fwhm={fwhm:.2f} sky={sky:.2f} ')
-        except Exception:
+            self.ax.set_title(f'rms:{rmse:.2f} fwhm:{fwhm:.2f} sky:{sky:.2f}', fontsize='small')
+            # self.rms_legend.set_text(f'rms={rmse:.2f} fwhm={fwhm:.2f} sky={sky:.2f} ')
+        except Exception as e:
+            print('Radial Profile:', e)
             pass
 
         # self.ax.autoscale()
         self.ax.relim()
         self.ax.autoscale()
+        self.ax.margins
         # self.ax.plot(rad,val)
         self.fig.canvas.draw_idle()
 

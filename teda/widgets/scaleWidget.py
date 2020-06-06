@@ -565,4 +565,5 @@ class ScaleWidget(QWidget):
             setattr(model, model_key, value)
             pass
         except TraitError:
-            print(f'Attempt to set {model_key} := {value} caused exception. Ignored')
+            if value is not None:
+                print(f'Attempt to set {model_key} := {value} caused exception. Ignored')

@@ -39,7 +39,8 @@ class HeaderTableWidget(QTableWidget):
 
         color = PySide2.QtGui.QColor(200, 220, 200)
         if bool(pin):
-            newKeyItem.setIcon(QIcon.fromTheme('emblem-important'));
+            # newKeyItem.setIcon(QIcon.fromTheme('emblem-important'));
+            newKeyItem.setIcon(QIcon('/Users/mka/src/kibana-6.4.2-darwin-x86_64/node_modules/pivotal-ui/css/iconography/svgs/filter_list.svg'))
             newKeyItem.setBackground(color)
             newValItem.setBackground(color)
         self.insertRow(pos)

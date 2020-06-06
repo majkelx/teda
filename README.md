@@ -3,10 +3,20 @@
 Observatory optimized SAO DS9 replacement
 
 ## Key Features
-* Flexible layout
+* Flexible windows and widgets layout
 * WCS support
-* Radial Profile with gaussoide fit
-* Scan mode: observes directory for changes and automatically opens new FITS 
+* Radial Profile with gaussoide fit (try `r`-key)
+* Scan mode: observes directory for changes and automatically opens new FITS
+* Integrated ipython console with direct access to data and application
+
+## Installation
+``` bash
+   pip install teda
+``` 
+To use ipython console, additionally:
+``` bash
+    pip install qtconsole
+``` 
 
 ## Development version install:
 ``` bash

@@ -43,7 +43,7 @@
 import PySide2
 from PySide2 import QtWidgets
 from PySide2.QtCore import QFile, Qt, QTextStream, QSettings
-from PySide2.QtGui import (QFont, QIcon, QKeySequence)
+from PySide2.QtGui import QFont, QIcon, QKeySequence
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QWidget, QPushButton,
                                QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem,
@@ -56,7 +56,7 @@ from teda.version import __version__
 from teda.views.fitsplot import FitsPlotter
 from teda.views.fitsplot_fitsfile import FitsPlotterFitsFile
 from teda.models.coordinates import CoordinatesModel
-from .painterComponent import PainterComponent
+from teda.painterComponent import PainterComponent
 from teda.widgets.radialprofile import RadialProfileWidget
 from teda.widgets.fullViewWidget import FullViewWidget
 from teda.widgets.zoomViewWidget import ZoomViewWidget
@@ -67,6 +67,7 @@ from teda.widgets.scanToolbar import ScanToolbar
 from teda.widgets.info import InfoWidget
 from teda.models.cmaps import ColorMaps
 from teda.models.scalesModel import ScalesModel
+from teda.icons import IconFactory
 from . import console
 
 
@@ -269,7 +270,8 @@ class MainWindow(QMainWindow):
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
-        self.openAct = QAction(QIcon.fromTheme('document-new', QIcon(':/images/new.png')), "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
+        self.openAct = QAction(IconFactory.getIcon('file-earmark-plus'),
+                               "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
