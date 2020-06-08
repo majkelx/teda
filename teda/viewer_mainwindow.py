@@ -274,7 +274,7 @@ class MainWindow(QMainWindow):
     def createActions(self):
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
-        self.openAct = QAction(IconFactory.getIcon('file-earmark-plus'),
+        self.openAct = QAction(IconFactory.getIcon('note_add'),
                                "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
@@ -292,6 +292,22 @@ class MainWindow(QMainWindow):
                                  statusTip="Overlay WCS coordinates grid over image",)
         self.wcsGridAct.setCheckable(True)
         self.wcsGridAct.toggled.connect(self.on_grid_toggle)
+
+        self.prevHDUAct = QAction(IconFactory.getIcon('skip_previous'), 'Prev HDU', self,
+                                  statusTip="Previous HDU", triggered=self.prevHDU)
+        self.nextHDUAct = QAction(IconFactory.getIcon('skip_next'), 'Next HDU', self,
+                                  statusTip="Next HDU", triggered=self.nextHDU)
+
+        self.zoom4Act = QAction(IconFactory.getIcon(), '×4', self,
+                                  statusTip="Zoom ×4", triggered=self.setZoomButton4)
+        self.zoom2Act = QAction(IconFactory.getIcon(), '×2', self,
+                                  statusTip="Zoom ×2", triggered=self.setZoomButton2)
+        self.zoomHomeAct = QAction(IconFactory.getIcon('home'), 'Home', self,
+                                  statusTip="Reset zoom an position", triggered=self.setZoomButtonHome)
+        self.zoom05Act = QAction(IconFactory.getIcon(), '1/2', self,
+                                  statusTip="Zoom 1/2", triggered=self.setZoomButton05)
+        self.zoom025Act = QAction(IconFactory.getIcon(), '1/4', self,
+                                  statusTip="Zoom 1/4", triggered=self.setZoomButton025)
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
@@ -320,8 +336,8 @@ class MainWindow(QMainWindow):
         self.fileToolBar.addAction(self.openAct)
 
         self.hduToolBar = self.addToolBar("HDU Toolbar")
-        self.hduToolBar.addAction("prevHDU").triggered.connect(self.prevHDU)
-        self.hduToolBar.addAction("nextHDU").triggered.connect(self.nextHDU)
+        self.hduToolBar.addAction(self.prevHDUAct)
+        self.hduToolBar.addAction(self.nextHDUAct)
 
         self.scanToolBar = self.addToolBar("Scan Toolbar")
         self.scanwidget = ScanToolbar(self)
@@ -338,11 +354,11 @@ class MainWindow(QMainWindow):
         self.infoToolBar.hide()
 
         self.zoomToolBar = self.addToolBar("Zoom Toolbar")
-        self.zoomToolBar.addAction("x4").triggered.connect(self.setZoomButton4)
-        self.zoomToolBar.addAction("x2").triggered.connect(self.setZoomButton2)
-        self.zoomToolBar.addAction("Home").triggered.connect(self.setZoomButtonHome)
-        self.zoomToolBar.addAction("1/2").triggered.connect(self.setZoomButton05)
-        self.zoomToolBar.addAction("1/4").triggered.connect(self.setZoomButton025)
+        self.zoomToolBar.addAction(self.zoom4Act)
+        self.zoomToolBar.addAction(self.zoom2Act)
+        self.zoomToolBar.addAction(self.zoomHomeAct)
+        self.zoomToolBar.addAction(self.zoom05Act)
+        self.zoomToolBar.addAction(self.zoom025Act)
 
         self.mouseActionToolBar = self.addToolBar("Mouse Task Toolbar")
 

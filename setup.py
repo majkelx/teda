@@ -17,6 +17,7 @@ setup(
     description='TeDa FITS Viewer',
     long_description=long_description,
     long_description_content_type="text/markdown",
+    package_data={'teda': ['icons/*']},
     entry_points={
         # "console_scripts": [
         #     "teda_viewer = teda_fits:main",
