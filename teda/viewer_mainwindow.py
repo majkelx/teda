@@ -41,7 +41,7 @@
 
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
 import PySide2
-from PySide2 import QtWidgets
+from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import QFile, Qt, QTextStream, QSettings
 from PySide2.QtGui import QFont, QIcon, QKeySequence
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
@@ -317,11 +317,11 @@ class MainWindow(QMainWindow):
         self.zoom025Act = QAction(IconFactory.getIcon(), '1/4', self,
                                   statusTip="Zoom 1/4", triggered=self.setZoomButton025)
 
-        self.circleAct = QAction(IconFactory.getIcon(), 'Add Region', self,
+        self.circleAct = QAction(IconFactory.getIcon('circle'), 'Add Region', self,
                                   statusTip="Add Region", triggered=self.changeAddCircleStatus)
-        self.centerCircleAct = QAction(IconFactory.getIcon(), 'Radial profile', self,
+        self.centerCircleAct = QAction(IconFactory.getIcon('add_circle_outline'), 'Radial profile', self,
                                  statusTip="Radial profile", triggered=self.changeAddCenterCircleStatus)
-        self.deleteAct = QAction(IconFactory.getIcon(), 'Delete selected', self,
+        self.deleteAct = QAction(IconFactory.getIcon('delete_forever'), 'Delete selected', self,
                                  statusTip="Delete selected", triggered=self.deleteSelected)
 
     def createMenus(self):
@@ -356,7 +356,10 @@ class MainWindow(QMainWindow):
 
         self.scanToolBar = self.addToolBar("Scan Toolbar")
         self.scanwidget = ScanToolbar(self)
-        self.scanToolBar.addWidget(self.scanwidget)
+        self.scanToolBar.addAction(self.scanwidget.scanAct)
+        self.scanToolBar.addAction(self.scanwidget.stopAct)
+        self.scanToolBar.addAction(self.scanwidget.pauseAct)
+        self.scanToolBar.addAction(self.scanwidget.resumeAct)
         self.scanToolBar.hide()
 
         self.infoToolBar = self.addToolBar("Info Toolbar")
