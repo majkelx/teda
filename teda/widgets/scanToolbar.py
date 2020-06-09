@@ -1,8 +1,9 @@
 from PySide2 import QtCore
-from PySide2.QtWidgets import QWidget, QPushButton, QHBoxLayout, QFileDialog
+from PySide2.QtWidgets import QWidget, QPushButton, QHBoxLayout, QFileDialog, QAction
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from teda.icons import IconFactory
 
 class ScanToolbar(QWidget):
 
@@ -18,24 +19,6 @@ class ScanToolbar(QWidget):
         self.worker_thread = None
 
         self.layout = QHBoxLayout(self)
-        self.BtnScan = QPushButton("Scan")
-        self.BtnScan.clicked.connect(self.startScan)
-        self.layout.addWidget(self.BtnScan)
-
-        self.BtnStop = QPushButton("Stop")
-        self.BtnStop.clicked.connect(self.stopScan)
-        self.BtnStop.setVisible(False)
-        self.layout.addWidget(self.BtnStop)
-
-        self.BtnPause = QPushButton("Pause")
-        self.BtnPause.clicked.connect(self.pauseScan)
-        self.BtnPause.setVisible(False)
-        self.layout.addWidget(self.BtnPause)
-
-        self.BtnResume = QPushButton("Resume")
-        self.BtnResume.clicked.connect(self.resumeScan)
-        self.BtnResume.setVisible(False)
-        self.layout.addWidget(self.BtnResume)
 
         #buttony do wywoływania ręcznie ich akcji , na click nie działa self.worker.startWork
         self.BtnStartScan = QPushButton("StartScan")
@@ -56,14 +39,26 @@ class ScanToolbar(QWidget):
         # Make any cross object connections.
         self._connectSignals()
 
+        self.scanAct = QAction(IconFactory.getIcon('play_circle_outline'), 'Scan', self,
+                                 statusTip="Scan", triggered=self.startScan)
+        self.stopAct = QAction(IconFactory.getIcon('stop_circle'), 'Stop', self,
+                                 statusTip="Stop", triggered=self.stopScan)
+        self.stopAct.setVisible(False)
+        self.pauseAct = QAction(IconFactory.getIcon('pause_circle_outline'), 'Pause', self,
+                                 statusTip="Pause", triggered=self.pauseScan)
+        self.pauseAct.setVisible(False)
+        self.resumeAct = QAction(IconFactory.getIcon('not_started'), 'Resume', self,
+                                 statusTip="Resume", triggered=self.resumeScan)
+        self.resumeAct.setVisible(False)
+
     def startScan(self):
         fileName = QFileDialog.getExistingDirectory(self, 'Select directory')
 
         if fileName:
             self.createWorkerThread()
-            self.BtnScan.setVisible(False)
-            self.BtnStop.setVisible(True)
-            self.BtnPause.setVisible(True)
+            self.scanAct.setVisible(False)
+            self.stopAct.setVisible(True)
+            self.pauseAct.setVisible(True)
             self.worker_thread.start() #powinno tu być ale jest w create
             self.worker.setActive(True)
             self.activeScan = True
@@ -72,24 +67,24 @@ class ScanToolbar(QWidget):
 
     def stopScan(self):
         #self.worker.setActive(False)
-        self.BtnScan.setVisible(True)
-        self.BtnStop.setVisible(False)
-        self.BtnPause.setVisible(False)
-        self.BtnResume.setVisible(False)
+        self.scanAct.setVisible(True)
+        self.stopAct.setVisible(False)
+        self.pauseAct.setVisible(False)
+        self.resumeAct.setVisible(False)
         self.activeScan = False
         self.BtnStopScan.click()
 
     def pauseScan(self):
         #self.worker.setActive(False)
-        self.BtnPause.setVisible(False)
-        self.BtnResume.setVisible(True)
+        self.pauseAct.setVisible(False)
+        self.resumeAct.setVisible(True)
         self.activeScan = False
         self.BtnPauseScan.click()
 
     def resumeScan(self):
         self.worker.setActive(True)
-        self.BtnPause.setVisible(True)
-        self.BtnResume.setVisible(False)
+        self.pauseAct.setVisible(True)
+        self.resumeAct.setVisible(False)
         #self.worker_thread.start()
         self.activeScan = True
         self.BtnResumeScan.click()

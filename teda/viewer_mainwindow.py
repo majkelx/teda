@@ -41,7 +41,7 @@
 
 """PySide2 port of the widgets/mainwindows/dockwidgets example from Qt v5.x, originating from PyQt"""
 import PySide2
-from PySide2 import QtWidgets
+from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import QFile, Qt, QTextStream, QSettings
 from PySide2.QtGui import QFont, QIcon, QKeySequence
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
@@ -319,6 +319,13 @@ class MainWindow(QMainWindow):
         self.zoom025Act = QAction(IconFactory.getIcon(), '1/4', self,
                                   statusTip="Zoom 1/4", triggered=self.setZoomButton025)
 
+        self.circleAct = QAction(IconFactory.getIcon('circle'), 'Add Region', self,
+                                  statusTip="Add Region", triggered=self.changeAddCircleStatus)
+        self.centerCircleAct = QAction(IconFactory.getIcon('add_circle_outline'), 'Radial profile', self,
+                                 statusTip="Radial profile", triggered=self.changeAddCenterCircleStatus)
+        self.deleteAct = QAction(IconFactory.getIcon('delete_forever'), 'Delete selected', self,
+                                 statusTip="Delete selected", triggered=self.deleteSelected)
+
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAct)
@@ -351,7 +358,10 @@ class MainWindow(QMainWindow):
 
         self.scanToolBar = self.addToolBar("Scan Toolbar")
         self.scanwidget = ScanToolbar(self)
-        self.scanToolBar.addWidget(self.scanwidget)
+        self.scanToolBar.addAction(self.scanwidget.scanAct)
+        self.scanToolBar.addAction(self.scanwidget.stopAct)
+        self.scanToolBar.addAction(self.scanwidget.pauseAct)
+        self.scanToolBar.addAction(self.scanwidget.resumeAct)
         self.scanToolBar.hide()
 
         self.infoToolBar = self.addToolBar("Info Toolbar")
@@ -371,20 +381,11 @@ class MainWindow(QMainWindow):
         self.zoomToolBar.addAction(self.zoom025Act)
 
         self.mouseActionToolBar = self.addToolBar("Mouse Task Toolbar")
-
-        self.BtnCircle = QPushButton("Add Region")
-        self.BtnCircle.setCheckable(True)
-        self.BtnCircle.clicked.connect(self.changeAddCircleStatus)
-        self.mouseActionToolBar.addWidget(self.BtnCircle)
-
-        self.BtnCenterCircle = QPushButton("Radial profile")
-        self.BtnCenterCircle.setCheckable(True)
-        self.BtnCenterCircle.clicked.connect(self.changeAddCenterCircleStatus)
-        self.mouseActionToolBar.addWidget(self.BtnCenterCircle)
-
-        self.BtnDelete = QPushButton("Delete selected")
-        self.BtnDelete.clicked.connect(self.deleteSelected)
-        self.mouseActionToolBar.addWidget(self.BtnDelete)
+        self.circleAct.setCheckable(True)
+        self.mouseActionToolBar.addAction(self.circleAct)
+        self.centerCircleAct.setCheckable(True)
+        self.mouseActionToolBar.addAction(self.centerCircleAct)
+        self.mouseActionToolBar.addAction(self.deleteAct)
 
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
@@ -422,18 +423,18 @@ class MainWindow(QMainWindow):
             self.full_view_widget.updateMiniatureShape(self.fits_image.viewX, self.fits_image.viewY, self.fits_image.viewW, self.fits_image.viewH)
 
     def changeAddCircleStatus(self):
-        if self.BtnCircle.isChecked():
+        if self.circleAct.isChecked():
             self.toogleOffRegionButtons()
-            self.BtnCircle.toggle()
+            self.circleAct.toggle()
             self.painterComponent.startPainting(self.central_widget, "circle")
         else:
             self.painterComponent.stopPainting(self.central_widget)
             self.painterComponent.startMovingEvents(self.central_widget)
 
     def changeAddCenterCircleStatus(self):
-        if self.BtnCenterCircle.isChecked():
+        if self.centerCircleAct.isChecked():
             self.toogleOffRegionButtons()
-            self.BtnCenterCircle.toggle()
+            self.centerCircleAct.toggle()
             self.painterComponent.startPainting(self.central_widget,"circleCenter")
         else:
             self.painterComponent.stopPainting(self.central_widget)
@@ -443,10 +444,10 @@ class MainWindow(QMainWindow):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
 
     def toogleOffRegionButtons(self):
-        if self.BtnCircle.isChecked():
-            self.BtnCircle.toggle()
-        if self.BtnCenterCircle.isChecked():
-            self.BtnCenterCircle.toggle()
+        if self.circleAct.isChecked():
+            self.circleAct.toggle()
+        if self.centerCircleAct.isChecked():
+            self.centerCircleAct.toggle()
         self.painterComponent.stopPainting(self.central_widget)
 
 
