@@ -106,7 +106,8 @@ class MainWindow(QMainWindow):
         self.createToolBars()
         self.createStatusBar()
         self.createDockWindows()
-        self.scaleWidget.readSlidersValues()
+        if not self.tedaCommandLine.ignoreSettings:
+            self.scaleWidget.readSlidersValues()
         # self.defineButtonsActions()
         self.setWindowTitle("TeDa")
 
@@ -131,7 +132,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeAppState()
         self.writeWindowSettings()
-        self.scaleWidget.writeSlidersValues()
+        if not self.tedaCommandLine.ignoreSettings:
+            self.scaleWidget.writeSlidersValues()
         super().closeEvent(event)
 
     def keyPressEvent(self, e):
@@ -203,6 +205,8 @@ class MainWindow(QMainWindow):
         self.saveLastFits()
 
     def saveLastFits(self):
+        if self.tedaCommandLine.ignoreSettings:
+            return
         settings = QSettings()
         settings.beginGroup("Files")
         settings.setValue("lastFile", self.filename)
@@ -210,6 +214,8 @@ class MainWindow(QMainWindow):
 
     def openLastFits(self):
         if (self.tedaCommandLine.openFile is None):
+            if self.tedaCommandLine.ignoreSettings:
+                return
             settings = QSettings()
             settings.beginGroup("Files")
             filename = settings.value("lastFile")
@@ -220,8 +226,9 @@ class MainWindow(QMainWindow):
             self.open_fits(filename)
 
     def readAppState(self):
+        if self.tedaCommandLine.ignoreSettings:
+            return
         settings = QSettings()
-
         settings.beginGroup("WCS")
         self.wcsSexAct.setChecked(bool(settings.value("sexagesimal", True)))
         self.wcsGridAct.setChecked(bool(settings.value("grid", False)))
@@ -230,8 +237,9 @@ class MainWindow(QMainWindow):
 
 
     def writeAppState(self):
+        if self.tedaCommandLine.ignoreSettings:
+            return
         settings = QSettings()
-
         settings.beginGroup("WCS")
         settings.setValue("sexagesimal", self.wcsSexAct.isChecked())
         settings.setValue("grid", self.wcsGridAct.isChecked())
@@ -582,6 +590,8 @@ class MainWindow(QMainWindow):
             self.full_view_widget.updateMiniatureShape(self.fits_image.viewX,self.fits_image.viewY,self.fits_image.viewW,self.fits_image.viewH)
 
     def readWindowSettings(self):
+        if self.tedaCommandLine.ignoreSettings:
+            return
         settings = QSettings()
         settings.beginGroup("MainWindow")
         size, pos = settings.value("size"), settings.value("pos")
@@ -605,6 +615,8 @@ class MainWindow(QMainWindow):
         self.headerWidget.readSettings(settings)
 
     def writeWindowSettings(self):
+        if self.tedaCommandLine.ignoreSettings:
+            return
         settings = QSettings()
         settings.beginGroup("MainWindow")
         settings.setValue("size", self.size())
