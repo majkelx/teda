@@ -114,6 +114,8 @@ class MainWindow(QMainWindow):
         self.readWindowSettings()
         self.readAppState()
 
+        self.updateHeaderData()
+
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
         self.painterComponent.observe(lambda change: self.onCenterCircleRadiusChange(change), ['cradius'])
         self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
@@ -198,7 +200,7 @@ class MainWindow(QMainWindow):
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
         # self.scaleWidget.adjustSliders()
 
-        self.headerWidget.setHeader()
+        self.updateHeaderData()
 
         self.zoom_view_widget.updateFits(self.fits_image)
         self.full_view_widget.updateFits(self.fits_image)
@@ -394,11 +396,16 @@ class MainWindow(QMainWindow):
 
     def nextHDU(self):
         self.fits_image.changeHDU(True, 1)
-        self.headerWidget.setHeader()
+        self.updateHeaderData()
 
     def prevHDU(self):
         self.fits_image.changeHDU(True, -1)
+        self.updateHeaderData()
+
+    def updateHeaderData(self):
         self.headerWidget.setHeader()
+        self.prevHDUAct.setEnabled(self.fits_image._huds is not None and self.fits_image.hdu != 0)
+        self.nextHDUAct.setEnabled(self.fits_image._huds is not None and self.fits_image.hdu != len(self.fits_image._huds) - 1)
 
     def setZoomButton4(self):
         self.setZoomButton(4,False)
