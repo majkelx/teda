@@ -59,13 +59,14 @@ class HeaderTableWidget(QTableWidget):
             self.createRow(pos, key, value, bool(1))
             pos += 1
 
-        for key in list(header.keys()):
-            try:
-                self.pinnedItems.index(key)
-            except ValueError:
-                value = str(header[key])
-                self.createRow(pos, key, value, bool(0))
-                pos += 1
+        if header is not None:
+            for key in list(header.keys()):
+                try:
+                    self.pinnedItems.index(key)
+                except ValueError:
+                    value = str(header[key])
+                    self.createRow(pos, key, value, bool(0))
+                    pos += 1
 
         self.resizeRowsToContents()
         self.verticalHeader().hide()
