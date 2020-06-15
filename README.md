@@ -12,11 +12,18 @@ Observatory optimized SAO DS9 replacement
 ## Installation
 ``` bash
    pip install teda
+   teda_viewer 
 ``` 
 To use ipython console, additionally:
 ``` bash
     pip install qtconsole
 ``` 
+
+## Run
+The installation scripts should install the command:
+```
+    teda_viewer
+```
 
 ## Development version install:
 ``` bash

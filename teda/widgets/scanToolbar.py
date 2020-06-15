@@ -1,3 +1,6 @@
+import glob
+import os
+
 from PySide2 import QtCore
 from PySide2.QtWidgets import QWidget, QPushButton, QHBoxLayout, QFileDialog, QAction
 import time
@@ -17,6 +20,7 @@ class ScanToolbar(QWidget):
 
         self.worker = None
         self.worker_thread = None
+        self.lastScanedFits = None
 
         self.layout = QHBoxLayout(self)
 
@@ -51,10 +55,26 @@ class ScanToolbar(QWidget):
                                  statusTip="Resume", triggered=self.resumeScan)
         self.resumeAct.setVisible(False)
 
-    def startScan(self):
-        fileName = QFileDialog.getExistingDirectory(self, 'Select directory')
+    def setNewestFits(self, path):
+        list_of_files = glob.glob(path+'/*')
+        found=False
+        while not found:
+            if list_of_files.__len__()>0:
+                latest_file = max(list_of_files, key=os.path.getctime)
+                if self.parent.fits_image.isFitsFile(latest_file, False):
+                    found = True
+                    self.parent.open_fits(latest_file)
+                else:
+                    list_of_files.remove(latest_file)
+            else:
+                found = True #not found byt no fits in
 
+
+    def startScan(self):
+        self.lastScanedFits = None
+        fileName = QFileDialog.getExistingDirectory(self, 'Select directory')
         if fileName:
+            self.setNewestFits(fileName)
             self.createWorkerThread()
             self.scanAct.setVisible(False)
             self.stopAct.setVisible(True)
@@ -71,6 +91,7 @@ class ScanToolbar(QWidget):
         self.stopAct.setVisible(False)
         self.pauseAct.setVisible(False)
         self.resumeAct.setVisible(False)
+        self.lastScanedFits = None
         self.activeScan = False
         self.BtnStopScan.click()
 
@@ -86,7 +107,10 @@ class ScanToolbar(QWidget):
         self.pauseAct.setVisible(True)
         self.resumeAct.setVisible(False)
         #self.worker_thread.start()
+        if self.lastScanedFits!=None:#load fits if appeared when paused
+            self.parent.open_fits(self.lastScanedFits)
         self.activeScan = True
+        self.lastScanedFits
         self.BtnResumeScan.click()
 
     def _connectSignals(self):
@@ -131,14 +155,19 @@ class ScanToolbar(QWidget):
     def updateStatus(self, status):
         if self.activeScan: # Wprowadzona flaga by ignorować sygnał gdy skan zatrzymany
             time.sleep(1)
-            if self.parent.fits_image.isFitsFile(status):
+            if self.parent.fits_image.isFitsFile(status,True):
                 print(status)
                 try:
                     self.parent.open_fits(status)
+                    self.lastScanedFits = None
                 except FileNotFoundError:
                     print('Błąd w odczycie pliku')
                 except OSError:
                     print('Pusty lub błedny format pliku')
+        else:
+            time.sleep(1)
+            if self.parent.fits_image.isFitsFile(status, False):
+                self.lastScanedFits = status
 
 class WorkerObject(QtCore.QObject):
 

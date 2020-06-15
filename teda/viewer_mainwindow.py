@@ -357,12 +357,12 @@ class MainWindow(QMainWindow):
         self.hduToolBar.addAction(self.nextHDUAct)
 
         self.scanToolBar = self.addToolBar("Scan Toolbar")
-        self.scanwidget = ScanToolbar(self)
-        self.scanToolBar.addAction(self.scanwidget.scanAct)
-        self.scanToolBar.addAction(self.scanwidget.stopAct)
-        self.scanToolBar.addAction(self.scanwidget.pauseAct)
-        self.scanToolBar.addAction(self.scanwidget.resumeAct)
-        self.scanToolBar.hide()
+        # self.scanwidget = ScanToolbar(self)
+        # self.scanToolBar.addAction(self.scanwidget.scanAct)
+        # self.scanToolBar.addAction(self.scanwidget.stopAct)
+        # self.scanToolBar.addAction(self.scanwidget.pauseAct)
+        # self.scanToolBar.addAction(self.scanwidget.resumeAct)
+        # self.scanToolBar.hide()
 
         self.infoToolBar = self.addToolBar("Info Toolbar")
         self.mouse_x_label = QLabel('100.1')
@@ -389,7 +389,7 @@ class MainWindow(QMainWindow):
 
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
-        self.viewMenu.addAction(self.scanToolBar.toggleViewAction())
+        # self.viewMenu.addAction(self.scanToolBar.toggleViewAction())
         self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
         self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
         self.viewMenu.addSeparator()

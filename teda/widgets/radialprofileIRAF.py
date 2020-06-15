@@ -149,8 +149,8 @@ class IRAFRadialProfileWidget(QWidget):
                     if dist2 <= rmax2:
                         distances.append(math.sqrt(dist2))
                         values.append(v)
-                except LookupError:
-                    pass # pixel out of table
+                except (LookupError, TypeError):
+                    pass # pixel out of table or no table
         return distances, values
 
 

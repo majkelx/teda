@@ -68,15 +68,17 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
         except AttributeError: # ax is None or not WCSAxies
             pass
 
-    def isFitsFile(self,filename):
+    def isFitsFile(self,filename,showinfo = True):
         try:
             fits.open(filename)
             return True
         except FileNotFoundError:
-            print('Błąd w odczycie pliku')
+            if showinfo:
+                print('Błąd w odczycie pliku')
             return False
         except OSError:
-            print('Pusty lub błedny format pliku')
+            if showinfo:
+                print('Pusty lub błedny format pliku')
             return False
 
 
