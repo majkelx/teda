@@ -49,6 +49,8 @@ class HeaderTableWidget(QTableWidget):
 
     def setHeader(self):
         header = self.parent.fits_image.header
+        if header is None:
+            return
         self.setRowCount(0)
         pos = 0
         for key in self.pinnedItems :
