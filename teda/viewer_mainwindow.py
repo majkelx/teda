@@ -543,11 +543,11 @@ class MainWindow(QMainWindow):
             display = f'{change.new:f}'
             val = change.new
         if change.name == 'mouse_xdata':
-            self.mouse_x_label.setText(display)
+            # self.mouse_x_label.setText(display)
             self.current_x_coord = val
             self.cursor_coords.set_img_x(change.new)
         elif change.name == 'mouse_ydata':
-            self.mouse_y_label.setText(display)
+            # self.mouse_y_label.setText(display)
             self.current_y_coord = val
             self.cursor_coords.set_img_y(change.new)
         if display != '':

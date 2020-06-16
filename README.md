@@ -2,6 +2,8 @@
 
 Observatory optimized FITS Images viewer
 
+![](img/teda.png)
+
 ## Key Features
 * Flexible windows and widgets layout
 * WCS support
@@ -39,6 +41,19 @@ On the FITS Header panel, selected keys can be *pinned* to appear
 on the top ot the list. This can be done via context (right-click) menu.
 
 The set of pinned keys is saved and preserved between sessions.  
+
+## Radial Profile
+The **Radial Profile** button turns on the mode of selecting targets for 
+the radial profile analysis. Make sure the radial profile panel is visible 
+(View/Radial Profile). The shortcut for displaying radial profile of the star 
+under cursor is the **R**-key.
+
+The centroid of the star is corrected within small (be precise!) radius
+using the bivariate gaussoide fit.
+
+Together with the pixels values, the radial profile presents 1D fit of
+"gaussian(r) + sky". This fit provides information of presented fwhm and sky level.
+   
 
 ## Integrated Python Console
 In order to use integrated python console the `qtconsole` module, and it's
