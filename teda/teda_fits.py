@@ -11,6 +11,7 @@ from PySide2.QtWidgets import QApplication
 
 from teda.command_line import TedaCommandLine, CommandLineParseResult
 from teda.viewer_mainwindow import MainWindow
+from teda.version import __version__
 
 def main():
     import sys
@@ -19,10 +20,10 @@ def main():
     QApplication.setOrganizationName('Akond Lab')
     QApplication.setOrganizationDomain('akond.com')
     QApplication.setApplicationName('TeDa FITS Viewer')
-    QApplication.setApplicationVersion("XX.XX.XX")
+    QApplication.setApplicationVersion(__version__)
 
     tcl = TedaCommandLine()
-    parser = QCommandLineParser();
+    parser = QCommandLineParser()
 
     result = tcl.parseCommandLine(parser)
     if result.result == CommandLineParseResult.CommandLineError :
