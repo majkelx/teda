@@ -230,7 +230,12 @@ class MainWindow(QMainWindow):
                           "Created by <a href='https://akond.com'>Akond Lab</a> for The Araucaria Project")
 
     def on_console_show(self):
-        console.show(ax=self.fits_image.ax, window=self, data=self.fits_image.data, header=self.fits_image.header, wcs=self.cursor_coords.wcs)
+        console.show(
+            ax=self.fits_image.ax,
+            window=self,
+            data=self.fits_image.data,
+            header=self.fits_image.header,
+            wcs=self.cursor_coords.wcs)
 
     def on_sex_toggle(self):
         print('sex toggled to :', self.wcsSexAct.isChecked())
@@ -322,14 +327,14 @@ class MainWindow(QMainWindow):
         self.scanToolBar.addAction(self.scanObject.resumeAct)
         self.scanToolBar.hide()
 
-        self.infoToolBar = self.addToolBar("Info Toolbar")
-        self.mouse_x_label = QLabel('100.1')
-        self.mouse_y_label = QLabel('100.145')
-        self.infoToolBar.addWidget(QLabel('image x:'))
-        self.infoToolBar.addWidget(self.mouse_x_label)
-        self.infoToolBar.addWidget(QLabel('y:'))
-        self.infoToolBar.addWidget(self.mouse_y_label)
-        self.infoToolBar.hide()
+        # self.infoToolBar = self.addToolBar("Info Toolbar")
+        # self.mouse_x_label = QLabel('100.1')
+        # self.mouse_y_label = QLabel('100.145')
+        # self.infoToolBar.addWidget(QLabel('image x:'))
+        # self.infoToolBar.addWidget(self.mouse_x_label)
+        # self.infoToolBar.addWidget(QLabel('y:'))
+        # self.infoToolBar.addWidget(self.mouse_y_label)
+        # self.infoToolBar.hide()
 
         self.zoomToolBar = self.addToolBar("Zoom Toolbar")
         self.zoomToolBar.addAction(self.zoom4Act)
@@ -348,7 +353,7 @@ class MainWindow(QMainWindow):
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
         self.viewMenu.addAction(self.scanToolBar.toggleViewAction())
-        self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
+        # self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
         self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
         self.viewMenu.addSeparator()
 

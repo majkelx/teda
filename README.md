@@ -1,6 +1,6 @@
 # TeDa FITS Viewer
 
-Observatory optimized SAO DS9 replacement
+Observatory optimized FITS Images viewer
 
 ## Key Features
 * Flexible windows and widgets layout
@@ -30,6 +30,10 @@ Try
 ```
 for list of command line parameters.
 
+## Dynamic Scale and Color
+The dynamic scale of the image, and color mapping can be adjusted form 
+the **Dynamic Scale** panel. From menu: **View/Dynamic Scale**
+
 ## Fits Header Cards Pinning
 On the FITS Header panel, selected keys can be *pinned* to appear
 on the top ot the list. This can be done via context (right-click) menu.
@@ -44,8 +48,15 @@ Install `qtconsole` by:
 ``` bash
     pip install qtconsole
 ``` 
+
+The console is available form menu **View/Python Console**
 ### Predefined variables
 The console has a number of predefined variables set:
+* `ax: WCSAxesSubplot` main plotting axes.
+* `window: MainWindow` main window
+* `data: numpy.ndarray` current HDU data
+* `header: astropy.fits.Header` current HDU header
+* `wcs: astropy.wcs.WCS` the WCS transformer
 
 ### Plotting
 To plot directly on the console, run the following magic command `%matplotlib inline`.

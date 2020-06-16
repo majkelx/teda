@@ -55,6 +55,6 @@ def show(**kwargs):
 
     widget = Console()
     widget.push_vars(kwargs)
-    widget.show()
     widget.print_text('The following variables from TeDa FITS Viewer are available:')
     widget.print_text(' '.join(kwargs.keys()))
+    widget.show()
