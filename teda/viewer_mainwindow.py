@@ -354,6 +354,7 @@ class MainWindow(QMainWindow):
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
         self.viewMenu.addAction(self.scanToolBar.toggleViewAction())
         # self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
+        self.viewMenu.addAction(self.zoomToolBar.toggleViewAction())
         self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
         self.viewMenu.addSeparator()
 
