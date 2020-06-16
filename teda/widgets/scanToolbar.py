@@ -2,18 +2,19 @@ import glob
 import os
 
 from PySide2 import QtCore
-from PySide2.QtWidgets import QWidget, QPushButton, QHBoxLayout, QFileDialog, QAction
+from PySide2.QtCore import QObject
+from PySide2.QtWidgets import QFileDialog, QAction
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from teda.icons import IconFactory
 
-class ScanToolbar(QWidget):
+class ScanToolbar(QObject):
 
     signalStatus = QtCore.Signal(str)
 
     def __init__(self,parent):
-        QWidget.__init__(self, parent)
+        super().__init__()
 
         self.parent = parent
         self.activeScan=False
@@ -21,22 +22,6 @@ class ScanToolbar(QWidget):
         self.worker = None
         self.worker_thread = None
         self.lastScanedFits = None
-
-        self.layout = QHBoxLayout(self)
-
-        #buttony do wywoływania ręcznie ich akcji , na click nie działa self.worker.startWork
-        self.BtnStartScan = QPushButton("StartScan")
-        self.BtnStartScan.setVisible(False)
-        self.layout.addWidget(self.BtnStartScan)
-        self.BtnStopScan = QPushButton("StopScan")
-        self.BtnStopScan.setVisible(False)
-        self.layout.addWidget(self.BtnStopScan)
-        self.BtnPauseScan = QPushButton("PauseScan")
-        self.BtnPauseScan.setVisible(False)
-        self.layout.addWidget(self.BtnPauseScan)
-        self.BtnResumeScan = QPushButton("ResumeScan")
-        self.BtnResumeScan.setVisible(False)
-        self.layout.addWidget(self.BtnResumeScan)
 
         # Create a new worker thread.
         # self.createWorkerThread()
@@ -55,6 +40,7 @@ class ScanToolbar(QWidget):
                                  statusTip="Resume", triggered=self.resumeScan)
         self.resumeAct.setVisible(False)
 
+
     def setNewestFits(self, path):
         list_of_files = glob.glob(path+'/*')
         found=False
@@ -72,7 +58,7 @@ class ScanToolbar(QWidget):
 
     def startScan(self):
         self.lastScanedFits = None
-        fileName = QFileDialog.getExistingDirectory(self, 'Select directory')
+        fileName = QFileDialog.getExistingDirectory(None, 'Select directory')
         if fileName:
             self.setNewestFits(fileName)
             self.createWorkerThread()
@@ -83,7 +69,7 @@ class ScanToolbar(QWidget):
             self.worker.setActive(True)
             self.activeScan = True
             self.worker.setFileName(fileName)
-            self.BtnStartScan.click()
+            self.BtnStartScan.trigger()
 
     def stopScan(self):
         #self.worker.setActive(False)
@@ -93,14 +79,14 @@ class ScanToolbar(QWidget):
         self.resumeAct.setVisible(False)
         self.lastScanedFits = None
         self.activeScan = False
-        self.BtnStopScan.click()
+        self.forceWorkerStop()
 
     def pauseScan(self):
         #self.worker.setActive(False)
         self.pauseAct.setVisible(False)
         self.resumeAct.setVisible(True)
         self.activeScan = False
-        self.BtnPauseScan.click()
+        self.forceWorkerStop()
 
     def resumeScan(self):
         self.worker.setActive(True)
@@ -111,7 +97,7 @@ class ScanToolbar(QWidget):
             self.parent.open_fits(self.lastScanedFits)
         self.activeScan = True
         self.lastScanedFits
-        self.BtnResumeScan.click()
+        self.BtnResumeScan.trigger()
 
     def _connectSignals(self):
         self.signalStatus.connect(self.updateStatus)
@@ -128,10 +114,11 @@ class ScanToolbar(QWidget):
 
             # Connect any worker signals
             self.worker.signalStatus.connect(self.updateStatus)
-            self.BtnStartScan.clicked.connect(self.worker.startWork)
-            self.BtnResumeScan.clicked.connect(self.worker.startWork)
-            self.BtnStopScan.clicked.connect(self.forceWorkerStop)
-            self.BtnPauseScan.clicked.connect(self.forceWorkerStop)
+
+            self.BtnStartScan = QAction(IconFactory.getIcon(''), 'BtnStartScan', self,
+                                        statusTip="Scan", triggered=self.worker.startWork)
+            self.BtnResumeScan = QAction(IconFactory.getIcon(''), 'BtnResumeScan', self,
+                                         statusTip="Scan", triggered=self.worker.startWork)
 
 
     def forceWorkerStop(self):
