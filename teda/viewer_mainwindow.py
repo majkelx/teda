@@ -69,6 +69,7 @@ from teda.models.cmaps import ColorMaps
 from teda.models.scalesModel import ScalesModel
 from teda.icons import IconFactory
 from . import console
+from .widgets.fileSystemWidget import FileSystemWidget
 
 
 class MainWindow(QMainWindow):
@@ -529,6 +530,15 @@ class MainWindow(QMainWindow):
         self.zoom_view_widget.fits_image.set_cmap_model(self.cmaps)
         dock.setWidget(self.zoom_view_widget)
         self.addDockWidget(Qt.TopDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        # fileSelector
+        dock = QDockWidget("Directory view", self)
+        dock.setObjectName("DIRECTORY_VIEW")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.file_widget = FileSystemWidget(self)
+        dock.setWidget(self.file_widget)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
         self.viewMenu.addSeparator()
