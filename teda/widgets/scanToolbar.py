@@ -1,13 +1,16 @@
 import glob
 import os
 
-from PySide2 import QtCore
-from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QFileDialog, QAction
+from PySide2 import QtCore, QtGui
+from PySide2.QtCore import QObject, QEvent, QSettings
+from PySide2.QtWidgets import QFileDialog, QAction, QApplication
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from teda.icons import IconFactory
+import threading
+from traitlets import Float, Int, HasTraits, Bool
+
 
 class ScanToolbar(QObject):
 
@@ -39,6 +42,34 @@ class ScanToolbar(QObject):
         self.resumeAct = QAction(IconFactory.getIcon('not_started'), 'Resume', self,
                                  statusTip="Resume", triggered=self.resumeScan)
         self.resumeAct.setVisible(False)
+        self.autopauseAct = QAction(IconFactory.getIcon('autopause'), 'Autopause', self,
+                                 statusTip="Disable Autopause", triggered=self.autopauseClick)
+        self.autopauseAct.setVisible(False)
+        self.disabledautopauseAct = QAction(IconFactory.getIcon('autopause_disabled'), 'Disabled Autopause', self,
+                                    statusTip="Enable Autopause", triggered=self.autopauseClick)
+        self.disabledautopauseAct.setVisible(False)
+
+        self.lastmouseposition = None
+        self.obserwableValue = ObserwableValue()
+        self.obserwableValue.observe(lambda change: self.onAutopauseChange(change), ['autopauseFlag'])
+        self.enableAutopause = self.getAutopauseFlagFormSettings()
+
+    def getAutopauseFlagFormSettings(self):
+        if self.parent.tedaCommandLine.ignoreSettings:
+            return True
+
+        settings = QSettings()
+        settings.beginGroup("ScanToolbar")
+        flag = settings.value("autopause")
+        settings.endGroup()
+
+        if flag != None:
+            if flag=="true":
+                return True
+            else:
+                return False
+        else:
+            return True
 
 
     def setNewestFits(self, path):
@@ -70,6 +101,10 @@ class ScanToolbar(QObject):
             self.activeScan = True
             self.worker.setFileName(fileName)
             self.BtnStartScan.trigger()
+            if self.enableAutopause:
+                self.obserwableValue.autopauseFlag = True
+            self.showAutopauseButton()
+            #self.startAutopauseTimer()
 
     def stopScan(self):
         #self.worker.setActive(False)
@@ -80,6 +115,8 @@ class ScanToolbar(QObject):
         self.lastScanedFits = None
         self.activeScan = False
         self.forceWorkerStop()
+        self.obserwableValue.autopauseFlag = False
+        self.hideAutopauseButton()
 
     def pauseScan(self):
         #self.worker.setActive(False)
@@ -87,6 +124,8 @@ class ScanToolbar(QObject):
         self.resumeAct.setVisible(True)
         self.activeScan = False
         self.forceWorkerStop()
+        self.obserwableValue.autopauseFlag = False
+        self.hideAutopauseButton()
 
     def resumeScan(self):
         self.worker.setActive(True)
@@ -95,9 +134,11 @@ class ScanToolbar(QObject):
         #self.worker_thread.start()
         if self.lastScanedFits!=None:#load fits if appeared when paused
             self.parent.open_fits(self.lastScanedFits)
+            self.lastScanedFits = None
         self.activeScan = True
-        self.lastScanedFits
         self.BtnResumeScan.trigger()
+        self.obserwableValue.autopauseFlag = True
+        self.showAutopauseButton()
 
     def _connectSignals(self):
         self.signalStatus.connect(self.updateStatus)
@@ -140,21 +181,96 @@ class ScanToolbar(QObject):
 
     @QtCore.Slot(str)
     def updateStatus(self, status):
-        if self.activeScan: # Wprowadzona flaga by ignorować sygnał gdy skan zatrzymany
-            time.sleep(1)
-            if self.parent.fits_image.isFitsFile(status,True):
-                print(status)
-                try:
-                    self.parent.open_fits(status)
-                    self.lastScanedFits = None
-                except FileNotFoundError:
-                    print('Błąd w odczycie pliku')
-                except OSError:
-                    print('Pusty lub błedny format pliku')
+        if status=="1secPing":
+            self.autopauseTimer()
         else:
-            time.sleep(1)
-            if self.parent.fits_image.isFitsFile(status, False):
-                self.lastScanedFits = status
+            if not self.obserwableValue.autopauseFlag:
+                if self.activeScan: # Wprowadzona flaga by ignorować sygnał gdy skan zatrzymany
+                    time.sleep(1)
+                    if self.parent.fits_image.isFitsFile(status,True):
+                        print(status)
+                        try:
+                            self.parent.open_fits(status)
+                            self.lastScanedFits = None
+                        except FileNotFoundError:
+                            print('Błąd w odczycie pliku')
+                        except OSError:
+                            print('Pusty lub błedny format pliku')
+                else:
+                    time.sleep(1)
+                    if self.parent.fits_image.isFitsFile(status, False):
+                        self.lastScanedFits = status
+            else:
+                time.sleep(1)
+                if self.parent.fits_image.isFitsFile(status, False):
+                    self.lastScanedFits = status
+
+    def autopauseTimer(self):
+        if self.obserwableValue.autopauseFlag:
+            if self.lastmouseposition == QtGui.QCursor.pos():
+                self.timerCount -= 1
+                if self.timerCount == 8:
+                    self.autopauseAct.setIcon(IconFactory.getIcon('count4'))
+                if self.timerCount == 6:
+                    self.autopauseAct.setIcon(IconFactory.getIcon('count3'))
+                if self.timerCount == 4:
+                    self.autopauseAct.setIcon(IconFactory.getIcon('count2'))
+                if self.timerCount == 2:
+                    self.autopauseAct.setIcon(IconFactory.getIcon('count1'))
+            else:
+                self.lastmouseposition = QtGui.QCursor.pos()
+                self.resetMaxTimer()
+                self.autopauseAct.setIcon(IconFactory.getIcon('count5'))
+            if self.timerCount < 1:
+                self.obserwableValue.autopauseFlag = False
+        else:
+            pass
+
+    def resetMaxTimer(self):
+        self.timerCount = 10
+
+    def stopAutopauseTimer(self):
+        self.timerCount = 0
+
+    def showAutopauseButton(self):
+        if not self.enableAutopause:
+            self.autopauseAct.setVisible(False)
+            self.disabledautopauseAct.setVisible(True)
+        else:
+            self.autopauseAct.setVisible(True)
+            self.disabledautopauseAct.setVisible(False)
+
+    def hideAutopauseButton(self):
+        self.autopauseAct.setVisible(False)
+        self.disabledautopauseAct.setVisible(False)
+
+    def onAutopauseChange(self,change):
+        if change.new:
+            self.autopauseAct.setIcon(IconFactory.getIcon('count5'))
+            self.resetMaxTimer()
+            self.lastmouseposition = None
+        else:
+            self.timerCount = 0
+            self.autopauseAct.setIcon(IconFactory.getIcon('autopause'))
+            if self.lastScanedFits != None:  # load fits if appeared when paused
+                self.parent.open_fits(self.lastScanedFits)
+                self.lastScanedFits = None
+
+    def autopauseClick(self):
+        if not self.enableAutopause:
+            self.autopauseAct.setVisible(True)
+            self.disabledautopauseAct.setVisible(False)
+            self.obserwableValue.autopauseFlag = True
+        else:
+            self.autopauseAct.setVisible(False)
+            self.disabledautopauseAct.setVisible(True)
+            self.obserwableValue.autopauseFlag = False
+        self.enableAutopause = not self.enableAutopause
+
+        settings = QSettings()
+        settings.beginGroup("ScanToolbar")
+        settings.setValue("autopause", self.enableAutopause)
+        settings.endGroup()
 
 class WorkerObject(QtCore.QObject):
 
@@ -183,7 +299,8 @@ class WorkerObject(QtCore.QObject):
         self.observer.start()
         try:
             while True:
-                time.sleep(1)
+                time.sleep(0.5)
+                self.signalStatus.emit("1secPing")
         except KeyboardInterrupt:
             self.observer.stop()
         self.observer.join()
@@ -199,3 +316,6 @@ class MyHandler(FileSystemEventHandler):
 
     def on_created(self, event):
         self.signal.emit(event.src_path)
+
+class ObserwableValue(HasTraits):
+    autopauseFlag = Bool(default_value=False)

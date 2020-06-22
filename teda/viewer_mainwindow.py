@@ -325,6 +325,8 @@ class MainWindow(QMainWindow):
         self.scanToolBar.addAction(self.scanObject.stopAct)
         self.scanToolBar.addAction(self.scanObject.pauseAct)
         self.scanToolBar.addAction(self.scanObject.resumeAct)
+        self.scanToolBar.addAction(self.scanObject.autopauseAct)
+        self.scanToolBar.addAction(self.scanObject.disabledautopauseAct)
         self.scanToolBar.hide()
 
         # self.infoToolBar = self.addToolBar("Info Toolbar")
@@ -553,6 +555,9 @@ class MainWindow(QMainWindow):
             self.cursor_coords.set_img_y(change.new)
         if display != '':
             self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
+            if self.scanObject.activeScan and self.scanObject.enableAutopause:#reser autopause
+                if not self.scanObject.obserwableValue.autopauseFlag:
+                    self.scanObject.obserwableValue.autopauseFlag = True
 
     def onMouseZoomOnImage(self, change):
         changed = False
