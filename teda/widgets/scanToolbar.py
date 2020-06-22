@@ -3,10 +3,8 @@ import os
 
 from PySide2 import QtCore
 from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QFileDialog, QAction
+from PySide2.QtWidgets import QFileDialog, QAction, QMessageBox
 import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 from teda.icons import IconFactory
 
 class ScanToolbar(QObject):
@@ -57,6 +55,16 @@ class ScanToolbar(QObject):
 
 
     def startScan(self):
+        try:
+            from watchdog.observers import Observer
+        except ImportError:
+            msgBox = QMessageBox()
+            msgBox.setText("The 'watchdog' package not installed")
+            msgBox.setInformativeText(
+                "In order to use directory scanning, install watchdog package\n  pip install watchdog")
+            msgBox.exec()
+            return
+
         self.lastScanedFits = None
         fileName = QFileDialog.getExistingDirectory(None, 'Select directory')
         if fileName:
@@ -178,6 +186,7 @@ class WorkerObject(QtCore.QObject):
 
     @QtCore.Slot()
     def startWork(self):
+        from watchdog.observers import Observer
         self.observer = Observer()
         self.observer.schedule(self.event_handler, path=self.filename, recursive=False)
         self.observer.start()
@@ -192,9 +201,15 @@ class WorkerObject(QtCore.QObject):
     def stopWork(self):
         self.observer.stop()
 
-class MyHandler(FileSystemEventHandler):
+try:
+    from watchdog.events import FileSystemEventHandler
+    HandlerBase = FileSystemEventHandler
+except ImportError:
+    HandlerBase = object
+
+
+class MyHandler(HandlerBase):
     def __init__(self, signal):
-        FileSystemEventHandler.__init__(self)
         self.signal = signal
 
     def on_created(self, event):
