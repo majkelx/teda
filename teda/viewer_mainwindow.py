@@ -144,6 +144,13 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage("Saved '%s'" % filename, 2000)
 
+    def save_dialog(self):
+        dialog = QFileDialog.getSaveFileName(self, "Save As, supported formats: eps, pdf, pgf, png, ps, raw, rgba, svg, svgz")
+        if dialog[0] != "":
+            try:
+                self.central_widget.figure.savefig(dialog[0])
+            except ValueError:
+                print("Unsupported format")
 
     def open_fits(self, fileName):
         """Opens specified FITS file and loads it to user interface"""
@@ -249,6 +256,9 @@ class MainWindow(QMainWindow):
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
         self.openAct = QAction(IconFactory.getIcon('note_add'),
                                "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open_dialog)
+        self.saveAct = QAction(IconFactory.getIcon('save'),
+                               "&Save", self, shortcut=QKeySequence.Save, statusTip="Save FITS view",
+                               triggered=self.save_dialog)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
@@ -292,6 +302,7 @@ class MainWindow(QMainWindow):
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAct)
+        self.fileMenu.addAction(self.saveAct)
 
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.quitAct)
@@ -314,6 +325,7 @@ class MainWindow(QMainWindow):
     def createToolBars(self):
         self.fileToolBar = self.addToolBar("File Toolbar")
         self.fileToolBar.addAction(self.openAct)
+        self.fileToolBar.addAction(self.saveAct)
 
         self.hduToolBar = self.addToolBar("HDU Toolbar")
         self.hduToolBar.addAction(self.prevHDUAct)
@@ -555,6 +567,8 @@ class MainWindow(QMainWindow):
             self.cursor_coords.set_img_y(change.new)
         if display != '':
             self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
+            if not self.hasFocus():
+                self.setFocus()
             if self.scanObject.activeScan and self.scanObject.enableAutopause:#reser autopause
                 if not self.scanObject.obserwableValue.autopauseFlag:
                     self.scanObject.obserwableValue.autopauseFlag = True
