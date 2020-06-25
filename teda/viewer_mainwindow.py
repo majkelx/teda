@@ -281,15 +281,15 @@ class MainWindow(QMainWindow):
         self.nextHDUAct = QAction(IconFactory.getIcon('skip_next'), 'Next HDU', self,
                                   statusTip="Next HDU", triggered=self.nextHDU)
 
-        self.zoom4Act = QAction(IconFactory.getIcon(), '×4', self,
+        self.zoom4Act = QAction(IconFactory.getIcon("x4"), '×4', self,
                                   statusTip="Zoom ×4", triggered=self.setZoomButton4)
-        self.zoom2Act = QAction(IconFactory.getIcon(), '×2', self,
+        self.zoom2Act = QAction(IconFactory.getIcon("x2"), '×2', self,
                                   statusTip="Zoom ×2", triggered=self.setZoomButton2)
         self.zoomHomeAct = QAction(IconFactory.getIcon('home'), 'Home', self,
                                   statusTip="Reset zoom an position", triggered=self.setZoomButtonHome)
-        self.zoom05Act = QAction(IconFactory.getIcon(), '1/2', self,
+        self.zoom05Act = QAction(IconFactory.getIcon("1-2"), '1/2', self,
                                   statusTip="Zoom 1/2", triggered=self.setZoomButton05)
-        self.zoom025Act = QAction(IconFactory.getIcon(), '1/4', self,
+        self.zoom025Act = QAction(IconFactory.getIcon("1-4"), '1/4', self,
                                   statusTip="Zoom 1/4", triggered=self.setZoomButton025)
 
         self.circleAct = QAction(IconFactory.getIcon('circle'), 'Add Region', self,
