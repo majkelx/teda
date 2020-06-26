@@ -60,6 +60,7 @@ class MainWindow(QMainWindow):
 
         self.painterComponent = PainterComponent(self.fits_image)
         self.painterComponent.startMovingEvents(self.central_widget)
+        self.scanObject = ScanToolbar(self)
         self.createActions()
         self.createMenus()
         self.createToolBars()
@@ -281,17 +282,19 @@ class MainWindow(QMainWindow):
         self.nextHDUAct = QAction(IconFactory.getIcon('skip_next'), 'Next HDU', self,
                                   statusTip="Next HDU", triggered=self.nextHDU)
 
-        self.zoom4Act = QAction(IconFactory.getIcon("x4"), '×4', self,
+        self.zoom4Act = QAction(IconFactory.getIcon("x4"), 'Zoom ×4', self,
                                   statusTip="Zoom ×4", triggered=self.setZoomButton4)
-        self.zoom2Act = QAction(IconFactory.getIcon("x2"), '×2', self,
+        self.zoom2Act = QAction(IconFactory.getIcon("x2"), 'Zoom ×2', self,
                                   statusTip="Zoom ×2", triggered=self.setZoomButton2)
         self.zoomHomeAct = QAction(IconFactory.getIcon('home'), 'Home', self,
                                   statusTip="Reset zoom an position", triggered=self.setZoomButtonHome)
-        self.zoom05Act = QAction(IconFactory.getIcon("1-2"), '1/2', self,
+        self.zoom05Act = QAction(IconFactory.getIcon("1-2"), 'Zoom 1/2', self,
                                   statusTip="Zoom 1/2", triggered=self.setZoomButton05)
-        self.zoom025Act = QAction(IconFactory.getIcon("1-4"), '1/4', self,
+        self.zoom025Act = QAction(IconFactory.getIcon("1-4"), 'Zoom 1/4', self,
                                   statusTip="Zoom 1/4", triggered=self.setZoomButton025)
 
+        self.panningAct = QAction(IconFactory.getIcon('panning'), 'Panning', self,
+                                 statusTip="Panning", triggered=self.changePanningStatus)
         self.circleAct = QAction(IconFactory.getIcon('circle'), 'Add Region', self,
                                   statusTip="Add Region", triggered=self.changeAddCircleStatus)
         self.centerCircleAct = QAction(IconFactory.getIcon('add_circle_outline'), 'Radial profile', self,
@@ -302,10 +305,34 @@ class MainWindow(QMainWindow):
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAct)
+        self.fileMenu.addAction(self.scanObject.scanAct)
+        self.fileMenu.addAction(self.scanObject.stopAct)
+        self.fileMenu.addAction(self.scanObject.pauseAct)
+        self.fileMenu.addAction(self.scanObject.resumeAct)
+        self.fileMenu.addAction(self.scanObject.autopauseAct)
+        self.fileMenu.addAction(self.scanObject.disabledautopauseAct)
         self.fileMenu.addAction(self.saveAct)
-
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.quitAct)
+
+        self.editMenu = self.menuBar().addMenu("&Edit")
+        self.editMenu.addAction(self.panningAct)
+        self.editMenu.addAction(self.circleAct)
+        self.editMenu.addAction(self.centerCircleAct)
+        self.editMenu.addSeparator()
+        self.editMenu.addAction(self.deleteAct)
+
+        self.hduMenu = self.menuBar().addMenu("HDU")
+        self.hduMenu.addAction(self.prevHDUAct)
+        self.hduMenu.addAction(self.nextHDUAct)
+        self.hduMenu.addSeparator()
+
+        self.zoomMenu = self.menuBar().addMenu("Zoom")
+        self.zoomMenu.addAction(self.zoom4Act)
+        self.zoomMenu.addAction(self.zoom2Act)
+        self.zoomMenu.addAction(self.zoomHomeAct)
+        self.zoomMenu.addAction(self.zoom05Act)
+        self.zoomMenu.addAction(self.zoom025Act)
 
         self.WcsMenu = self.menuBar().addMenu("W&CS")
         self.WcsMenu.addAction(self.wcsSexAct)
@@ -332,7 +359,6 @@ class MainWindow(QMainWindow):
         self.hduToolBar.addAction(self.nextHDUAct)
 
         self.scanToolBar = self.addToolBar("Scan Toolbar")
-        self.scanObject = ScanToolbar(self)
         self.scanToolBar.addAction(self.scanObject.scanAct)
         self.scanToolBar.addAction(self.scanObject.stopAct)
         self.scanToolBar.addAction(self.scanObject.pauseAct)
@@ -358,6 +384,9 @@ class MainWindow(QMainWindow):
         self.zoomToolBar.addAction(self.zoom025Act)
 
         self.mouseActionToolBar = self.addToolBar("Mouse Task Toolbar")
+        self.panningAct.setCheckable(True)
+        self.panningAct.setChecked(True)
+        self.mouseActionToolBar.addAction(self.panningAct)
         self.circleAct.setCheckable(True)
         self.mouseActionToolBar.addAction(self.circleAct)
         self.centerCircleAct.setCheckable(True)
@@ -400,6 +429,16 @@ class MainWindow(QMainWindow):
             self.fits_image.setZoom(zoom, reset)
             self.full_view_widget.updateMiniatureShape(self.fits_image.viewX, self.fits_image.viewY, self.fits_image.viewW, self.fits_image.viewH)
 
+    def changePanningStatus(self):
+        if self.panningAct.isChecked():
+            self.toogleOffRegionButtons()
+            self.panningAct.toggle()
+            self.painterComponent.stopPainting(self.central_widget)
+            self.painterComponent.startMovingEvents(self.central_widget)
+        else:
+            self.painterComponent.stopPainting(self.central_widget)
+            self.painterComponent.stopMovingEvents(self.central_widget)
+
     def changeAddCircleStatus(self):
         if self.circleAct.isChecked():
             self.toogleOffRegionButtons()
@@ -408,6 +447,7 @@ class MainWindow(QMainWindow):
         else:
             self.painterComponent.stopPainting(self.central_widget)
             self.painterComponent.startMovingEvents(self.central_widget)
+            self.panningAct.toggle()
 
     def changeAddCenterCircleStatus(self):
         if self.centerCircleAct.isChecked():
@@ -417,11 +457,14 @@ class MainWindow(QMainWindow):
         else:
             self.painterComponent.stopPainting(self.central_widget)
             self.painterComponent.startMovingEvents(self.central_widget)
+            self.panningAct.toggle()
 
     def deleteSelected(self):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
 
     def toogleOffRegionButtons(self):
+        if self.panningAct.isChecked():
+            self.panningAct.toggle()
         if self.circleAct.isChecked():
             self.circleAct.toggle()
         if self.centerCircleAct.isChecked():

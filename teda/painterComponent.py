@@ -121,6 +121,9 @@ class PainterComponent(HasTraits):
         self.actualShape = ""
         self.removeCanvasEvents(canvas)
 
+    def stopMovingEvents(self, canvas):
+        self.removeCanvasEvents(canvas)
+
     def startLine(self,canvas,x1,y1):
         ax = canvas.figure.axes[0]
         self.tempLines = ax.lines.copy()
