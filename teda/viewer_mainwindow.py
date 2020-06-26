@@ -1,4 +1,6 @@
 """TeDa FITS Viewer main window"""
+import os
+
 import PySide2
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import QFile, Qt, QTextStream, QSettings
@@ -146,7 +148,14 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Saved '%s'" % filename, 2000)
 
     def save_dialog(self):
-        dialog = QFileDialog.getSaveFileName(self, "Save As, supported formats: eps, pdf, pgf, png, ps, raw, rgba, svg, svgz")
+        figure = self.central_widget.figure
+        filetypes = figure.canvas.get_supported_filetypes_grouped()
+        filterstr = ';;'.join([
+            k+' (' + ' '.join([
+                '*.'+ext for ext in v
+            ])+')' for k, v in filetypes.items()
+        ])
+        dialog = QFileDialog.getSaveFileName(self, "Save Image As...", os.path.splitext(self.filename)[0], filterstr)
         if dialog[0] != "":
             try:
                 self.central_widget.figure.savefig(dialog[0])
