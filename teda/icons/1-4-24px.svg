@@ -7,13 +7,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   height="24"
-   viewBox="0 0 24 24"
-   width="24"
-   version="1.1"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   sodipodi:docname="1-4test-24px.svg"
    id="svg158"
-   sodipodi:docname="1-4-24px.svg"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)">
+   version="1.1"
+   width="24"
+   viewBox="0 0 24 24"
+   height="24">
   <metadata
      id="metadata164">
     <rdf:RDF>
@@ -29,39 +29,40 @@
   <defs
      id="defs162" />
   <sodipodi:namedview
-     inkscape:document-rotation="0"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1"
-     objecttolerance="10"
-     gridtolerance="10"
-     guidetolerance="10"
-     inkscape:pageopacity="0"
-     inkscape:pageshadow="2"
-     inkscape:window-width="1421"
-     inkscape:window-height="1049"
-     id="namedview160"
-     showgrid="false"
-     inkscape:zoom="21.888954"
-     inkscape:cx="17.995265"
-     inkscape:cy="8.7029781"
-     inkscape:window-x="560"
-     inkscape:window-y="116"
+     inkscape:current-layer="svg158"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg158" />
+     inkscape:window-y="116"
+     inkscape:window-x="560"
+     inkscape:cy="8.7029781"
+     inkscape:cx="17.995265"
+     inkscape:zoom="21.412562"
+     showgrid="false"
+     id="namedview160"
+     inkscape:window-height="1049"
+     inkscape:window-width="1390"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     inkscape:document-rotation="0" />
   <path
-     d="M0 0h24v24H0V0z"
+     id="path94"
+     style="font-size:14.6667px"
+     d="M 2.0084756,15.604437 H 4.3717623 V 7.4475175 L 1.8007928,7.9631437 V 6.6454323 L 4.3574393,6.1298061 h 1.4466179 v 9.4746309 h 2.3632867 v 1.217451 H 2.0084756 Z" />
+  <path
+     id="path96"
+     style="font-size:14.6667px"
+     d="m 13.24483,6.1298061 h 1.21745 L 10.738314,18.182568 H 9.5208628 Z" />
+  <path
+     id="path98"
+     style="font-size:14.6667px"
+     d="M 20.005262,7.3902257 16.35291,13.097921 h 3.652352 z M 19.625704,6.1298061 h 1.819014 v 6.9681149 h 1.525395 v 1.203128 h -1.525395 v 2.520839 h -1.439456 v -2.520839 h -4.826834 v -1.396488 z" />
+  <path
+     id="path154"
      fill="none"
-     id="path154" />
-  <text
-     id="text14"
-     y="16.821888"
-     x="0.18946098"
-     style="font-style:normal;font-weight:normal;font-size:14.6667px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none"
-     xml:space="preserve"><tspan
-       style="font-size:14.6667px"
-       y="16.821888"
-       x="0.18946098"
-       id="tspan12"
-       sodipodi:role="line">1/4</tspan></text>
+     d="M0 0h24v24H0V0z" />
 </svg>
