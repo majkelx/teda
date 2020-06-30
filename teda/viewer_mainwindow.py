@@ -589,6 +589,7 @@ class MainWindow(QMainWindow):
             self.restoreState(settings.value("windowState"))
 
         self.headerWidget.readSettings(settings)
+        self.file_widget.readSettings(settings)
 
     def writeWindowSettings(self):
         if self.tedaCommandLine.ignoreSettings:
@@ -603,6 +604,7 @@ class MainWindow(QMainWindow):
         settings.setValue('windowState',self.saveState())
 
         self.headerWidget.writeSettings(settings)
+        self.file_widget.writeSettings(settings)
 
     # def updateFitsInWidgets(self):
     #     # print("updateFitsInWidgets")

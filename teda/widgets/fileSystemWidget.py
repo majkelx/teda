@@ -1,7 +1,7 @@
 from PySide2.QtCore import QDir
 from PySide2.QtGui import Qt
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QFileSystemModel, QTreeView, QListView, QAction, QVBoxLayout, \
-    QPushButton, QToolButton, QFileDialog
+    QPushButton, QToolButton, QFileDialog, QSplitter
 
 from teda.icons import IconFactory
 
@@ -12,52 +12,55 @@ class FileSystemWidget(QWidget):
         super().__init__(*args, **kwargs)
 
         self.currentRootPath = '/'
+        self.currentPath = QDir.currentPath()
 
         self.mainWindow = parent;
 
-        self.chooseDirAction = QAction(IconFactory.getIcon('play_circle_outline'), 'Root dir', self, statusTip="Root directory", triggered=self.chooseRootDir)
-        self.showAllAction = QAction(IconFactory.getIcon('play_circle_outline'), 'Show all', self, statusTip="Show all/only FITS files", triggered=self.showAllFiles)
+        self.chooseDirAction = QAction(IconFactory.getIcon('play_circle_outline'), 'Root directory', self, statusTip="Change root directory", triggered=self.chooseRootDir)
+        self.showOFAction = QAction(IconFactory.getIcon('play_circle_outline'), 'Show only FITS files', self, statusTip="Show only FITS/all files", triggered=self.showOFFiles)
+        self.showOFAction.setCheckable(True)
+        self.showOFAction.toggled.connect(self.showOFFiles)
 
         self.chooseDirBtn = QToolButton()
         self.chooseDirBtn.setDefaultAction(self.chooseDirAction)
 
-        self.showAllBtn = QToolButton()
-        self.showAllBtn.setDefaultAction(self.showAllAction)
+        self.showOFBtn = QToolButton()
+        self.showOFBtn.setDefaultAction(self.showOFAction)
+
 
         iconlayout = QHBoxLayout()
         iconlayout.setAlignment(Qt.AlignLeft)
         iconlayout.addWidget(self.chooseDirBtn)
-        iconlayout.addWidget(self.showAllBtn)
+        iconlayout.addWidget(self.showOFBtn)
 
-        viewslayout = QHBoxLayout()
+        self.viewsSplitter = QSplitter(Qt.Horizontal)
+        self.viewsSplitter.splitterMoved.connect(self.splitterMoved)
 
-        self.dirModel = QFileSystemModel(self)
-        self.dirModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs)
-        self.dirModel.setRootPath(self.currentRootPath);
+        self.dirsModel = QFileSystemModel(self)
+        self.dirsModel.setOption(QFileSystemModel.DontWatchForChanges, True)
+        self.dirsModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs)
+        self.dirsModel.setNameFilterDisables(False)
 
-        self.tree = QTreeView()
-        self.tree.setModel(self.dirModel)
-        self.tree.hideColumn(1); self.tree.hideColumn(2); self.tree.hideColumn(3)
-        self.tree.setRootIndex(self.dirModel.index(self.currentRootPath))
+        self.dirs = QTreeView()
+        self.dirs.setModel(self.dirsModel)
+        self.dirs.hideColumn(1); self.dirs.hideColumn(2); self.dirs.hideColumn(3)
 
-        index = self.dirModel.index(QDir.currentPath())
-        self.tree.setCurrentIndex(index)
-        self.tree.setExpanded(index, True)
-
-        self.tree.clicked.connect(self.onDirChange)
+        self.dirs.clicked.connect(self.onDirsClick)
+        self.dirs.doubleClicked.connect(self.onDirsDoubleClick)
 
         self.filesModel = QFileSystemModel(self)
+        self.filesModel.setOption(QFileSystemModel.DontWatchForChanges, True)
         self.filesModel.setFilter(QDir.NoDotAndDotDot | QDir.Files)
-
-        self.filesModel.setRootPath(QDir.currentPath());
+        self.filesModel.setNameFilterDisables(False)
 
         self.files = QListView()
         self.files.setModel(self.filesModel)
-        self.files.setRootIndex(self.filesModel.index(QDir.currentPath()))
-        self.files.doubleClicked.connect(self.onChooseFile)
+        self.files.doubleClicked.connect(self.onFilesDoubleClick)
 
-        viewslayout.addWidget(self.tree)
-        viewslayout.addWidget(self.files)
+        self.viewsSplitter.addWidget(self.dirs)
+        self.viewsSplitter.addWidget(self.files)
+        viewslayout = QHBoxLayout()
+        viewslayout.addWidget(self.viewsSplitter)
 
         layout = QVBoxLayout()
         layout.addLayout(iconlayout)
@@ -65,28 +68,102 @@ class FileSystemWidget(QWidget):
 
         self.setLayout(layout)
 
-    def onDirChange(self, item):
-        index = self.tree.selectedIndexes()[0]
-        path = self.dirModel.filePath(index)
-        self.files.setRootIndex(self.filesModel.setRootPath(path))
+        self.dirsModel.setRootPath(self.currentRootPath);
+        self.dirs.setRootIndex(self.dirsModel.index(self.currentRootPath))
 
-    def onChooseFile(self, item):
+        index = self.dirsModel.index(self.currentPath)
+        self.dirs.setCurrentIndex(index)
+        self.dirs.setExpanded(index, True)
+
+        self.filesModel.setRootPath(self.currentPath);
+        self.files.setRootIndex(self.filesModel.index(self.currentPath))
+
+    def splitterMoved(self, pos, index):
+        if pos == 0:
+            self.filesModel.setFilter(QDir.NoDot | QDir.AllEntries | QDir.DirsFirst | QDir.Type)
+        elif pos == self.viewsSplitter.width()-self.viewsSplitter.handleWidth():
+            self.dirsModel.setFilter(QDir.NoDotAndDotDot|QDir.AllEntries)
+        else:
+            self.dirsModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs)
+            self.filesModel.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+
+    def onDirsClick(self, item):
+        index = self.dirs.selectedIndexes()[0]
+        info = self.dirsModel.fileInfo(index)
+        if info.isDir():
+            self.currentPath = info.filePath()
+            self.files.setRootIndex(self.filesModel.setRootPath(info.filePath()))
+
+    def onDirsDoubleClick(self, item):
+        index = self.dirs.selectedIndexes()[0]
+        info = self.dirsModel.fileInfo(index)
+        if info.isDir():
+            self.currentPath = info.filePath()
+            self.files.setRootIndex(self.filesModel.setRootPath(info.filePath()))
+        else:
+            self.mainWindow.open_fits(info.filePath())
+
+    def onFilesDoubleClick(self, item):
         index = self.files.selectedIndexes()[0]
-        path = self.filesModel.filePath(index)
-        self.mainWindow.open_fits(path)
+        info = self.filesModel.fileInfo(index)
+        if info.isDir():
+            self.setPath(info.filePath())
+        else:
+            self.mainWindow.open_fits(info.filePath())
+
+    def setPath(self, path):
+        self.currentPath = path
+
+        index = self.dirsModel.index(self.currentPath)
+        self.dirs.setCurrentIndex(index)
+        self.dirs.setExpanded(index, True)
+
+        self.files.setRootIndex(self.filesModel.setRootPath(self.currentPath))
 
     def chooseRootDir(self):
-        fileName = QFileDialog.getExistingDirectory(self, 'Select directory')
-        if fileName:
-            self.setRootPath(fileName);
+        dir = QFileDialog.getExistingDirectory(self, 'Select directory')
+        if dir:
+            self.setRootPath(dir);
 
-    def setRootPath(self, fileName):
-        self.currentRootPath = fileName
-        self.dirModel.setRootPath(fileName)
-        self.tree.setRootIndex(self.dirModel.index(fileName))
+    def setRootPath(self, dir):
+        self.currentRootPath = dir
 
-        self.filesModel.setRootPath(fileName)
-        self.files.setRootIndex(self.filesModel.index(fileName))
+        self.dirsModel.setRootPath(self.currentRootPath)
+        self.dirs.setRootIndex(self.dirsModel.index(self.currentRootPath))
 
-    def showAllFiles(self):
-        pass
+        self.setPath(self.currentRootPath)
+
+    def showOFFiles(self):
+        if self.showOFAction.isChecked():
+            self.dirsModel.setNameFilters(["*.FITS", "*.fits"])
+            self.filesModel.setNameFilters(["*.FITS", "*.fits"])
+        else:
+            self.dirsModel.setNameFilters(["*"])
+            self.filesModel.setNameFilters(["*"])
+
+    def writeSettings(self, settings):
+        settings.beginGroup("fileWidget")
+        settings.setValue('splitterGeometry',self.viewsSplitter.saveGeometry())
+        settings.setValue('splitterState',self.viewsSplitter.saveState())
+        settings.setValue('rootPath',self.currentRootPath)
+        settings.setValue('path',self.currentPath)
+        settings.endGroup()
+
+    def readSettings(self, settings):
+        settings.beginGroup("fileWidget")
+        self.viewsSplitter.restoreGeometry(settings.value("splitterGeometry"))
+        self.viewsSplitter.restoreState(settings.value("splitterState"))
+        rootPath = settings.value("rootPath")
+        path = settings.value("path")
+        settings.endGroup()
+
+        if rootPath is None:
+            rootPath = '/'
+        self.setRootPath(rootPath)
+
+        if path is None:
+            path = QDir.currentPath()
+        self.setPath(path)
+
+        self.splitterMoved(self.viewsSplitter.handle(1).pos().x(), 0)
+
