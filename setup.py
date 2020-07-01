@@ -32,6 +32,6 @@ setup(
         'matplotlib',
         'scipy',
         'traitlets',
-        'watchdog',
+#        'watchdog',
     ],
 )

@@ -1,6 +1,8 @@
 # TeDa FITS Viewer
 
-Observatory optimized SAO DS9 replacement
+Observatory optimized FITS Images viewer
+
+![](img/teda.png)
 
 ## Key Features
 * Flexible windows and widgets layout
@@ -14,9 +16,14 @@ Observatory optimized SAO DS9 replacement
    pip install teda
    teda_viewer 
 ``` 
-To use ipython console, additionally:
+### Optional dependencies
+To use ipython console the `qtconsole` package is needed, additionally:
 ``` bash
     pip install qtconsole
+``` 
+For directory scanning functionality, the `watchdog` package should be installed, e.g. 
+``` bash
+    pip install watchdog
 ``` 
 
 ## Run
@@ -30,11 +37,28 @@ Try
 ```
 for list of command line parameters.
 
+## Dynamic Scale and Color
+The dynamic scale of the image, and color mapping can be adjusted form 
+the **Dynamic Scale** panel. From menu: **View/Dynamic Scale**
+
 ## Fits Header Cards Pinning
 On the FITS Header panel, selected keys can be *pinned* to appear
 on the top ot the list. This can be done via context (right-click) menu.
 
 The set of pinned keys is saved and preserved between sessions.  
+
+## Radial Profile
+The **Radial Profile** button turns on the mode of selecting targets for 
+the radial profile analysis. Make sure the radial profile panel is visible 
+(View/Radial Profile). The shortcut for displaying radial profile of the star 
+under cursor is the **R**-key.
+
+The centroid of the star is corrected within small (be precise!) radius
+using the bivariate gaussoide fit.
+
+Together with the pixels values, the radial profile presents 1D fit of
+"gaussian(r) + sky". This fit provides information of presented fwhm and sky level.
+   
 
 ## Integrated Python Console
 In order to use integrated python console the `qtconsole` module, and it's
@@ -44,8 +68,15 @@ Install `qtconsole` by:
 ``` bash
     pip install qtconsole
 ``` 
+
+The console is available form menu **View/Python Console**
 ### Predefined variables
 The console has a number of predefined variables set:
+* `ax: WCSAxesSubplot` main plotting axes.
+* `window: MainWindow` main window
+* `data: numpy.ndarray` current HDU data
+* `header: astropy.fits.Header` current HDU header
+* `wcs: astropy.wcs.WCS` the WCS transformer
 
 ### Plotting
 To plot directly on the console, run the following magic command `%matplotlib inline`.
@@ -76,7 +107,10 @@ automatically.
 To avoid loading new files when inspecting current one, pause scanning by **Pause**
 button.
 
-This mode is intended to observe newly created FITS files in observatory. 
+This mode is intended to observe newly created FITS files in observatory.
+
+Directory scanning needs the [`watchdog`](https://pypi.org/project/watchdog/) component to be 
+installed manually (optional dependence).
 
 ## Development version install
 ``` bash
