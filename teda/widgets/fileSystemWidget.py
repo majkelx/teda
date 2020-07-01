@@ -16,8 +16,8 @@ class FileSystemWidget(QWidget):
 
         self.mainWindow = parent;
 
-        self.chooseDirAction = QAction(IconFactory.getIcon('play_circle_outline'), 'Root directory', self, statusTip="Change root directory", triggered=self.chooseRootDir)
-        self.showOFAction = QAction(IconFactory.getIcon('play_circle_outline'), 'Show only FITS files', self, statusTip="Show only FITS/all files", triggered=self.showOFFiles)
+        self.chooseDirAction = QAction(IconFactory.getIcon('folder'), 'Root directory', self, statusTip="Change root directory", triggered=self.chooseRootDir)
+        self.showOFAction = QAction(IconFactory.getIcon('filter_alt'), 'Show only FITS files', self, statusTip="Show only FITS/all files", triggered=self.showOFFiles)
         self.showOFAction.setCheckable(True)
         self.showOFAction.toggled.connect(self.showOFFiles)
 
