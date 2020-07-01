@@ -16,9 +16,14 @@ Observatory optimized FITS Images viewer
    pip install teda
    teda_viewer 
 ``` 
-To use ipython console, additionally:
+### Optional dependencies
+To use ipython console the `qtconsole` package is needed, additionally:
 ``` bash
     pip install qtconsole
+``` 
+For directory scanning functionality, the `watchdog` package should be installed, e.g. 
+``` bash
+    pip install watchdog
 ``` 
 
 ## Run
@@ -102,7 +107,10 @@ automatically.
 To avoid loading new files when inspecting current one, pause scanning by **Pause**
 button.
 
-This mode is intended to observe newly created FITS files in observatory. 
+This mode is intended to observe newly created FITS files in observatory.
+
+Directory scanning needs the [`watchdog`](https://pypi.org/project/watchdog/) component to be 
+installed manually (optional dependence).
 
 ## Development version install
 ``` bash
