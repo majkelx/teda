@@ -245,7 +245,18 @@ class MainWindow(QMainWindow):
                           "<li>Edward Lis</li>"
                           "<li>Grzegorz Mroczkowski</li>"
                           "</ul>"
-                          "Created by <a href='https://akond.com'>Akond Lab</a> for The Araucaria Project")
+                          "Created by <a href='https://akond.com'>Akond Lab</a> for The "
+                          "<a href='https://araucaria.camk.edu.pl'>Araucaria Project</a><br/>"
+                          "Licence: MIT <br/>"
+                          "3rd party work used: "
+                          "<a href='https://material.io/resources/icons/'> Google Material Icons</a>, "
+                          "<a href='https://www.astropy.org'> AstroPy</a>, "
+                          "<a href='https://doc.qt.io/qtforpython/'> Qt5/PySide2</a>, "
+                          "<a href='https://www.scipy.org'> SciPy</a>, and other..."
+                          "<br/><br/>"
+                          "Visit the <a href='https://github.com/majkelx/teda'>project's GitHub  page</a> for help"
+                          " and the issue tracker"
+                          )
 
     def on_console_show(self):
         console.show(

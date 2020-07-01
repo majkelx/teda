@@ -99,18 +99,32 @@ plt.plot(data[10,10:30])
 The **Scan Toolbar** (hidden by default) provides controls for the 
 directory scanning mode.
 
+This mode is intended to observe newly created FITS files in observatory.
+
 After pressing **Scan** button, and choosing directory, TeDa Fits Viewer will
 load most recent FITS file from that directory, and keep watching the directory 
 for changes. When new FITS file is added to directory, it will be loaded 
 automatically.
 
-To avoid loading new files when inspecting current one, pause scanning by **Pause**
-button.
+User can pause scanning using **Pause** button. There is also **auto pause** feature,
+when active, any mouse movement in the main area pauses scanning for 5 seconds,
+avoiding FITS reload when working.
 
-This mode is intended to observe newly created FITS files in observatory.
+After un-pausing (manually or after idle 5 seconds when auto-pause) the newest
+FITS will be loaded if any new files appeared during the pause.
 
 Directory scanning needs the [`watchdog`](https://pypi.org/project/watchdog/) component to be 
 installed manually (optional dependence).
+
+## Directory Panel
+The Directory Panel can be shown using menu command **View-Directory view**.
+
+The Directory Panel is convenient files navigator. The panel has two views:
+* Directory Tree
+* Files List
+
+User can collapse any of them using divider handle and use only remaining one.
+If the tree view is the only visible, it shows directories and files as well.      
 
 ## Development version install
 ``` bash
