@@ -30,6 +30,7 @@ from teda.models.cmaps import ColorMaps
 from teda.models.scalesModel import ScalesModel
 from teda.icons import IconFactory
 from . import console
+from .widgets.fileSystemWidget import FileSystemWidget
 
 
 class MainWindow(QMainWindow):
@@ -561,6 +562,15 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
+        # fileSelector
+        dock = QDockWidget("Directory view", self)
+        dock.setObjectName("DIRECTORY_VIEW")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.file_widget = FileSystemWidget(self)
+        dock.setWidget(self.file_widget)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
         self.viewMenu.addSeparator()
 
 
@@ -656,6 +666,7 @@ class MainWindow(QMainWindow):
             self.restoreState(settings.value("windowState"))
 
         self.headerWidget.readSettings(settings)
+        self.file_widget.readSettings(settings)
 
     def writeWindowSettings(self):
         if self.tedaCommandLine.ignoreSettings:
@@ -670,6 +681,7 @@ class MainWindow(QMainWindow):
         settings.setValue('windowState',self.saveState())
 
         self.headerWidget.writeSettings(settings)
+        self.file_widget.writeSettings(settings)
 
     # def updateFitsInWidgets(self):
     #     # print("updateFitsInWidgets")
