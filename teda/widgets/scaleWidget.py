@@ -2,12 +2,12 @@
 from PySide2.QtCore import Qt, QSettings
 from PySide2.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QComboBox)
 from traitlets import TraitError
+from widgets.slider import FloatSlider
 
 class ScaleWidget(QWidget):
     stretches_list = ['powerdist', 'asinh', 'contrastbias', 'histogram', 'linear',
      'log', 'power', 'sinh', 'sqrt', 'square']
     intervals_list = ['zscale','minmax', 'manual', 'percentile', 'asymetric']
-
 
     def __init__(self, parent, scales_model, cmap_model):
         QWidget.__init__(self, parent)
@@ -22,7 +22,6 @@ class ScaleWidget(QWidget):
         self.combobox_widget.setEnabled(False)
         self.combobox_layout = self.createComboboxes()
         self.combobox_widget.setLayout(self.combobox_layout)
-        # self.combobox_widget.setMaximumHeight(40)
         layout.addWidget(self.combobox_widget)
 
         # Stretch
@@ -30,7 +29,6 @@ class ScaleWidget(QWidget):
         self.stretch_sliders_layout = self.createStretchStackedLayout()
         self.stretch_sliders_widget.setEnabled(False)
         self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
-        # self.stretch_sliders_widget.setMaximumHeight(50)
         layout.addWidget(self.stretch_sliders_widget)
 
         # Interval
@@ -38,7 +36,6 @@ class ScaleWidget(QWidget):
         self.interval_sliders_layout = self.createIntervalStackedLayout()
         self.interval_sliders_widget.setEnabled(False)
         self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
-        # self.interval_sliders_widget.setMaximumHeight(125)
         layout.addWidget(self.interval_sliders_widget)
         self.setLayout(layout)
         self.setMaximumHeight(350)
@@ -52,7 +49,7 @@ class ScaleWidget(QWidget):
 
     def createStretchStackedLayout(self):
         self.stretchStackedLayout = QStackedLayout()
-        asinh = self.createAsinhParamsSliders()
+        asinh = FloatSlider()
         contrastbias = self.createContrastbiasParamsSliders()
         histogram = QLabel("")
         linear = self.createLinearSliders()
@@ -476,7 +473,7 @@ class ScaleWidget(QWidget):
             self.zscale_minpixels.setValue(self.scalesModel.interval_zscale_minpixels)
             self.zscale_krej.setValue(self.scalesModel.interval_zscale_krej * 10)
             self.zscale_miterations.setValue(self.scalesModel.interval_zscale_maxiterations)
-            self.asinh_a.setValue(self.scalesModel.stretch_asinh_a * 10)
+            # self.asinh_a.setValue(self.scalesModel.stretch_asinh_a * 10)
             self.contrast_contrast.setValue(self.scalesModel.stretch_contrastbias_contrast * 10)
             self.contrast_bias.setValue(self.scalesModel.stretch_contrastbias_bias * 10)
             self.linear_slope.setValue(self.scalesModel.stretch_linear_slope * 10)
