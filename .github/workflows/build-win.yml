@@ -34,7 +34,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Build executable with pyinstaller
-        run: pyinstaller arbeitszeit.py
+        run: pyinstaller teda/teda_fits.py
 
 # # Runs a single command using the runners shell
 #       - name: Run a one-line script
