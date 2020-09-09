@@ -37,7 +37,7 @@ jobs:
       - name: ZIP application
         run: |
           cd dist
-          zip -r dist/teda_fits.app.zip teda_fits.app
+          zip -r teda_fits.app.zip teda_fits.app
           cd ..
           
       - name: Collect executable
