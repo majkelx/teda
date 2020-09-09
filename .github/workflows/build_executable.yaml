@@ -34,11 +34,17 @@ jobs:
       - name: Build executable with pyinstaller
         run: pyinstaller -w --osx-bundle-identifier com.akond.teda.teda_fits teda/teda_fits.py
         
+      - name: ZIP application
+        run: |
+          cd dist
+          zip -r dist/teda_fits.app.zip teda_fits.app
+          cd ..
+          
       - name: Collect executable
         uses: actions/upload-artifact@v2
         with:
           name: teda_fits.app
-          path: dist/teda_fits.app
+          path: dist/teda_fits.app.zip
 
 # # Runs a single command using the runners shell
 #       - name: Run a one-line script
