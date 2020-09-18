@@ -5,7 +5,7 @@ from PySide2.QtWidgets import QWidget, QSlider, QLabel, QHBoxLayout, QLineEdit
 
 class LabeledSlder(QWidget):
     slider_min = 0
-    slider_max = 20
+    slider_max = 64
     slider_step = 1
     line_edit_width = 45
 
@@ -119,6 +119,9 @@ class IntSlider(LabeledSlder):
         self.max = max
         self.min = min
         self.line_edit.setValidator(self.validator)
+        self.slider.setMinimum(self.min)
+        self.slider.setMaximum(self.max)
+        self.slider.setSingleStep((self.max - self.min)//100 + 1)
 
         self.slider.valueChanged.connect(lambda: self._on_slider_moved(self.slider.value()))
         self.line_edit.editingFinished.connect(lambda: self._on_edit_finished(self.line_edit.text()))
@@ -145,17 +148,19 @@ class IntSlider(LabeledSlder):
         self.valueChanged.emit(normalized_value)
 
     def _to_slider(self, val: int):  # float
-        normalized = 1.0 * (val - self.min) / (self.max - self.min)
-        slider = normalized * self.slider_max
-        return slider
+        return val
+        # normalized = 1.0 * (val - self.min) / (self.max - self.min)
+        # slider = normalized * self.slider_max
+        # return slider
 
     def _from_slider(self, slider_val: int):  # int
-        normalized = 1.0 * slider_val / self.slider_max
-        if self.min != 0:
-            val = normalized * (self.max - self.min) + self.min
-        else:
-            val = normalized * (self.max - self.min) - self.min
-        return val
+        return slider_val
+        # normalized = 1.0 * slider_val / self.slider_max
+        # if self.min != 0:
+        #     val = normalized * (self.max - self.min) + self.min
+        # else:
+        #     val = normalized * (self.max - self.min) - self.min
+        # return val
 
     def get_value(self):
         return self.slider.value()
