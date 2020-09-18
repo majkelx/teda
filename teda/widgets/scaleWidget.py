@@ -1,8 +1,9 @@
 
 from PySide2.QtCore import Qt, QSettings, Slot
-from PySide2.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QComboBox)
+from PySide2.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout,
+                               QComboBox, QFormLayout, QLineEdit)
 from traitlets import TraitError
-from widgets.slider import IntSlider, FloatSlider
+from .slider import IntSlider, FloatSlider
 
 class ScaleWidget(QWidget):
     stretches_list = ['powerdist', 'asinh', 'contrastbias', 'histogram', 'linear',
@@ -16,31 +17,36 @@ class ScaleWidget(QWidget):
         self.cmapModel = cmap_model
         self.ignore_signals = False
 
-        # comboboxes
         layout = QVBoxLayout()
-        self.combobox_widget = QWidget()
-        self.combobox_widget.setEnabled(False)
+
+        # comboboxes
+        # self.combobox_widget = QWidget()
+        # self.combobox_widget.setEnabled(False)
         self.combobox_layout = self.createComboboxes()
-        self.combobox_widget.setLayout(self.combobox_layout)
-        layout.addWidget(self.combobox_widget)
+        # self.combobox_widget.setLayout(self.combobox_layout)
+        # layout.addWidget(self.combobox_widget)
+        layout.addLayout(self.combobox_layout)
 
         # Stretch
-        self.stretch_sliders_widget = QWidget()
+        # self.stretch_sliders_widget = QWidget()
         self.stretch_sliders_layout = self.createStretchStackedLayout()
-        self.stretch_sliders_widget.setEnabled(False)
-        self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
-        layout.addWidget(self.stretch_sliders_widget)
+        # self.stretch_sliders_widget.setEnabled(False)
+        # self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
+        # layout.addWidget(self.stretch_sliders_widget)
+        layout.addLayout(self.stretch_sliders_layout)
 
 
         # Interval
-        self.interval_sliders_widget = QWidget()
+        # self.interval_sliders_widget = QWidget()
         self.interval_sliders_layout = self.createIntervalStackedLayout()
-        self.interval_sliders_widget.setEnabled(False)
-        self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
-        layout.addWidget(self.interval_sliders_widget)
+        # self.interval_sliders_widget.setEnabled(False)
+        # self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
+        # layout.addWidget(self.interval_sliders_widget)
+        layout.addLayout(self.interval_sliders_layout)
+
         self.setLayout(layout)
         # self.interval_sliders_widget.setMaximumHeight(350)
-        self.setMaximumHeight(450)
+        # self.setMaximumHeight(450)
 
         self.adjustCombos()
         self.adjustCmapCombo()
@@ -91,17 +97,16 @@ class ScaleWidget(QWidget):
 
     def createManualParamsSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
-        self.manual_vmin = FloatSlider(min=0.0, max=2.0)
-        self.manual_vmax = IntSlider(min=100, max=30000)
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.manual_vmin = FloatSlider(min=0.0, max=30000.0)
+        self.manual_vmax = FloatSlider(min=0.0, max=30000.0)
 
         self.manual_vmin.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_manual_vmin', val))
         self.manual_vmax.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_manual_vmax', val))
 
-        layout.addWidget(QLabel('vmin'), 0, 0)
-        layout.addWidget(self.manual_vmin, 0, 1)
-        layout.addWidget(QLabel('vmax'), 1, 0)
-        layout.addWidget(self.manual_vmax, 1, 1)
+        layout.addRow('vmin', self.manual_vmin)
+        layout.addRow('vmax', self.manual_vmax)
         widget.setLayout(layout)
 
         return widget
@@ -147,7 +152,8 @@ class ScaleWidget(QWidget):
 
     def createZscaleParamsSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.zscale_nsamples = IntSlider(min=0, max=2000)
         self.zscale_contrast = FloatSlider(min=0.0, max=2.0)
@@ -163,18 +169,12 @@ class ScaleWidget(QWidget):
         self.zscale_krej.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_krej', val))
         self.zscale_miterations.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_maxiterations', val))
 
-        layout.addWidget(QLabel("samples"), 0, 0)
-        layout.addWidget(self.zscale_nsamples, 0, 1)
-        layout.addWidget(QLabel("contrast"), 1, 0)
-        layout.addWidget(self.zscale_contrast, 1, 1)
-        layout.addWidget(QLabel("max reject"), 2, 0)
-        layout.addWidget(self.zscale_mreject, 2, 1)
-        layout.addWidget(QLabel("pixels"), 3, 0)
-        layout.addWidget(self.zscale_minpixels, 3, 1)
-        layout.addWidget(QLabel("krej"), 4, 0)
-        layout.addWidget(self.zscale_krej, 4, 1)
-        layout.addWidget(QLabel("m_iterations"), 5, 0)
-        layout.addWidget(self.zscale_miterations, 5, 1)
+        layout.addRow("samples", self.zscale_nsamples)
+        layout.addRow("contrast", self.zscale_contrast)
+        layout.addRow("max reject", self.zscale_mreject)
+        layout.addRow("pixels", self.zscale_minpixels)
+        layout.addRow("krej", self.zscale_krej)
+        layout.addRow("m_iterations", self.zscale_miterations)
 
         widget.setLayout(layout)
 
@@ -381,9 +381,9 @@ class ScaleWidget(QWidget):
         self.ignore_signals = True
         try:
             # self.selectSliders(self.stretchStackedLayout.currentIndex(), self.intervalStackedLayout.currentIndex())
-            self.stretch_sliders_widget.setEnabled(True)
-            self.interval_sliders_widget.setEnabled(True)
-            self.combobox_widget.setEnabled(True)
+            # self.stretch_sliders_widget.setEnabled(True)
+            # self.interval_sliders_widget.setEnabled(True)
+            # self.combobox_widget.setEnabled(True)
             self.manual_vmin.set_value_from_settings(self.scalesModel.interval_manual_vmin)
             self.manual_vmax.set_value_from_settings(self.scalesModel.interval_manual_vmax)
             self.percentile_percentile.set_value_from_settings(self.scalesModel.interval_percentile_percentile)
