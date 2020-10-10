@@ -1,9 +1,9 @@
 
-from PySide2.QtCore import Qt, QSettings, Slot
+from PySide2.QtCore import Qt, QSettings, Slot, QSize
 from PySide2.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout,
-                               QComboBox, QFormLayout, QLineEdit)
+                               QComboBox, QFormLayout, QLineEdit, QSizePolicy, QLayout, QCheckBox)
 from traitlets import TraitError
-from .slider import IntSlider, FloatSlider
+from .slider import IntSlider, FloatSlider, LabeledSlider
 
 class ScaleWidget(QWidget):
     stretches_list = ['powerdist', 'asinh', 'contrastbias', 'histogram', 'linear',
@@ -16,34 +16,40 @@ class ScaleWidget(QWidget):
         self.scalesModel = scales_model
         self.cmapModel = cmap_model
         self.ignore_signals = False
-
         layout = QVBoxLayout()
+        layout.setSpacing(0)
 
         # comboboxes
-        # self.combobox_widget = QWidget()
+        self.combobox_widget = QWidget()
         # self.combobox_widget.setEnabled(False)
         self.combobox_layout = self.createComboboxes()
-        # self.combobox_widget.setLayout(self.combobox_layout)
-        # layout.addWidget(self.combobox_widget)
-        layout.addLayout(self.combobox_layout)
+        self.combobox_widget.setLayout(self.combobox_layout)
+        layout.addWidget(self.combobox_widget)
+        # layout.addLayout(self.combobox_layout)
+        self.combobox_widget.setMaximumHeight(40)
 
         # Stretch
-        # self.stretch_sliders_widget = QWidget()
+        self.stretch_sliders_widget = QWidget()
         self.stretch_sliders_layout = self.createStretchStackedLayout()
         # self.stretch_sliders_widget.setEnabled(False)
-        # self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
-        # layout.addWidget(self.stretch_sliders_widget)
-        layout.addLayout(self.stretch_sliders_layout)
-
+        self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
+        layout.addWidget(self.stretch_sliders_widget)
+        # layout.addLayout(self.stretch_sliders_layout)
+        # self.stretch_sliders_widget.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
         # Interval
-        # self.interval_sliders_widget = QWidget()
+        self.interval_sliders_widget = QWidget()
         self.interval_sliders_layout = self.createIntervalStackedLayout()
         # self.interval_sliders_widget.setEnabled(False)
-        # self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
-        # layout.addWidget(self.interval_sliders_widget)
-        layout.addLayout(self.interval_sliders_layout)
+        self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
+        layout.addWidget(self.interval_sliders_widget)
+        # layout.addLayout(self.interval_sliders_layout)
 
+        # self.localeCheckBox = QCheckBox('Locale', self)
+        # self.localeCheckBox.stateChanged.connect(lambda changed:
+        #                                          LabeledSlider.changeLocale(labeled_slider, self.localeCheckBox.isChecked()))
+        # layout.addWidget(self.localeCheckBox)
+        # layout.setSizeConstraint(QLayout.SetMinimumSize)
         self.setLayout(layout)
         # self.interval_sliders_widget.setMaximumHeight(350)
         # self.setMaximumHeight(450)
@@ -99,8 +105,9 @@ class ScaleWidget(QWidget):
         widget = QWidget()
         layout = QFormLayout()
         layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+
         self.manual_vmin = FloatSlider(min=0.0, max=30000.0)
-        self.manual_vmax = FloatSlider(min=0.0, max=30000.0)
+        self.manual_vmax = IntSlider(min=0, max=30000)
 
         self.manual_vmin.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_manual_vmin', val))
         self.manual_vmax.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_manual_vmax', val))
@@ -108,29 +115,32 @@ class ScaleWidget(QWidget):
         layout.addRow('vmin', self.manual_vmin)
         layout.addRow('vmax', self.manual_vmax)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(60)
 
         return widget
 
     def createPercentileParamsSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+
         self.percentile_percentile = FloatSlider(min=0.1, max=2.0)
         self.percentile_nsamples = IntSlider(min=1, max=2000)
 
         self.percentile_percentile.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_percentile_percentile', val))
         self.percentile_nsamples.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_percentile_nsamples', val))
 
-        layout.addWidget(QLabel('percentile'), 0, 0)
-        layout.addWidget(self.percentile_percentile, 0, 1)
-        layout.addWidget(QLabel('samples'), 1, 0)
-        layout.addWidget(self.percentile_nsamples, 1, 1)
+        layout.addRow('percentile', self.percentile_percentile)
+        layout.addRow('samples', self.percentile_nsamples)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(60)
 
         return widget
 
     def createAsymetricParamsSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.asymetric_lpercentile = FloatSlider(min=0.0, max=2.0)
         self.asymetric_upercentile = FloatSlider(min=0.0, max=2.0)
@@ -140,13 +150,12 @@ class ScaleWidget(QWidget):
         self.asymetric_upercentile.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_asymetric_upper_percentile', val))
         self.asymetric_nsamples.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_asymetric_nsamples', val))
 
-        layout.addWidget(QLabel("l_percentile"), 0, 0)
-        layout.addWidget(self.asymetric_lpercentile, 0, 1)
-        layout.addWidget(QLabel("u_percentile"), 1, 0)
-        layout.addWidget(self.asymetric_upercentile, 1, 1)
-        layout.addWidget(QLabel("samples"), 2, 0)
-        layout.addWidget(self.asymetric_nsamples, 2, 1)
+        layout.addRow("l_percentile", self.asymetric_lpercentile)
+        layout.addRow("u_percentile", self.asymetric_upercentile)
+        layout.addRow("samples", self.asymetric_nsamples)
+
         widget.setLayout(layout)
+        widget.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
         return widget
 
@@ -177,6 +186,7 @@ class ScaleWidget(QWidget):
         layout.addRow("m_iterations", self.zscale_miterations)
 
         widget.setLayout(layout)
+        # widget.setMaximumHeight(180)
 
         return widget
 
@@ -186,7 +196,6 @@ class ScaleWidget(QWidget):
         self.stretch_combobox = QComboBox()
         self.stretch_combobox.setFocusPolicy(Qt.NoFocus)
         self.stretch_combobox.addItems(self.stretches_list)
-
 
         self.interval_combobox = QComboBox()
         self.interval_combobox.setFocusPolicy(Qt.NoFocus)
@@ -219,21 +228,23 @@ class ScaleWidget(QWidget):
 
     def createAsinhParamsSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.asinh_a = FloatSlider(min=0.1, max=2.0)
-
         self.asinh_a.valueChanged.connect(
             lambda val=vars: self.onSliderChange('stretch_asinh_a', val))
-        layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(self.asinh_a, 0, 1)
+
+        layout.addRow('a', self.asinh_a)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(30)
 
         return widget
 
     def createContrastbiasParamsSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.contrast_contrast = FloatSlider(min=0.0, max=4.0)
         self.contrast_bias = FloatSlider(min=0.0, max=2.0)
@@ -241,87 +252,86 @@ class ScaleWidget(QWidget):
         self.contrast_contrast.valueChanged.connect(
             lambda val=vars: self.onSliderChange('stretch_contrastbias_contrast', val))
         self.contrast_bias.valueChanged.connect(lambda val=vars : self.onSliderChange('stretch_contrastbias_bias', val))
-        layout.addWidget(QLabel('contrast'), 0, 0)
-        layout.addWidget(self.contrast_contrast, 0, 1)
-        layout.addWidget(QLabel('bias'), 1, 0)
-        layout.addWidget(self.contrast_bias, 1, 1)
 
+        layout.addRow('contrast', self.contrast_contrast)
+        layout.addRow('bias', self.contrast_bias)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(60)
 
         return widget
 
     def createLinearSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.linear_slope = FloatSlider(min=0.1, max=3.0)
-
         self.linear_intercept = FloatSlider(min=-1.0, max=1.0)
 
-        # connects
         self.linear_slope.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_linear_slope', val))
         self.linear_intercept.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_linear_intercept', val))
 
-        layout.addWidget(QLabel("slope"), 0, 0)
-        layout.addWidget(self.linear_slope, 0, 1)
-        layout.addWidget(QLabel("intercept"), 1, 0)
-        layout.addWidget(self.linear_intercept, 1, 1)
-
+        layout.addRow('slope', self.linear_slope)
+        layout.addRow('intercept', self.linear_intercept)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(60)
 
         return widget
 
     def createLogSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.log_a = FloatSlider(min=0.1, max=2000.0)
-
         self.log_a.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_log_a', val))
 
-        layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(self.log_a, 0, 1)
+        layout.addRow('a', self.log_a)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(30)
 
         return widget
 
     def createPowerdistSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.powerdist_a = FloatSlider(min=10.0, max=2000.0)
-
         self.powerdist_a.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_powerdist_a', val))
 
-        layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(self.powerdist_a, 0, 1)
+        layout.addRow('a', self.powerdist_a)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(40)
+
         return widget
 
     def createPowerSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.power_a = FloatSlider(min=0.1, max=2.0)
-
         self.power_a.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_power_a', val))
 
-        layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(self.power_a, 0, 1)
+        layout.addRow('a', self.power_a)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(30)
+
         return widget
 
     def createSinhSliders(self):
         widget = QWidget()
-        layout = QGridLayout()
+        layout = QFormLayout()
+        layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.sinh_a = FloatSlider(min=0.0, max=1.0)
-
         self.sinh_a.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_sinh_a', val))
 
-        layout.addWidget(QLabel('a'), 0, 0)
-        layout.addWidget(self.sinh_a, 0, 1)
+        layout.addRow('a', self.sinh_a)
         widget.setLayout(layout)
+        # widget.setMaximumHeight(30)
+
         return widget
 
     def onSliderChange(self, param, value):
@@ -370,7 +380,67 @@ class ScaleWidget(QWidget):
                 self.intervals_list.index(self.scalesModel.selected_interval))
         except ValueError:
             pass
+        try:
+            # print(self.sizeHint())
+            self.adjustWidgetHeight(self.scalesModel.selected_stretch, self.scalesModel.selected_interval)
+            # print(self.sizeHint())
+        except ValueError:
+            pass
+
         # self.fitsNormalization(self.stretch_combobox.currentText(), self.interval_combobox.currentText())
+
+    def adjustWidgetHeight(self, stretch, interval):
+
+        # widget_height = 100
+        # if stretch == 'histogram' or stretch == 'sqrt' or stretch == 'square':
+        #     widget_height = widget_height
+        # if stretch == 'contrastbias' or stretch == 'linear':
+        #     widget_height = widget_height + 60
+        # else:
+        #     widget_height = widget_height + 30
+        #
+        # if interval == 'minmax':
+        #     widget_height = widget_height
+        # elif interval == 'asymetric':
+        #     widget_height = widget_height + 60
+        # elif interval == 'zscale':
+        #     widget_height = widget_height + 120
+        # else:
+        #     widget_height = widget_height + 40
+
+        # self.setMaximumHeight(widget_height)
+        widget_height = 50
+        if stretch == 'histogram' or stretch == 'sqrt' or stretch == 'square':
+            self.stretch_sliders_widget.hide()
+        else:
+            self.stretch_sliders_widget.show()
+            if stretch == 'contrastbias' or stretch == 'linear':
+                # self.stretch_sliders_widget.show()
+                widget_height = widget_height + 80
+                self.stretch_sliders_widget.setMaximumHeight(70)
+                # self.stretch_sliders_widget.setMinimumHeight(60)
+            else:
+                # self.stretch_sliders_widget.show()
+                widget_height = widget_height + 50
+                self.stretch_sliders_widget.setMaximumHeight(40)
+                # self.stretch_sliders_widget.setMinimumHeight(30)
+
+        if interval == 'minmax':
+            self.interval_sliders_widget.setMaximumHeight(0)
+        elif interval == 'asymetric':
+            widget_height = widget_height + 100
+            self.interval_sliders_widget.setMaximumHeight(90)
+            # self.interval_sliders_widget.setMinimumHeight(80)
+        elif interval == 'zscale':
+            widget_height = widget_height + 190
+            self.interval_sliders_widget.setMaximumHeight(180)
+            # self.interval_sliders_widget.setMinimumHeight(170)
+        else:
+            widget_height = widget_height + 80
+            self.interval_sliders_widget.setMaximumHeight(70)
+            # self.interval_sliders_widget.setMinimumHeight(60)
+
+        self.setMaximumHeight(widget_height)
 
     def adjustCmapCombo(self):
         """Set combo value"""

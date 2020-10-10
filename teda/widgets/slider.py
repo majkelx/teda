@@ -1,18 +1,20 @@
 import PySide2
 from PySide2.QtGui import QDoubleValidator, QIntValidator, QValidator
 from PySide2.QtCore import Qt, Signal, Slot, QLocale
-from PySide2.QtWidgets import QWidget, QSlider, QLabel, QHBoxLayout, QLineEdit
+from PySide2.QtWidgets import QWidget, QSlider, QLabel, QHBoxLayout, QLineEdit, QSizePolicy
 
-class LabeledSlder(QWidget):
+class LabeledSlider(QWidget):
     slider_min = 0
     slider_max = 64
     slider_step = 1
-    line_edit_width = 45
+    line_edit_width = 70
+    line_edit_heigth = 20
+
+    stateChanged = Signal(bool)
 
     def __init__(self):
         super().__init__()
-        self.locale = QLocale(QLocale.German, QLocale.Germany)
-
+        self.locale = QLocale(QLocale.English, QLocale.UnitedStates)
         self.setContentsMargins(0, 0, 0, 0)
         hbox = QHBoxLayout(self)
         hbox.setContentsMargins(0, 0, 0, 0,)
@@ -21,13 +23,23 @@ class LabeledSlder(QWidget):
         self.slider.setMaximum(self.slider_max)
         self.slider.setSingleStep(self.slider_step)
         self.line_edit = QLineEdit('', self)
+        self.line_edit.setAlignment(Qt.AlignCenter)
         self.line_edit.setMaximumWidth(self.line_edit_width)
+        self.line_edit.setMaximumHeight(self.line_edit_heigth)
+        self.line_edit.setMinimumHeight(self.line_edit_heigth)
         hbox.addWidget(self.slider)
         hbox.addWidget(self.line_edit)
+        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+
+    # @Slot(bool)
+    # def changeLocale(self, locale):
+    #     if locale:
+    #         self.locale = QLocale(QLocale.German, QLocale.Germany)
+    #     else:
+    #         self.locale = QLocale(QLocale.English, QLocale.UnitedStates)
 
 
-
-class FloatSlider(LabeledSlder):
+class FloatSlider(LabeledSlider):
     """
     Slider with value
 
@@ -67,7 +79,8 @@ class FloatSlider(LabeledSlder):
 
     @Slot(int)
     def _on_slider_moved(self, val):
-        normalized_value = self._from_slider(val)
+        value = self._from_slider(val)
+        normalized_value = self.normalizeToTwoDecimalsValue(value)
         str_value = self.locale.toString(normalized_value)
         self.line_edit.setText(str_value)
         self.valueChanged.emit(normalized_value)
@@ -100,8 +113,11 @@ class FloatSlider(LabeledSlder):
         val = self.validate_input(value)
         self.setValue(val)
 
+    def normalizeToTwoDecimalsValue(self, value):
+        return float("{:.2f}".format(value))
 
-class IntSlider(LabeledSlder):
+
+class IntSlider(LabeledSlider):
     """
     Slider with value
 
