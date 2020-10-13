@@ -1,7 +1,8 @@
 import PySide2
-from PySide2.QtGui import QDoubleValidator, QIntValidator, QValidator
+from PySide2.QtGui import QDoubleValidator, QIntValidator
 from PySide2.QtCore import Qt, Signal, Slot, QLocale
-from PySide2.QtWidgets import QWidget, QSlider, QLabel, QHBoxLayout, QLineEdit, QSizePolicy
+from PySide2.QtWidgets import QWidget, QSlider, QHBoxLayout, QLineEdit, QSizePolicy
+
 
 class LabeledSlider(QWidget):
     slider_min = 0
@@ -10,11 +11,9 @@ class LabeledSlider(QWidget):
     line_edit_width = 70
     line_edit_heigth = 20
 
-    stateChanged = Signal(bool)
-
     def __init__(self):
         super().__init__()
-        self.locale = QLocale(QLocale.English, QLocale.UnitedStates)
+        self.locale = QLocale()
         self.setContentsMargins(0, 0, 0, 0)
         hbox = QHBoxLayout(self)
         hbox.setContentsMargins(0, 0, 0, 0,)
@@ -30,13 +29,6 @@ class LabeledSlider(QWidget):
         hbox.addWidget(self.slider)
         hbox.addWidget(self.line_edit)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
-
-    # @Slot(bool)
-    # def changeLocale(self, locale):
-    #     if locale:
-    #         self.locale = QLocale(QLocale.German, QLocale.Germany)
-    #     else:
-    #         self.locale = QLocale(QLocale.English, QLocale.UnitedStates)
 
 
 class FloatSlider(LabeledSlider):
@@ -80,7 +72,7 @@ class FloatSlider(LabeledSlider):
     @Slot(int)
     def _on_slider_moved(self, val):
         value = self._from_slider(val)
-        normalized_value = self.normalizeToTwoDecimalsValue(value)
+        normalized_value = self.normalize_to_two_decimals_value(value)
         str_value = self.locale.toString(normalized_value)
         self.line_edit.setText(str_value)
         self.valueChanged.emit(normalized_value)
@@ -113,7 +105,7 @@ class FloatSlider(LabeledSlider):
         val = self.validate_input(value)
         self.setValue(val)
 
-    def normalizeToTwoDecimalsValue(self, value):
+    def normalize_to_two_decimals_value(self, value):
         return float("{:.2f}".format(value))
 
 

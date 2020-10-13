@@ -45,14 +45,7 @@ class ScaleWidget(QWidget):
         layout.addWidget(self.interval_sliders_widget)
         # layout.addLayout(self.interval_sliders_layout)
 
-        # self.localeCheckBox = QCheckBox('Locale', self)
-        # self.localeCheckBox.stateChanged.connect(lambda changed:
-        #                                          LabeledSlider.changeLocale(labeled_slider, self.localeCheckBox.isChecked()))
-        # layout.addWidget(self.localeCheckBox)
-        # layout.setSizeConstraint(QLayout.SetMinimumSize)
         self.setLayout(layout)
-        # self.interval_sliders_widget.setMaximumHeight(350)
-        # self.setMaximumHeight(450)
 
         self.adjustCombos()
         self.adjustCmapCombo()
@@ -115,7 +108,6 @@ class ScaleWidget(QWidget):
         layout.addRow('vmin', self.manual_vmin)
         layout.addRow('vmax', self.manual_vmax)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(60)
 
         return widget
 
@@ -133,7 +125,6 @@ class ScaleWidget(QWidget):
         layout.addRow('percentile', self.percentile_percentile)
         layout.addRow('samples', self.percentile_nsamples)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(60)
 
         return widget
 
@@ -186,7 +177,6 @@ class ScaleWidget(QWidget):
         layout.addRow("m_iterations", self.zscale_miterations)
 
         widget.setLayout(layout)
-        # widget.setMaximumHeight(180)
 
         return widget
 
@@ -237,7 +227,6 @@ class ScaleWidget(QWidget):
 
         layout.addRow('a', self.asinh_a)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(30)
 
         return widget
 
@@ -256,7 +245,6 @@ class ScaleWidget(QWidget):
         layout.addRow('contrast', self.contrast_contrast)
         layout.addRow('bias', self.contrast_bias)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(60)
 
         return widget
 
@@ -274,7 +262,6 @@ class ScaleWidget(QWidget):
         layout.addRow('slope', self.linear_slope)
         layout.addRow('intercept', self.linear_intercept)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(60)
 
         return widget
 
@@ -288,7 +275,6 @@ class ScaleWidget(QWidget):
 
         layout.addRow('a', self.log_a)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(30)
 
         return widget
 
@@ -302,7 +288,6 @@ class ScaleWidget(QWidget):
 
         layout.addRow('a', self.powerdist_a)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(40)
 
         return widget
 
@@ -316,7 +301,6 @@ class ScaleWidget(QWidget):
 
         layout.addRow('a', self.power_a)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(30)
 
         return widget
 
@@ -330,7 +314,6 @@ class ScaleWidget(QWidget):
 
         layout.addRow('a', self.sinh_a)
         widget.setLayout(layout)
-        # widget.setMaximumHeight(30)
 
         return widget
 
@@ -342,10 +325,6 @@ class ScaleWidget(QWidget):
             setattr(self.scalesModel, param, value)
         finally:
             self.ignore_signals = False
-        # current_stretch = self.stretch_combobox.currentText()
-        # current_interval = self.interval_combobox.currentText()
-        #
-        # self.fitsNormalization(current_stretch, current_interval)
 
 
     def onScaleModelChange(self, change):
@@ -381,9 +360,7 @@ class ScaleWidget(QWidget):
         except ValueError:
             pass
         try:
-            # print(self.sizeHint())
             self.adjustWidgetHeight(self.scalesModel.selected_stretch, self.scalesModel.selected_interval)
-            # print(self.sizeHint())
         except ValueError:
             pass
 
@@ -391,54 +368,31 @@ class ScaleWidget(QWidget):
 
     def adjustWidgetHeight(self, stretch, interval):
 
-        # widget_height = 100
-        # if stretch == 'histogram' or stretch == 'sqrt' or stretch == 'square':
-        #     widget_height = widget_height
-        # if stretch == 'contrastbias' or stretch == 'linear':
-        #     widget_height = widget_height + 60
-        # else:
-        #     widget_height = widget_height + 30
-        #
-        # if interval == 'minmax':
-        #     widget_height = widget_height
-        # elif interval == 'asymetric':
-        #     widget_height = widget_height + 60
-        # elif interval == 'zscale':
-        #     widget_height = widget_height + 120
-        # else:
-        #     widget_height = widget_height + 40
-
-        # self.setMaximumHeight(widget_height)
-        widget_height = 50
+        widget_height = 70
         if stretch == 'histogram' or stretch == 'sqrt' or stretch == 'square':
             self.stretch_sliders_widget.hide()
         else:
             self.stretch_sliders_widget.show()
             if stretch == 'contrastbias' or stretch == 'linear':
-                # self.stretch_sliders_widget.show()
                 widget_height = widget_height + 80
-                self.stretch_sliders_widget.setMaximumHeight(70)
-                # self.stretch_sliders_widget.setMinimumHeight(60)
+                self.stretch_sliders_widget.setMaximumHeight(80)
             else:
-                # self.stretch_sliders_widget.show()
                 widget_height = widget_height + 50
-                self.stretch_sliders_widget.setMaximumHeight(40)
-                # self.stretch_sliders_widget.setMinimumHeight(30)
+                self.stretch_sliders_widget.setMaximumHeight(50)
 
         if interval == 'minmax':
-            self.interval_sliders_widget.setMaximumHeight(0)
-        elif interval == 'asymetric':
-            widget_height = widget_height + 100
-            self.interval_sliders_widget.setMaximumHeight(90)
-            # self.interval_sliders_widget.setMinimumHeight(80)
-        elif interval == 'zscale':
-            widget_height = widget_height + 190
-            self.interval_sliders_widget.setMaximumHeight(180)
-            # self.interval_sliders_widget.setMinimumHeight(170)
+            self.interval_sliders_widget.hide()
         else:
-            widget_height = widget_height + 80
-            self.interval_sliders_widget.setMaximumHeight(70)
-            # self.interval_sliders_widget.setMinimumHeight(60)
+            self.interval_sliders_widget.show()
+            if interval == 'asymetric':
+                widget_height = widget_height + 110
+                self.interval_sliders_widget.setMaximumHeight(110)
+            elif interval == 'zscale':
+                widget_height = widget_height + 200
+                self.interval_sliders_widget.setMaximumHeight(200)
+            else:
+                widget_height = widget_height + 80
+                self.interval_sliders_widget.setMaximumHeight(80)
 
         self.setMaximumHeight(widget_height)
 
@@ -450,10 +404,6 @@ class ScaleWidget(QWidget):
         ignore_signals = self.ignore_signals
         self.ignore_signals = True
         try:
-            # self.selectSliders(self.stretchStackedLayout.currentIndex(), self.intervalStackedLayout.currentIndex())
-            # self.stretch_sliders_widget.setEnabled(True)
-            # self.interval_sliders_widget.setEnabled(True)
-            # self.combobox_widget.setEnabled(True)
             self.manual_vmin.set_value_from_settings(self.scalesModel.interval_manual_vmin)
             self.manual_vmax.set_value_from_settings(self.scalesModel.interval_manual_vmax)
             self.percentile_percentile.set_value_from_settings(self.scalesModel.interval_percentile_percentile)
