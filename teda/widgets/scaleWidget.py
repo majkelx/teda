@@ -1,14 +1,14 @@
-
 from PySide2.QtCore import Qt, QSettings, Slot, QSize
 from PySide2.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout,
                                QComboBox, QFormLayout, QLineEdit, QSizePolicy, QLayout, QCheckBox)
 from traitlets import TraitError
 from .slider import IntSlider, FloatSlider, LabeledSlider
 
+
 class ScaleWidget(QWidget):
     stretches_list = ['powerdist', 'asinh', 'contrastbias', 'histogram', 'linear',
-     'log', 'power', 'sinh', 'sqrt', 'square']
-    intervals_list = ['zscale','minmax', 'manual', 'percentile', 'asymetric']
+                      'log', 'power', 'sinh', 'sqrt', 'square']
+    intervals_list = ['zscale', 'minmax', 'manual', 'percentile', 'asymetric']
 
     def __init__(self, parent, scales_model, cmap_model):
         QWidget.__init__(self, parent)
@@ -19,31 +19,28 @@ class ScaleWidget(QWidget):
         layout = QVBoxLayout()
         layout.setSpacing(0)
 
+        # pernament linear stretch
+        self.perm_linear_widget = self.createLinearSliders()
+        layout.addWidget(QLabel('Linear'))
+        layout.addWidget(self.perm_linear_widget)
+
         # comboboxes
         self.combobox_widget = QWidget()
-        # self.combobox_widget.setEnabled(False)
         self.combobox_layout = self.createComboboxes()
         self.combobox_widget.setLayout(self.combobox_layout)
         layout.addWidget(self.combobox_widget)
-        # layout.addLayout(self.combobox_layout)
-        self.combobox_widget.setMaximumHeight(40)
 
         # Stretch
         self.stretch_sliders_widget = QWidget()
         self.stretch_sliders_layout = self.createStretchStackedLayout()
-        # self.stretch_sliders_widget.setEnabled(False)
         self.stretch_sliders_widget.setLayout(self.stretch_sliders_layout)
         layout.addWidget(self.stretch_sliders_widget)
-        # layout.addLayout(self.stretch_sliders_layout)
-        # self.stretch_sliders_widget.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
         # Interval
         self.interval_sliders_widget = QWidget()
         self.interval_sliders_layout = self.createIntervalStackedLayout()
-        # self.interval_sliders_widget.setEnabled(False)
         self.interval_sliders_widget.setLayout(self.interval_sliders_layout)
         layout.addWidget(self.interval_sliders_widget)
-        # layout.addLayout(self.interval_sliders_layout)
 
         self.setLayout(layout)
 
@@ -58,14 +55,14 @@ class ScaleWidget(QWidget):
         self.stretchStackedLayout = QStackedLayout()
         asinh = self.createAsinhParamsSliders()
         contrastbias = self.createContrastbiasParamsSliders()
-        histogram = QLabel("")
-        linear = self.createLinearSliders()
+        histogram = QLabel('')
+        linear = QLabel('')
         log = self.createLogSliders()
         powerdist = self.createPowerdistSliders()
         power = self.createPowerSliders()
         sinh = self.createSinhSliders()
-        sqrt = QLabel("")
-        square = QLabel("")
+        sqrt = QLabel('')
+        square = QLabel('')
         self.stretchStackedLayout.addWidget(powerdist)
         self.stretchStackedLayout.addWidget(asinh)
         self.stretchStackedLayout.addWidget(contrastbias)
@@ -119,8 +116,10 @@ class ScaleWidget(QWidget):
         self.percentile_percentile = FloatSlider(min=0.1, max=2.0)
         self.percentile_nsamples = IntSlider(min=1, max=2000)
 
-        self.percentile_percentile.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_percentile_percentile', val))
-        self.percentile_nsamples.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_percentile_nsamples', val))
+        self.percentile_percentile.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('interval_percentile_percentile', val))
+        self.percentile_nsamples.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('interval_percentile_nsamples', val))
 
         layout.addRow('percentile', self.percentile_percentile)
         layout.addRow('samples', self.percentile_nsamples)
@@ -137,9 +136,12 @@ class ScaleWidget(QWidget):
         self.asymetric_upercentile = FloatSlider(min=0.0, max=2.0)
         self.asymetric_nsamples = IntSlider(min=0, max=2000)
 
-        self.asymetric_lpercentile.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_asymetric_lower_percentile', val))
-        self.asymetric_upercentile.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_asymetric_upper_percentile', val))
-        self.asymetric_nsamples.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_asymetric_nsamples', val))
+        self.asymetric_lpercentile.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('interval_asymetric_lower_percentile', val))
+        self.asymetric_upercentile.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('interval_asymetric_upper_percentile', val))
+        self.asymetric_nsamples.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('interval_asymetric_nsamples', val))
 
         layout.addRow("l_percentile", self.asymetric_lpercentile)
         layout.addRow("u_percentile", self.asymetric_upercentile)
@@ -165,9 +167,11 @@ class ScaleWidget(QWidget):
         self.zscale_nsamples.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_nsamples', val))
         self.zscale_contrast.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_contrast', val))
         self.zscale_mreject.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_maxreject', val))
-        self.zscale_minpixels.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_minpixels', val))
+        self.zscale_minpixels.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('interval_zscale_minpixels', val))
         self.zscale_krej.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_krej', val))
-        self.zscale_miterations.valueChanged.connect(lambda val=vars: self.onSliderChange('interval_zscale_maxiterations', val))
+        self.zscale_miterations.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('interval_zscale_maxiterations', val))
 
         layout.addRow("samples", self.zscale_nsamples)
         layout.addRow("contrast", self.zscale_contrast)
@@ -205,7 +209,6 @@ class ScaleWidget(QWidget):
         self.color_combobox.activated.connect(lambda activated: self.on_select_cmap())
         return layout
 
-
     # For functionalty below, see FitsPlotterControlled.scale_from_model()
     # def fitsNormalization(self, stretch, interval):
     #     self.parent.fits_image.set_normalization(stretch=stretch,
@@ -240,7 +243,7 @@ class ScaleWidget(QWidget):
 
         self.contrast_contrast.valueChanged.connect(
             lambda val=vars: self.onSliderChange('stretch_contrastbias_contrast', val))
-        self.contrast_bias.valueChanged.connect(lambda val=vars : self.onSliderChange('stretch_contrastbias_bias', val))
+        self.contrast_bias.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_contrastbias_bias', val))
 
         layout.addRow('contrast', self.contrast_contrast)
         layout.addRow('bias', self.contrast_bias)
@@ -257,7 +260,8 @@ class ScaleWidget(QWidget):
         self.linear_intercept = FloatSlider(min=-1.0, max=1.0)
 
         self.linear_slope.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_linear_slope', val))
-        self.linear_intercept.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_linear_intercept', val))
+        self.linear_intercept.valueChanged.connect(
+            lambda val=vars: self.onSliderChange('stretch_linear_intercept', val))
 
         layout.addRow('slope', self.linear_slope)
         layout.addRow('intercept', self.linear_intercept)
@@ -309,7 +313,7 @@ class ScaleWidget(QWidget):
         layout = QFormLayout()
         layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
-        self.sinh_a = FloatSlider(min=0.0, max=1.0)
+        self.sinh_a = FloatSlider(min=0.1, max=1.0)
         self.sinh_a.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_sinh_a', val))
 
         layout.addRow('a', self.sinh_a)
@@ -325,7 +329,6 @@ class ScaleWidget(QWidget):
             setattr(self.scalesModel, param, value)
         finally:
             self.ignore_signals = False
-
 
     def onScaleModelChange(self, change):
         if self.ignore_signals:  # avoid selfupdate on moving sliders
@@ -367,15 +370,17 @@ class ScaleWidget(QWidget):
         # self.fitsNormalization(self.stretch_combobox.currentText(), self.interval_combobox.currentText())
 
     def adjustWidgetHeight(self, stretch, interval):
+        self.perm_linear_widget.setMaximumHeight(100)
+        self.combobox_widget.setMaximumHeight(40)
 
-        widget_height = 70
-        if stretch == 'histogram' or stretch == 'sqrt' or stretch == 'square':
+        widget_height = 160
+        if stretch == 'linear' or stretch == 'histogram' or stretch == 'sqrt' or stretch == 'square':
             self.stretch_sliders_widget.hide()
         else:
             self.stretch_sliders_widget.show()
             if stretch == 'contrastbias' or stretch == 'linear':
-                widget_height = widget_height + 80
-                self.stretch_sliders_widget.setMaximumHeight(80)
+                widget_height = widget_height + 100
+                self.stretch_sliders_widget.setMaximumHeight(100)
             else:
                 widget_height = widget_height + 50
                 self.stretch_sliders_widget.setMaximumHeight(50)
@@ -385,11 +390,11 @@ class ScaleWidget(QWidget):
         else:
             self.interval_sliders_widget.show()
             if interval == 'asymetric':
-                widget_height = widget_height + 110
-                self.interval_sliders_widget.setMaximumHeight(110)
+                widget_height = widget_height + 120
+                self.interval_sliders_widget.setMaximumHeight(120)
             elif interval == 'zscale':
-                widget_height = widget_height + 200
-                self.interval_sliders_widget.setMaximumHeight(200)
+                widget_height = widget_height + 210
+                self.interval_sliders_widget.setMaximumHeight(210)
             else:
                 widget_height = widget_height + 80
                 self.interval_sliders_widget.setMaximumHeight(80)
@@ -429,7 +434,6 @@ class ScaleWidget(QWidget):
         finally:
             self.ignore_signals = ignore_signals
 
-
     def writeSlidersValues(self):
         # TODO: Move Save/Load settings to model object
         settings = QSettings()
@@ -461,6 +465,7 @@ class ScaleWidget(QWidget):
         settings.setValue("cmap", self.cmapModel.cmap_idx)
         settings.setValue("stretch", self.scalesModel.selected_stretch)
         settings.setValue("interval", self.scalesModel.selected_interval)
+
         # settings.setValue("cmap", self.color_combobox.currentIndex())
 
         settings.endGroup()

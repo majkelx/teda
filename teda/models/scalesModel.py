@@ -87,7 +87,6 @@ class ScalesModel(HasTraits):
     def func(self, change):
             self.update(self.dictionary, change.name, change.new)
 
-
     def update(self, kw, args, value):
         params = args.split("_")
         if params[1] == 'percentile':
