@@ -87,12 +87,11 @@ class MainWindow(QMainWindow):
         self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
         self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewBounaries_versionno'])
 
-        #open last fits
+        # open last fits
         try:
             self.openLastFits()
         except FileNotFoundError:
             print('Błąd w odczycie lub brak ostatio wczytanego pliku')
-
 
     def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
         self.writeAppState()
@@ -174,7 +173,6 @@ class MainWindow(QMainWindow):
 
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
-        # self.scaleWidget.adjustSliders()
 
         self.updateHeaderData()
 

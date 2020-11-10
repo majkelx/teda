@@ -18,14 +18,22 @@ class FitsPlotterControlled(FitsPlotter):
     def scale_from_model(self):
         if self.scale_model is None:
             return
-        stretch  = self.scale_model.selected_stretch
-        interval = self.scale_model.selected_interval
 
-        self.set_normalization(stretch=stretch,
-                               interval=interval,
-                               stretchkwargs=self.scale_model.dictionary[stretch],
-                               intervalkwargs=self.scale_model.dictionary[interval]
-                               )
+        selected_stretch = self.scale_model.selected_stretch
+        selected_interval = self.scale_model.selected_interval
+
+        if selected_stretch != 'linear':
+            self.set_normalization(stretch=selected_stretch,
+                                   interval=selected_interval,
+                                   stretchkwargs=self.scale_model.dictionary[selected_stretch],
+                                   intervalkwargs=self.scale_model.dictionary[selected_interval],
+                                   perm_linear=self.scale_model.dictionary['linear'])
+        else:
+            self.set_normalization(stretch=selected_stretch,
+                                   interval=selected_interval,
+                                   stretchkwargs=self.scale_model.dictionary[selected_stretch],
+                                   intervalkwargs=self.scale_model.dictionary[selected_interval])
+
         self.invalidate()
 
     def cmap_from_model(self):

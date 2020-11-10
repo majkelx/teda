@@ -6,12 +6,11 @@ import json
 import traitlets as tr
 from numpy import *
 import math
-
 import astropy.visualization as vis
-
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from teda.models.scalesModel import ScalesModel
 
 
 class FitsPlotter(tr.HasTraits):
@@ -20,7 +19,6 @@ class FitsPlotter(tr.HasTraits):
     mouse_xdata = tr.Float(allow_none=True)
     mouse_ydata = tr.Float(allow_none=True)
     alpha = tr.Float(default_value=1.0, max=1.0, min=0.0)
-
     viewX = tr.Float()
     viewY = tr.Float()
     viewW = tr.Float()
@@ -43,6 +41,7 @@ class FitsPlotter(tr.HasTraits):
         self.interval_kwargs = intervalkwargs
         self.stretch = stretch
         self.stretch_kwargs = stretchkwargs
+        self.scale_model = ScalesModel()
         if cmap is None:
             self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list('zielonka', ['w', 'g'], )
         else:
@@ -94,7 +93,7 @@ class FitsPlotter(tr.HasTraits):
         # if color is not None:
         #     self.changeCmap(color)
         ax = self.get_ax()
-        data = self.data;
+        data = self.data
         if data is not None:
             self.plot_fits_data(data, ax, self.alpha, self.get_normalization(), self.cmap)
             self.invalidate()
@@ -104,7 +103,7 @@ class FitsPlotter(tr.HasTraits):
         if self.img is not None:
             self.img.set_cmap(cmap)
 
-    def set_normalization(self, stretch=None, interval=None, stretchkwargs={}, intervalkwargs={}):
+    def set_normalization(self, stretch=None, interval=None, stretchkwargs={}, intervalkwargs={}, perm_linear=None):
         if stretch is None:
             if self.stretch is None:
                 stretch = 'linear'
@@ -112,33 +111,47 @@ class FitsPlotter(tr.HasTraits):
                 stretch = self.stretch
         if isinstance(stretch, str):
             print(stretch, ' '.join([f'{k}={v}' for k, v in stretchkwargs.items()]))
-            if self.data is None:  # can not calculate objects yet
+            if self.data is None:  #can not calculate objects yet
                 self.stretch_kwargs = stretchkwargs
             else:
                 kwargs = self.prepare_kwargs(self.stretch_kws_defaults[stretch],
                                              self.stretch_kwargs, stretchkwargs)
-                if stretch == 'asinh':  # arg: a=0.1
-                    stretch = vis.AsinhStretch(**kwargs)
-                elif stretch == 'contrastbias':  # args: contrast, bias
-                    stretch = vis.ContrastBiasStretch(**kwargs)
-                elif stretch == 'histogram':
-                    stretch = vis.HistEqStretch(self.data, **kwargs)
-                elif stretch == 'linear':  # args: slope=1, intercept=0
-                    stretch = vis.LinearStretch(**kwargs)
-                elif stretch == 'log':  # args: a=1000.0
-                    stretch = vis.LogStretch(**kwargs)
-                elif stretch == 'powerdist':  # args: a=1000.0
-                    stretch = vis.PowerDistStretch(**kwargs)
-                elif stretch == 'power':  # args: a
-                    stretch = vis.PowerStretch(**kwargs)
-                elif stretch == 'sinh':  # args: a=0.33
-                    stretch = vis.SinhStretch(**kwargs)
-                elif stretch == 'sqrt':
-                    stretch = vis.SqrtStretch()
-                elif stretch == 'square':
-                    stretch = vis.SquaredStretch()
+                if perm_linear is not None:
+                    perm_linear_kwargs = self.prepare_kwargs(self.stretch_kws_defaults['linear'], perm_linear)
+                    print('linear', ' '.join([f'{k}={v}' for k, v in perm_linear_kwargs.items()]))
+                    if stretch == 'asinh':  # arg: a=0.1
+                        stretch = vis.CompositeStretch(vis.LinearStretch(**perm_linear_kwargs),
+                                                       vis.AsinhStretch(**kwargs))
+                    elif stretch == 'contrastbias':  # args: contrast, bias
+                        stretch = vis.CompositeStretch(vis.LinearStretch(**perm_linear_kwargs),
+                                                       vis.ContrastBiasStretch(**kwargs))
+                    elif stretch == 'histogram':
+                        stretch = vis.CompositeStretch(vis.HistEqStretch(self.data, **kwargs),
+                                                       vis.LinearStretch(**perm_linear_kwargs))
+                    elif stretch == 'log':  # args: a=1000.0
+                        stretch = vis.CompositeStretch(vis.LogStretch(**kwargs),
+                                                       vis.LinearStretch(**perm_linear_kwargs))
+                    elif stretch == 'powerdist':  # args: a=1000.0
+                        stretch = vis.CompositeStretch(vis.LinearStretch(**perm_linear_kwargs),
+                                                       vis.PowerDistStretch(**kwargs))
+                    elif stretch == 'power':  # args: a
+                        stretch = vis.CompositeStretch(vis.PowerStretch(**kwargs),
+                                                       vis.LinearStretch(**perm_linear_kwargs))
+                    elif stretch == 'sinh':  # args: a=0.33
+                        stretch = vis.CompositeStretch(vis.LinearStretch(**perm_linear_kwargs),
+                                                       vis.SinhStretch(**kwargs))
+                    elif stretch == 'sqrt':
+                        stretch = vis.CompositeStretch(vis.SqrtStretch(), vis.LinearStretch(**perm_linear_kwargs))
+                    elif stretch == 'square':
+                        stretch = vis.CompositeStretch(vis.LinearStretch(**perm_linear_kwargs),
+                                                       vis.SquaredStretch())
+                    else:
+                        raise ValueError('Unknown stretch:' + stretch)
                 else:
-                    raise ValueError('Unknown stretch:' + stretch)
+                    if stretch == 'linear':  # args: slope=1, intercept=0
+                        stretch = vis.LinearStretch(**kwargs)
+                    else:
+                        raise ValueError('Unknown stretch:' + stretch)
         self.stretch = stretch
         if interval is None:
             if self.interval is None:
@@ -170,8 +183,15 @@ class FitsPlotter(tr.HasTraits):
 
     def get_normalization(self):
         if not isinstance(self.interval, vis.BaseInterval) or not isinstance(self.stretch, vis.BaseStretch):
-            self.set_normalization(self.stretch, self.interval)
+            if self.get_selected_stretch_from_combobox() == 'linear':
+                self.set_normalization(self.stretch, self.interval)
+            else:
+                self.set_normalization(self.stretch, self.interval, perm_linear=self.scale_model.dictionary['linear'])
         return vis.ImageNormalize(self.data, interval=self.interval, stretch=self.stretch, clip=True)
+
+    def get_selected_stretch_from_combobox(self):
+        return self.scale_model.selected_stretch
+
 
     # def copy_visualization_parameters(self, source):
     #     self.cmap = source.cmap
