@@ -2,7 +2,7 @@ from .painterShapes.circleShape import (CircleShape)
 from .painterShapes.CircleCenterShape import (CircleCenterShape)
 from .painterShapes.rectangleMinatureShape import (RectangleMiniatureShape)
 import matplotlib.pyplot as plt
-from traitlets import Float, Int, HasTraits
+from traitlets import Float, Int, HasTraits, Bool
 from math import *
 
 from .fitting import fit_gauss_2d_c
@@ -19,6 +19,8 @@ class PainterComponent(HasTraits):
 
     movingViewX = Float()
     movingViewY = Float()
+
+    auto_center = Bool(True)
 
     def __init__(self, fits_plotter):
         self.shapes = []
@@ -281,10 +283,13 @@ class PainterComponent(HasTraits):
             shap = shape.getShape()
             self.listOfPaintedShapes.append(shap)
 
-    def centerRadialProfile(self, x, y, r):
+    def centerRadialProfile(self, x, y, r, force=False):
         #self.tempCanvas w tym jest aktualny canvas
         #tu centrowanie
         #zwrócić nowe x,y
+        # if force is False, center only if self.auto_center
+        if not force and not self.auto_center:
+            return x,y
         try:
             xy, values = self.fits_plotter.get_pixels_in_circle(x, y, r)
             model, a, mu_x, mu_y, sig, c, rmse = fit_gauss_2d_c(xy, values,

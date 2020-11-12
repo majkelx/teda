@@ -74,11 +74,14 @@ class MainWindow(QMainWindow):
         # self.defineButtonsActions()
         self.setWindowTitle("TeDa")
 
+        self.painterComponent.observe(lambda change: self.onAutoCenterChange(change), ['auto_center'])
+
         self.readWindowSettings()
         self.readAppState()
 
         self.updateHeaderData()
 
+        # Observing here may be to late for values loaded from settings e.g. via readAppState
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
         self.painterComponent.observe(lambda change: self.onCenterCircleRadiusChange(change), ['cradius'])
         self.fits_image.observe(lambda change: self.onMouseMoveOnImage(change), ['mouse_xdata', 'mouse_ydata'])
@@ -209,6 +212,10 @@ class MainWindow(QMainWindow):
         self.wcsSexAct.setChecked(bool(settings.value("sexagesimal", True)))
         self.wcsGridAct.setChecked(bool(settings.value("grid", False)))
         settings.endGroup()
+        settings.beginGroup("paint")
+        self.painterComponent.auto_center = bool(settings.value("auto_center", True))
+        settings.endGroup()
+
 
 
 
@@ -219,6 +226,9 @@ class MainWindow(QMainWindow):
         settings.beginGroup("WCS")
         settings.setValue("sexagesimal", self.wcsSexAct.isChecked())
         settings.setValue("grid", self.wcsGridAct.isChecked())
+        settings.endGroup()
+        settings.beginGroup("paint")
+        settings.setValue("auto_center", self.painterComponent.auto_center)
         settings.endGroup()
 
     def undo(self):
@@ -318,8 +328,18 @@ class MainWindow(QMainWindow):
                                   statusTip="Add Region", triggered=self.changeAddCircleStatus)
         self.centerCircleAct = QAction(IconFactory.getIcon('add_circle_outline'), 'Radial profile', self,
                                  statusTip="Radial profile with gaussoide fit [R]-key", triggered=self.changeAddCenterCircleStatus)
+        self.autoCenterAct = QAction('Auto Center', self,
+                                     statusTip="Automatically center cursor on star centroid",
+                                     triggered=self.changeAutoCenter)
         self.deleteAct = QAction(IconFactory.getIcon('delete_forever'), 'Delete selected', self,
                                  statusTip="Delete selected [Del]-key", triggered=self.deleteSelected)
+        self.panningAct.setCheckable(True)
+        self.panningAct.setChecked(True)
+        self.circleAct.setCheckable(True)
+        self.autoCenterAct.setCheckable(True)
+        self.autoCenterAct.setChecked(self.painterComponent.auto_center)
+        self.centerCircleAct.setCheckable(True)
+
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
@@ -338,6 +358,8 @@ class MainWindow(QMainWindow):
         self.editMenu.addAction(self.panningAct)
         self.editMenu.addAction(self.circleAct)
         self.editMenu.addAction(self.centerCircleAct)
+        self.editMenu.addSeparator()
+        self.editMenu.addAction(self.autoCenterAct)
         self.editMenu.addSeparator()
         self.editMenu.addAction(self.deleteAct)
 
@@ -403,12 +425,8 @@ class MainWindow(QMainWindow):
         self.zoomToolBar.addAction(self.zoom025Act)
 
         self.mouseActionToolBar = self.addToolBar("Mouse Task Toolbar")
-        self.panningAct.setCheckable(True)
-        self.panningAct.setChecked(True)
         self.mouseActionToolBar.addAction(self.panningAct)
-        self.circleAct.setCheckable(True)
         self.mouseActionToolBar.addAction(self.circleAct)
-        self.centerCircleAct.setCheckable(True)
         self.mouseActionToolBar.addAction(self.centerCircleAct)
         self.mouseActionToolBar.addAction(self.deleteAct)
 
@@ -472,11 +490,14 @@ class MainWindow(QMainWindow):
         if self.centerCircleAct.isChecked():
             self.toogleOffRegionButtons()
             self.centerCircleAct.toggle()
-            self.painterComponent.startPainting(self.central_widget,"circleCenter")
+            self.painterComponent.startPainting(self.central_widget, "circleCenter")
         else:
             self.painterComponent.stopPainting(self.central_widget)
             self.painterComponent.startMovingEvents(self.central_widget)
             self.panningAct.toggle()
+
+    def changeAutoCenter(self):
+        self.painterComponent.auto_center = self.autoCenterAct.isChecked()
 
     def deleteSelected(self):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
@@ -591,6 +612,8 @@ class MainWindow(QMainWindow):
     #     self.fits_image.plot()
     #     self.updateFitsInWidgets()
 
+    def onAutoCenterChange(self, change):
+        self.autoCenterAct.setChecked(change.new)
 
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
