@@ -129,7 +129,7 @@ If the tree view is the only visible, it shows directories and files as well.
 ## Development version install
 ``` bash
 
-    git clone git@github.com:majkelx/teda.git
+    git clone https://github.com/majkelx/teda.git
     cd teda
     python -m venv venv
     source ./venv/bin/activate
