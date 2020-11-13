@@ -49,7 +49,7 @@ class CoordinatesModel(HasTraits):
             if self.wcs is None or self.img_x is None or self.img_y is None:
                 raise ValueError()
             world = SkyCoord.from_pixel(self.img_x, self.img_y, wcs=self.wcs)
-            if self.wcs_coo != world:
+            if self.wcs_coo is None or self.wcs_coo != world:
                 self.wcs_coo = world
                 change = True
 

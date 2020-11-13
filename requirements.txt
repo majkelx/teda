@@ -3,4 +3,4 @@ astropy
 matplotlib
 scipy
 traitlets
-watchdog
+# watchdog
