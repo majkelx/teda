@@ -167,8 +167,8 @@ class MainWindow(QMainWindow):
 
     def open_fits(self, fileName):
         """Opens specified FITS file and loads it to user interface"""
+        self.fits_image.set_file(fileName)
         self.filename = fileName
-        self.fits_image.set_file(self.filename)
         self.cursor_coords.set_wcs_from_fits(self.fits_image.header)  # TODO: one up and extract and set wcs in fits_image before plot
         self.fits_image.set_wcs(self.cursor_coords.wcs)
 

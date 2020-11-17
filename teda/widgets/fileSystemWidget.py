@@ -109,7 +109,10 @@ class FileSystemWidget(QWidget):
         if info.isDir():
             self.setPath(info.filePath())
         else:
-            self.mainWindow.open_fits(info.filePath())
+            try:
+                self.mainWindow.open_fits(info.filePath())
+            except FileNotFoundError:
+                self.setPath(self.currentPath) # refesh maybe?
 
     def setPath(self, path):
         self.currentPath = path

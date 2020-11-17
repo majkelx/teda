@@ -33,7 +33,11 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
             self._huds.info()
 
     def set_file(self, filename):
-        self._huds = None
+        if filename is not None:
+            self._huds = fits.open(filename, lazy_load_hdus=False)
+            self._huds.info()
+        else:
+            self._huds = None
         self.fitsfile = filename
 
     @data.setter
