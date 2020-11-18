@@ -11,16 +11,16 @@ class InfoWidget(QWidget):
 
         self.mainwindow = mainwindow
         self.filename = QLineEdit(mainwindow.filename)
-        self.filename.setEnabled(False)
+        self.filename.setReadOnly(True)
 
         self.value = QLineEdit('')
-        self.value.setEnabled(False)
+        self.value.setReadOnly(True)
 
         self.xy = QLineEdit('')
-        self.xy.setEnabled(False)
+        self.xy.setReadOnly(True)
 
         self.wcs_coo = QLineEdit('')
-        self.wcs_coo.setEnabled(False)
+        self.wcs_coo.setReadOnly(True)
 
         layout = QFormLayout()
         layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)

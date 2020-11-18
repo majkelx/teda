@@ -165,6 +165,9 @@ class MainWindow(QMainWindow):
             except ValueError:
                 print("Unsupported format")
 
+    def open_region(self, fileName):
+        self.painterComponent.read_regions_file(fileName, axies=self.central_widget.figure.axes[0])
+
     def open_fits(self, fileName):
         """Opens specified FITS file and loads it to user interface"""
         self.fits_image.set_file(fileName)

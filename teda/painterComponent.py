@@ -1,3 +1,4 @@
+from .models.shapes_group import ShapesGroup
 from .painterShapes.circleShape import (CircleShape)
 from .painterShapes.CircleCenterShape import (CircleCenterShape)
 from .painterShapes.rectangleMinatureShape import (RectangleMiniatureShape)
@@ -22,6 +23,8 @@ class PainterComponent(HasTraits):
 
     auto_center = Bool(True)
 
+    _active_region_group = Int(default_value=None, allow_none=True)
+
     def __init__(self, fits_plotter):
         self.shapes = []
         self.centerCircle = []
@@ -37,12 +40,87 @@ class PainterComponent(HasTraits):
         self.draggableActive = False
         self.eventInShapeFlag = False
         self.fits_plotter = fits_plotter
+        self.region_groups = []
+
+    def get_active_region_group(self) -> ShapesGroup:
+        """Returns active region group: ShapesGroup object.
+        If there is no region groups, new one is created and activated"""
+        if self._active_region_group is None:
+            self._active_region_group = self.new_region_group()
+        return self.region_groups[self._active_region_group]
+
+    def new_region_group(self, name=None) -> int:
+        """Creates new region group and returns its index"""
+        grp = ShapesGroup()
+        if name is not None:
+            grp.name = name
+        self.region_groups.append(grp)
+        if self._active_region_group is None:
+            self._active_region_group = len(self.region_groups) - 1
+        return len(self.region_groups) - 1
+
+    def get_region_group_shapes(self, group_id):
+        grp = self.region_groups[group_id]
+        ret = []
+        for shape in self.shapes:
+            try:
+                if shape.region_group == grp:
+                    ret.append(shape)
+            except AttributeError:  # not all shapes has region_group
+                continue
+        return ret
 
 
-    def add(self, x, y, size = 15,type="circle",size2=0):
+    def remove_region_group(self, axies, group_id):
+        # TODO: maybe `axies` should be romoved, maybe Shapes should have set of axies on which it is visible
+        # TODO: and allow visibility of shape in multiple axies and made it easier to manage shapes without bothering
+        # TODO: with axies
+
+        self.deleteShapes(axes=axies, shapes_to_delete=self.get_region_group_shapes(group_id))
+
+        if self._active_region_group > group_id:  # the id of active group will move (decrease)
+            self._active_region_group -= 1
+        elif self._active_region_group == group_id:
+            if len(self.region_groups) == 1:  # we are deleting the only group
+                assert group_id == 0
+                self._active_region_group = None
+            else:  # we are deleting active group, make first one (after deletion) active
+                self._active_region_group = 0
+
+        del self.region_groups[group_id]
+
+    def read_regions_file(self, filename, axies):
+        group_id = self.new_region_group()
+        grp = self.region_groups[group_id]
+        try:
+            grp.read_file(filename)
+            grp.starlist['x'].count()  # generate exception if column not exists
+            grp.starlist['y'].count()
+        except Exception as e:
+            self.remove_region_group(axies, group_id)
+            raise e
+
+        self._active_region_group = group_id
+        # TODO: Deleting 0 group is temporary! until we have full support of multiple groups
+        self.remove_region_group(axies, 0)
+
+        for label, star in grp.starlist.iterrows():
+            self.add(star['x'], star['y'], grp_id=self._active_region_group, label=label)
+
+        self.paintAllShapes(axies)
+        axies.figure.canvas.draw_idle()
+
+    def add(self, x, y, size = 15,type="circle",size2=0, grp_id=None, label=None):
         if type == "circle":
             c = CircleShape(x, y, size)
             self.shapes.append(c)
+            if grp_id is None:
+                grp = self.get_active_region_group()
+            else:
+                grp = self.region_groups[grp_id]
+            label = grp.on_shape_added(x, y, label)
+            c.label = label
+            c.region_group = grp
         if type == "circleCenter":
             self.centerCircle = []
             newx,newy = self.centerRadialProfile(x, y ,size)
@@ -251,14 +329,25 @@ class PainterComponent(HasTraits):
         self.startMoving = False
 
     def deleteSelectedShapes(self, axes):
+        todeleteShapes = []
+        for shape in self.shapes:
+            if shape.selected:
+                todeleteShapes.append(shape)
+        self.deleteShapes(axes=axes, shapes_to_delete=todeleteShapes)
+
+    def deleteShapes(self, axes, shapes_to_delete):
         tempShapes = []
         for shape in self.shapes:
-            if shape.selected != True:
+            if shape not in shapes_to_delete:
                 tempShapes.append(shape)
         self.shapes = tempShapes
         for shape in self.centerCircle:
-            if shape.selected == True:
+            if shape in shapes_to_delete:
                 self.centerCircle.remove(shape)
+        for shape in shapes_to_delete:
+            try:
+                shape.region_group.on_shape_deleted(id=shape.label)
+            except AttributeError: pass
         self.paintAllShapes(axes)
         if self.draggableActive:
             self.makeAllShapesDraggable(axes)
@@ -417,15 +506,20 @@ class DraggablePoint:
             self.point = self.painterElement.refreshShape(axes)
 
         if self.movingStart == True:
-            if hasattr(self.painterElement, 'shapeType'):
-                if self.painterElement.shapeType == 'centerCircle':
-                    newx, newy = self.paintComp.centerRadialProfile(self.painterElement.x, self.painterElement.y, self.painterElement.size)
-                    self.painterElement.x = newx
-                    self.painterElement.y = newy
-                    self.paintComp.ccenter_x = self.painterElement.x
-                    self.paintComp.ccenter_y = self.painterElement.y
-                    self.paintComp.cradius = self.painterElement.size
-                    self.point = self.painterElement.refreshShape(axes)
+            # mka: CircleShape will be also cantered, there is switch in menu to avoid auto-centering
+            if isinstance(self.painterElement, CircleShape) or self.painterElement.shapeType == 'centerCircle':
+                newx, newy = self.paintComp.centerRadialProfile(self.painterElement.x, self.painterElement.y, self.painterElement.size)
+                self.painterElement.x = newx
+                self.painterElement.y = newy
+                self.paintComp.ccenter_x = self.painterElement.x
+                self.paintComp.ccenter_y = self.painterElement.y
+                self.paintComp.cradius = self.painterElement.size
+                self.point = self.painterElement.refreshShape(axes)
+                try:
+                    self.painterElement.region_group.on_shape_moved(self.painterElement.x, self.painterElement.y,
+                                                                    self.painterElement.label)
+                except AttributeError:
+                    pass
 
         self.point.figure.canvas.draw_idle()
         self.paintComp.fillListOfPaintedShapes()

@@ -257,7 +257,7 @@ class ScaleWidget(QWidget):
         layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
         self.linear_slope = FloatSlider(min=0.1, max=3.0)
-        self.linear_intercept = FloatSlider(min=-1.0, max=1.0)
+        self.linear_intercept = FloatSlider(min=-5.0, max=5.0)
 
         self.linear_slope.valueChanged.connect(lambda val=vars: self.onSliderChange('stretch_linear_slope', val))
         self.linear_intercept.valueChanged.connect(
