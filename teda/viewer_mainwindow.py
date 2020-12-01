@@ -31,6 +31,7 @@ from teda.models.scalesModel import ScalesModel
 from teda.icons import IconFactory
 from . import console
 from .widgets.fileSystemWidget import FileSystemWidget
+from .widgets.regionsWidget import RegionsWidget
 
 
 class MainWindow(QMainWindow):
@@ -61,7 +62,7 @@ class MainWindow(QMainWindow):
         self.centralWidgetcordX = 0
         self.centralWidgetcordY = 0
 
-        self.painterComponent = PainterComponent(self.fits_image)
+        self.painterComponent = PainterComponent(self.fits_image,self)
         self.painterComponent.startMovingEvents(self.central_widget)
         self.scanObject = ScanToolbar(self)
         self.createActions()
@@ -167,6 +168,7 @@ class MainWindow(QMainWindow):
 
     def open_region(self, fileName):
         self.painterComponent.read_regions_file(fileName, axies=self.central_widget.figure.axes[0])
+        self.region_widget.updateRegionList()
 
     def open_fits(self, fileName):
         """Opens specified FITS file and loads it to user interface"""
@@ -504,6 +506,7 @@ class MainWindow(QMainWindow):
 
     def deleteSelected(self):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
+        self.region_widget.updateRegionList()
 
     def toogleOffRegionButtons(self):
         if self.panningAct.isChecked():
@@ -602,6 +605,15 @@ class MainWindow(QMainWindow):
         self.file_widget = FileSystemWidget(self)
         dock.setWidget(self.file_widget)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+
+        # RegionsWidget
+        dock = QDockWidget("Regions panel", self)
+        dock.setObjectName("REGIONS_PANEL")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.region_widget = RegionsWidget(self)
+        dock.setWidget(self.region_widget)
+        self.addDockWidget(Qt.TopDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
 
         self.viewMenu.addSeparator()

@@ -46,10 +46,12 @@ class ShapesGroup(HasTraits):
 		if self.starlist is None:
 			self.count -= 1
 			return
-
-		self.starlist.drop(id)
-		self.modified = True
-		self.count = self.starlist.stars_number()
+		try:
+			self.starlist.drop(id)
+			self.modified = True
+			self.count = self.starlist.stars_number()
+		except :
+			print("Error in on_shape_deleted") # to do
 
 	def read_file(self, filename):
 		ext = os.path.splitext(filename)[1]
