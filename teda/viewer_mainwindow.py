@@ -4,7 +4,7 @@ import os
 import PySide2
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import QFile, Qt, QTextStream, QSettings
-from PySide2.QtGui import QFont, QIcon, QKeySequence
+from PySide2.QtGui import QFont, QIcon, QKeySequence, QKeyEvent, QMouseEvent
 from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QWidget, QPushButton,
                                QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem,
@@ -29,6 +29,7 @@ from teda.widgets.info import InfoWidget
 from teda.models.cmaps import ColorMaps
 from teda.models.scalesModel import ScalesModel
 from teda.icons import IconFactory
+from teda import draggingComponent
 from . import console
 from .widgets.fileSystemWidget import FileSystemWidget
 
@@ -40,6 +41,8 @@ class MainWindow(QMainWindow):
         self.cmaps = ColorMaps()
         self.combobox = QComboBox()
         self.filename = None
+        self.isMousePressed = False
+        self.isCmdPressed = False
         self.cursor_coords = CoordinatesModel()
         self.scales_model = ScalesModel()
         fig = Figure(figsize=(14, 10))
@@ -48,8 +51,7 @@ class MainWindow(QMainWindow):
         fig.subplots_adjust(left=0, bottom=0.001, right=1, top=1, wspace=None, hspace=None)
 
         self.fits_image = FitsPlotterFitsFile(figure=fig, cmap_model=self.cmaps,
-                                              scale_model=self.scales_model
-                                              )
+                                              scale_model=self.scales_model)
         self.central_widget = FigureCanvas(fig)
         self.setCentralWidget(self.central_widget)
 
@@ -62,7 +64,7 @@ class MainWindow(QMainWindow):
         self.centralWidgetcordY = 0
 
         self.painterComponent = PainterComponent(self.fits_image)
-        self.painterComponent.startMovingEvents(self.central_widget)
+        # self.painterComponent.startMovingEvents(self.central_widget)
         self.scanObject = ScanToolbar(self)
         self.createActions()
         self.createMenus()
@@ -80,6 +82,8 @@ class MainWindow(QMainWindow):
         self.readAppState()
 
         self.updateHeaderData()
+        self.dragging = draggingComponent.Dragging(widget=self, scale_widget=self.scaleWidget)
+        self.activeLinearAdjustmentByMouseMovement()
 
         # Observing here may be to late for values loaded from settings e.g. via readAppState
         self.painterComponent.observe(lambda change: self.onCenterCircleChange(change), ['ccenter_x', 'ccenter_y'])
@@ -113,6 +117,20 @@ class MainWindow(QMainWindow):
             if (self.cursor_coords.img_x != 0 and self.cursor_coords.img_x != None) and (self.cursor_coords.img_y != 0 and self.cursor_coords.img_y != None):
                 self.painterComponent.add(self.cursor_coords.img_x, self.cursor_coords.img_y, type="circleCenter")
                 self.painterComponent.paintAllShapes(self.central_widget.figure.axes[0])
+        if e.key() == Qt.Key_Control:
+            self.isCmdPressed = True
+
+    def keyReleaseEvent(self, event:PySide2.QtGui.QKeyEvent):
+        if event.key() == Qt.Key_Control:
+            self.isCmdPressed = False
+
+    def canvasMousePressEvent(self, event):
+        self.isMousePressed = not self.isMousePressed
+
+    def mouseMoveEventOnCanvas(self, event):
+        if self.isCmdPressed:
+            if self.isMousePressed:
+                self.dragging.mouseMoveEvent(event)
 
     def print_(self):
         document = self.textEdit.document()
@@ -333,12 +351,20 @@ class MainWindow(QMainWindow):
                                      triggered=self.changeAutoCenter)
         self.deleteAct = QAction(IconFactory.getIcon('delete_forever'), 'Delete selected', self,
                                  statusTip="Delete selected [Del]-key", triggered=self.deleteSelected)
+
+        self.slidersAct = QAction(IconFactory.getIcon('slider'), 'Dynamic Scale Sliders', self,
+                                  statusTip='Show/Hide Dynamic Scale',
+                                  triggered=self.dynamicScaleDockWidgetTriggerActions)
+
         self.panningAct.setCheckable(True)
         self.panningAct.setChecked(True)
         self.circleAct.setCheckable(True)
         self.autoCenterAct.setCheckable(True)
         self.autoCenterAct.setChecked(self.painterComponent.auto_center)
         self.centerCircleAct.setCheckable(True)
+
+
+
 
 
     def createMenus(self):
@@ -430,12 +456,18 @@ class MainWindow(QMainWindow):
         self.mouseActionToolBar.addAction(self.centerCircleAct)
         self.mouseActionToolBar.addAction(self.deleteAct)
 
+        self.sliderToolBar = self.addToolBar("Slider Toolbar")
+        self.slidersAct.setChecked(True)
+        self.sliderToolBar.addAction(self.slidersAct)
+
+
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
         self.viewMenu.addAction(self.scanToolBar.toggleViewAction())
         # self.viewMenu.addAction(self.infoToolBar.toggleViewAction())
         self.viewMenu.addAction(self.zoomToolBar.toggleViewAction())
         self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
+        self.viewMenu.addAction(self.sliderToolBar.toggleViewAction())
         self.viewMenu.addSeparator()
 
     def nextHDU(self):
@@ -517,15 +549,15 @@ class MainWindow(QMainWindow):
 
     def createDockWindows(self):
         # Scale
-        dock = QDockWidget("Dynamic Scale", self)
-        dock.setObjectName("SCALE")
-        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.dynamic_scale_dock = QDockWidget("Dynamic Scale", self)
+        self.dynamic_scale_dock.setObjectName("SCALE")
+        self.dynamic_scale_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.scaleWidget = ScaleWidget(self, scales_model=self.scales_model, cmap_model=self.cmaps)
-        dock.setWidget(self.scaleWidget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-        self.viewMenu.addAction(dock.toggleViewAction())
-        dock.setFloating(True)
-        dock.hide()
+        self.dynamic_scale_dock.setWidget(self.scaleWidget)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dynamic_scale_dock)
+        self.viewMenu.addAction(self.dynamic_scale_dock.toggleViewAction())
+        self.dynamic_scale_dock.setFloating(True)
+        self.dynamic_scale_dock.hide()
 
 
         #radial profiles
@@ -612,8 +644,16 @@ class MainWindow(QMainWindow):
     #     self.fits_image.plot()
     #     self.updateFitsInWidgets()
 
+
     def onAutoCenterChange(self, change):
         self.autoCenterAct.setChecked(change.new)
+
+    def dynamicScaleDockWidgetTriggerActions(self):
+        if self.dynamic_scale_dock.isHidden():
+            self.dynamic_scale_dock.show()
+        else:
+            self.dynamic_scale_dock.hide()
+
 
     def onCenterCircleChange(self, change):
         self.radial_profile_widget.set_centroid(self.painterComponent.ccenter_x, self.painterComponent.ccenter_y)
@@ -666,6 +706,11 @@ class MainWindow(QMainWindow):
             if self.scanObject.activeScan and self.scanObject.enableAutopause:#reser autopause
                 if not self.scanObject.obserwableValue.autopauseFlag:
                     self.scanObject.obserwableValue.autopauseFlag = True
+
+    def activeLinearAdjustmentByMouseMovement(self):
+        self.central_widget.mpl_connect('motion_notify_event', self.mouseMoveEventOnCanvas)
+        self.central_widget.mpl_connect('button_press_event', self.canvasMousePressEvent)
+        self.central_widget.mpl_connect('button_release_event', self.canvasMousePressEvent)
 
     def onMouseZoomOnImage(self, change):
         changed = False
