@@ -124,7 +124,10 @@ class MainWindow(QMainWindow):
 
         document.print_(printer)
 
-        self.statusBar().showMessage("Ready", 2000)
+        self.status_message("Ready", 2000)
+
+    def status_message(self, message, timeout=5000):
+        self.statusBar().showMessage(message, timeout)
 
     def open_dialog(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Image", ".", "Fits files (*.fits)")

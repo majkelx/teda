@@ -115,7 +115,11 @@ class FileSystemWidget(QWidget):
                 path = info.filePath()
                 ext = os.path.splitext(path)[1]
                 if ext.lower() in ['.reg', '.lst', '.ap', '.coo', '.als', '.xy']:
-                    self.mainWindow.open_region(path)
+                    try:
+                        self.mainWindow.open_region(path)
+                    except Exception as e:
+                        # TODO: log error and show error message (on status bar?)
+                        self.mainWindow.status_message(f'Can not load regions from {path}')
                 else:
                     self.mainWindow.open_fits(path)
             except FileNotFoundError:
