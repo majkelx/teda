@@ -1,3 +1,5 @@
+import os
+
 from PySide2.QtCore import QDir
 from PySide2.QtGui import Qt
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QFileSystemModel, QTreeView, QListView, QAction, QVBoxLayout, \
@@ -110,7 +112,16 @@ class FileSystemWidget(QWidget):
             self.setPath(info.filePath())
         else:
             try:
-                self.mainWindow.open_fits(info.filePath())
+                path = info.filePath()
+                ext = os.path.splitext(path)[1]
+                if ext.lower() in ['.reg', '.lst', '.ap', '.coo', '.als', '.xy']:
+                    try:
+                        self.mainWindow.open_region(path)
+                    except Exception as e:
+                        # TODO: log error and show error message (on status bar?)
+                        self.mainWindow.status_message(f'Can not load regions from {path}')
+                else:
+                    self.mainWindow.open_fits(path)
             except FileNotFoundError:
                 self.setPath(self.currentPath) # refesh maybe?
 

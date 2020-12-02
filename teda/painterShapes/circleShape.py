@@ -13,6 +13,8 @@ class CircleShape(object):
         self.selectionColor = 'y'
         self.selected = False
         self.originColor = color
+        self.label = None
+        self.region_group = None
 
 
     def paint(self):

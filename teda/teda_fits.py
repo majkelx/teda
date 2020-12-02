@@ -6,6 +6,7 @@ by Akond Lab
 """
 from sys import stderr
 
+import sys
 from PySide2.QtCore import QCommandLineParser, QCoreApplication
 from PySide2.QtWidgets import QApplication
 
@@ -13,10 +14,9 @@ from teda.command_line import TedaCommandLine, CommandLineParseResult
 from teda.viewer_mainwindow import MainWindow
 from teda.version import __version__
 
-def main():
-    import sys
+def teda_viewer(args):
 
-    app = QApplication(sys.argv)
+    app = QApplication(args)
     QApplication.setOrganizationName('Akond Lab')
     QApplication.setOrganizationDomain('akond.com')
     QApplication.setApplicationName('TeDa FITS Viewer')
@@ -45,4 +45,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    teda_viewer(sys.argv)
