@@ -25,7 +25,8 @@ class PainterComponent(HasTraits):
 
     _active_region_group = Int(default_value=None, allow_none=True)
 
-    def __init__(self, fits_plotter):
+    def __init__(self, fits_plotter, parent = None):
+        self.parent = parent
         self.shapes = []
         self.centerCircle = []
         self.rectangleMiniature = []
@@ -41,6 +42,7 @@ class PainterComponent(HasTraits):
         self.eventInShapeFlag = False
         self.fits_plotter = fits_plotter
         self.region_groups = []
+        self.lastGroupNumb = 1
 
     def get_active_region_group(self) -> ShapesGroup:
         """Returns active region group: ShapesGroup object.
@@ -54,6 +56,9 @@ class PainterComponent(HasTraits):
         grp = ShapesGroup()
         if name is not None:
             grp.name = name
+        else:
+            grp.name = "Group " + str(self.lastGroupNumb)
+            self.lastGroupNumb += 1
         self.region_groups.append(grp)
         if self._active_region_group is None:
             self._active_region_group = len(self.region_groups) - 1
@@ -101,14 +106,48 @@ class PainterComponent(HasTraits):
             raise e
 
         self._active_region_group = group_id
-        # TODO: Deleting 0 group is temporary! until we have full support of multiple groups
-        self.remove_region_group(axies, 0)
 
         for label, star in grp.starlist.iterrows():
             self.add(star['x'], star['y'], grp_id=self._active_region_group, label=label)
 
         self.paintAllShapes(axies)
         axies.figure.canvas.draw_idle()
+
+    def selectGroup(self,group, axies):
+        for shape in self.shapes:
+            if shape.region_group is group:
+                shape.select()
+        self.paintAllShapes(axies)
+        axies.figure.canvas.draw_idle()
+
+    def deselectGroup(self,group, axies):
+        for shape in self.shapes:
+            if shape.region_group is group:
+                shape.deselect()
+        self.paintAllShapes(axies)
+        axies.figure.canvas.draw_idle()
+
+    def reverseSelection(self, axies):
+        for shape in self.shapes:
+            if shape.selected:
+                shape.deselect()
+            else:
+                shape.select()
+        self.paintAllShapes(axies)
+        axies.figure.canvas.draw_idle()
+
+    def deleteGroup(self,group_id, axies):
+        self.remove_region_group(axies, group_id)
+
+    def setActiveGroup(self,group_id):
+        self._active_region_group = group_id
+
+    def getGroupCount(self,group) -> int:
+        count = 0
+        for shape in self.shapes:
+            if shape.region_group is group:
+                count += 1
+        return count
 
     def add(self, x, y, size = 15,type="circle",size2=0, grp_id=None, label=None):
         if type == "circle":
@@ -283,6 +322,7 @@ class PainterComponent(HasTraits):
             ax = self.tempCanvas.figure.axes[0]
             self.paintAllShapes(ax)
             self.tempCanvas.draw_idle()
+            self.parent.region_widget.updateRegionList()
         self.eventInShapeFlag = False
 
     def onMovingClick(self,event):
