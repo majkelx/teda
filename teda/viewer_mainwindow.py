@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
 
         self.painterComponent = PainterComponent(self.fits_image)
         # self.painterComponent.startMovingEvents(self.central_widget)
+        self.painterComponent.setCanvas(self.central_widget)
         self.scanObject = ScanToolbar(self)
         self.createActions()
         self.createMenus()
