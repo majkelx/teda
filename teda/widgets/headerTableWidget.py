@@ -1,6 +1,6 @@
-from PySide2.QtWidgets import (QTableWidget, QTableWidgetItem, QMenu)
-from PySide2.QtGui import (QIcon)
-import PySide2
+from PySide6.QtWidgets import (QTableWidget, QTableWidgetItem, QMenu)
+from PySide6.QtGui import (QIcon)
+import PySide6
 
 from teda.icons import IconFactory
 
@@ -39,7 +39,7 @@ class HeaderTableWidget(QTableWidget):
         newValItem = QTableWidgetItem()
         newValItem.setText(val)
 
-        color = PySide2.QtGui.QColor(200, 220, 200)
+        color = PySide6.QtGui.QColor(200, 220, 200)
         if bool(pin):
             # newKeyItem.setIcon(QIcon.fromTheme('emblem-important'));
             newKeyItem.setIcon(IconFactory.getIcon('push_pin'))

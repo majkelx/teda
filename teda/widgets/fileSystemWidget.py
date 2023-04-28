@@ -1,6 +1,6 @@
-from PySide2.QtCore import QDir
-from PySide2.QtGui import Qt
-from PySide2.QtWidgets import QWidget, QHBoxLayout, QFileSystemModel, QTreeView, QListView, QAction, QVBoxLayout, \
+from PySide6.QtCore import QDir
+from PySide6.QtGui import Qt, QAction
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileSystemModel, QTreeView, QListView, QVBoxLayout, \
     QPushButton, QToolButton, QFileDialog, QSplitter
 
 from teda.icons import IconFactory

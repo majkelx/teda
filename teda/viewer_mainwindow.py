@@ -1,12 +1,12 @@
 """TeDa FITS Viewer main window"""
 import os
 
-import PySide2
-from PySide2 import QtWidgets, QtCore
-from PySide2.QtCore import QFile, Qt, QTextStream, QSettings
-from PySide2.QtGui import QFont, QIcon, QKeySequence, QKeyEvent, QMouseEvent
-from PySide2.QtPrintSupport import QPrintDialog, QPrinter
-from PySide2.QtWidgets import (QAction, QApplication, QLabel, QDialog, QDockWidget, QWidget, QPushButton,
+import PySide6
+from PySide6 import QtWidgets, QtCore
+from PySide6.QtCore import QFile, Qt, QTextStream, QSettings
+from PySide6.QtGui import QFont, QIcon, QKeySequence, QKeyEvent, QMouseEvent, QAction
+from PySide6.QtPrintSupport import QPrintDialog, QPrinter
+from PySide6.QtWidgets import (QApplication, QLabel, QDialog, QDockWidget, QWidget, QPushButton,
                                QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem,
                                QComboBox)
 
@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
         except FileNotFoundError:
             print('Błąd w odczycie lub brak ostatio wczytanego pliku')
 
-    def closeEvent(self, event: PySide2.QtGui.QCloseEvent):
+    def closeEvent(self, event: PySide6.QtGui.QCloseEvent):
         self.writeAppState()
         self.writeWindowSettings()
         if not self.tedaCommandLine.ignoreSettings:
@@ -121,7 +121,7 @@ class MainWindow(QMainWindow):
         if e.key() == Qt.Key_Control:
             self.isCmdPressed = True
 
-    def keyReleaseEvent(self, event:PySide2.QtGui.QKeyEvent):
+    def keyReleaseEvent(self, event:PySide6.QtGui.QKeyEvent):
         if event.key() == Qt.Key_Control:
             self.isCmdPressed = False
 
@@ -278,7 +278,7 @@ class MainWindow(QMainWindow):
                           "3rd party work used: "
                           "<a href='https://material.io/resources/icons/'> Google Material Icons</a>, "
                           "<a href='https://www.astropy.org'> AstroPy</a>, "
-                          "<a href='https://doc.qt.io/qtforpython/'> Qt5/PySide2</a>, "
+                          "<a href='https://doc.qt.io/qtforpython/'> Qt5/PySide6</a>, "
                           "<a href='https://www.scipy.org'> SciPy</a>, and other..."
                           "<br/><br/>"
                           "Visit the <a href='https://github.com/majkelx/teda'>project's GitHub  page</a> for help"
@@ -564,6 +564,7 @@ class MainWindow(QMainWindow):
         #radial profiles
         dock = QDockWidget("Radial Profile Fit", self)
         dock.setObjectName("RADIAL_PROFILE_IRAF")
+
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.radial_profile_iraf_widget = IRAFRadialProfileWidget(self.fits_image.data)
         dock.setWidget(self.radial_profile_iraf_widget)

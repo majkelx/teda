@@ -6,8 +6,8 @@ by Akond Lab
 """
 from sys import stderr
 
-from PySide2.QtCore import QCommandLineParser, QCoreApplication
-from PySide2.QtWidgets import QApplication
+from PySide6.QtCore import QCommandLineParser, QCoreApplication
+from PySide6.QtWidgets import QApplication
 
 from teda.command_line import TedaCommandLine, CommandLineParseResult
 from teda.viewer_mainwindow import MainWindow
@@ -41,7 +41,7 @@ def main():
     # mainWin.resize(800, 600)   # now in config, see: MainWindow.readWindowSettings
     mainWin.show()
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == '__main__':

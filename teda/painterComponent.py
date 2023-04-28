@@ -58,8 +58,12 @@ class PainterComponent(HasTraits):
 
 
     def paintAllShapes(self, axes):
-        axes.patches.clear()
-        axes.lines.clear()
+        # axes.patches.clear()
+        # axes.lines.clear()
+        for p in axes.patches:
+            p.remove()
+        for p in axes.lines:
+            p.remove()
         self.listOfPaintedShapes = []
         self.drs = []
         for shape in self.shapes:
@@ -84,8 +88,12 @@ class PainterComponent(HasTraits):
 
     def makeAllShapesDraggable(self, axes):
         self.draggableActive = True
-        axes.patches.clear()
-        axes.lines.clear()
+        # axes.patches.clear()
+        # axes.lines.clear()
+        for p in axes.patches:
+            p.remove()
+        for p in axes.lines:
+            p.remove()
         self.drs = []
         for shape in self.shapes:
             shap = shape.paintShape(axes)
@@ -128,16 +136,16 @@ class PainterComponent(HasTraits):
 
     def startLine(self,canvas,x1,y1):
         ax = canvas.figure.axes[0]
-        self.tempLines = ax.lines.copy()
+        self.tempLines = [l for l in ax.lines]   # .copy()
         canvas.draw_idle()
 
     def paintLine(self,canvas,x1,x2,y1,y2):
         ax = canvas.figure.axes[0]
         if self.templine != None:
             self.templine = None
-            ax.lines = ax.lines[:-1]
+            ax.lines[-1].remove()
         if self.tempcircle != None:
-            ax.patches.remove(self.tempcircle)
+            self.tempcircle.remove()
             self.tempcircle = None
         xcord = [x1,x2]
         ycord = [y1,y2]
@@ -152,7 +160,9 @@ class PainterComponent(HasTraits):
         ax = canvas.figure.axes[0]
         self.templine = None
         self.tempcircle = None
-        ax.lines = self.tempLines.copy()
+        for l in self.tempLines:
+            ax.add_line(l)
+        # ax.lines = self.tempLines    #.copy()
         canvas.draw_idle()
 
     def setCanvas(self, canvas):

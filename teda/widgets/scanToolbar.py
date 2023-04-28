@@ -1,9 +1,10 @@
 import glob
 import os
 
-from PySide2 import QtCore, QtGui
-from PySide2.QtCore import QObject, QEvent, QSettings
-from PySide2.QtWidgets import QFileDialog, QAction, QApplication, QMessageBox
+from PySide6 import QtCore, QtGui
+from PySide6.QtGui import QAction
+from PySide6.QtCore import QObject, QEvent, QSettings
+from PySide6.QtWidgets import QFileDialog, QApplication, QMessageBox
 import time
 from teda.icons import IconFactory
 import threading

@@ -1,7 +1,7 @@
 from enum import Enum
 
-from PySide2.QtCore import QCommandLineParser, QCommandLineOption, QStringListModel, QCoreApplication
-from PySide2.QtWidgets import QApplication
+from PySide6.QtCore import QCommandLineParser, QCommandLineOption, QStringListModel, QCoreApplication
+from PySide6.QtWidgets import QApplication
 
 
 class CommandLineParseResult(Enum):

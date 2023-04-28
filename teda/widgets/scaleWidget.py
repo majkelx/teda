@@ -1,5 +1,5 @@
-from PySide2.QtCore import Qt, QSettings, Slot, QSize
-from PySide2.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout,
+from PySide6.QtCore import Qt, QSettings, Slot, QSize
+from PySide6.QtWidgets import (QLabel, QSlider, QStackedLayout, QVBoxLayout, QHBoxLayout, QWidget, QGridLayout,
                                QComboBox, QFormLayout, QLineEdit, QSizePolicy, QLayout, QCheckBox)
 from traitlets import TraitError
 from .slider import IntSlider, FloatSlider, LabeledSlider

@@ -1,7 +1,7 @@
-import PySide2
-from PySide2.QtGui import QDoubleValidator, QIntValidator
-from PySide2.QtCore import Qt, Signal, Slot, QLocale
-from PySide2.QtWidgets import QWidget, QSlider, QHBoxLayout, QLineEdit, QSizePolicy
+import PySide6
+from PySide6.QtGui import QDoubleValidator, QIntValidator
+from PySide6.QtCore import Qt, Signal, Slot, QLocale
+from PySide6.QtWidgets import QWidget, QSlider, QHBoxLayout, QLineEdit, QSizePolicy
 
 
 class LabeledSlider(QWidget):

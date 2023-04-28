@@ -173,7 +173,7 @@ class FitsPlotter(tr.HasTraits):
                     interval = vis.PercentileInterval(**kwargs)
                 elif interval == 'asymetric':  # args: lower_percentile, upper_percentile, n_samples
                     interval = vis.AsymmetricPercentileInterval(**kwargs)
-                elif interval == 'zscale':  # args: nsamples=1000, contrast=0.25, max_reject=0.5, min_npixels=5, krej=2.5, max_iterations=5
+                elif interval == 'zscale':  # args: n_samples=1000, contrast=0.25, max_reject=0.5, min_npixels=5, krej=2.5, max_iterations=5
                     interval = vis.ZScaleInterval(**kwargs)
                 else:
                     raise ValueError('Unknown interval:' + interval)
@@ -217,7 +217,7 @@ class FitsPlotter(tr.HasTraits):
         'manual': {'vmin': 0.0, 'vmax': 30000},
         'percentile': {'percentile': 0.1, 'n_samples': 1000},
         'asymetric': {'lower_percentile': 0.1, 'upper_percentile': 0.2, 'n_samples': 1000},
-        'zscale': {'nsamples': 1000, 'contrast': 0.25, 'max_reject': 0.5,
+        'zscale': {'n_samples': 1000, 'contrast': 0.25, 'max_reject': 0.5,
                    'min_npixels': 5, 'krej': 2.5, 'max_iterations': 5},
     }
 

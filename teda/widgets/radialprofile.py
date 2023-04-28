@@ -1,6 +1,6 @@
 import numpy as np
-import PySide2
-from PySide2.QtWidgets import QWidget, QHBoxLayout
+import PySide6
+from PySide6.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -32,12 +32,12 @@ class RadialProfileWidget(QWidget):
         # axes = plt.axes()
         # axes.set_ylim([0, 1])
 
-    def showEvent(self, event: PySide2.QtGui.QShowEvent):
+    def showEvent(self, event: PySide6.QtGui.QShowEvent):
         super().showEvent(event)
         # self.turn_on()
         self.invalidate()
 
-    # def hideEvent(self, event: PySide2.QtGui.QHideEvent):
+    # def hideEvent(self, event: PySide6.QtGui.QHideEvent):
     #     super().hideEvent(event)
     #     self.turn_off()
 

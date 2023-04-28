@@ -1,5 +1,5 @@
 from os import path
-from PySide2.QtWidgets import QWidget, QHBoxLayout, QStackedLayout, QLabel, QFormLayout, QLineEdit
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QStackedLayout, QLabel, QFormLayout, QLineEdit
 
 import numpy as np
 

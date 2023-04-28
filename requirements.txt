@@ -1,6 +1,0 @@
-pyside2
-astropy
-matplotlib
-scipy
-traitlets
-# watchdog
