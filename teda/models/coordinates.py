@@ -80,8 +80,10 @@ class CoordinatesModel(HasTraits):
 
     def format_wcs(self):
         if self.wcs_coo is not None:
-            fmt = 'hmsdms' if self.wcs_sexagesimal else 'decimal'
-            self.wcs_formatted = self.wcs_coo.to_string(fmt, sep=':', precision=3)
+            if self.wcs_sexagesimal:
+                self.wcs_formatted = self.wcs_coo.to_string('hmsdms', sep=':', precision=3)
+            else:
+                self.wcs_formatted = self.wcs_coo.to_string('decimal', precision=3)
             self.wcs_framename = self.wcs_coo.name
         else:
             self.wcs_formatted = ''
