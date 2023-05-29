@@ -65,7 +65,7 @@ class FileSystemWidget(QWidget):
         self.filesModel = QFileSystemModel(self)
         self.filesModel.setOption(QFileSystemModel.DontWatchForChanges, True)
         self.filesModel.setFilter(QDir.NoDotAndDotDot | QDir.Files)
-        self.filesModel.sort(0, Qt.DescendingOrder)
+        self.filesModel.sort(0, Qt.AscendingOrder)
         self.filesModel.setNameFilterDisables(False)
 
         self.files = QListView()
@@ -177,6 +177,9 @@ class FileSystemWidget(QWidget):
         settings.setValue('splitterState',self.viewsSplitter.saveState())
         settings.setValue('rootPath',self.currentRootPath)
         settings.setValue('path',self.currentPath)
+        settings.setValue('showOF',self.showOFAction.isChecked())
+        settings.setValue('refresh',self.refreshFilesAction.isChecked())
+        settings.setValue('sort',self.sortFilesAction.isChecked())
         settings.endGroup()
 
     def readSettings(self, settings):
@@ -185,6 +188,9 @@ class FileSystemWidget(QWidget):
         self.viewsSplitter.restoreState(settings.value("splitterState"))
         rootPath = settings.value("rootPath")
         path = settings.value("path")
+        self.showOFAction.setChecked(settings.value("showOF"))
+        self.refreshFilesAction.setChecked(settings.value("refresh"))
+        self.sortFilesAction.setChecked(settings.value("sort"))
         settings.endGroup()
 
         if rootPath is None:
@@ -196,4 +202,8 @@ class FileSystemWidget(QWidget):
         self.setPath(path)
 
         self.splitterMoved(self.viewsSplitter.handle(1).pos().x(), 0)
+
+        self.showOFFiles()
+        self.refreshFiles()
+        self.sortFiles()
 
