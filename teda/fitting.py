@@ -53,8 +53,8 @@ def fit_gauss_2d_c(xy ,values, initial_mu = None, mu_radius=(np.inf, np.inf)):
     opt, cov = optimize.curve_fit(gauss, xy, values,
                                   p0=[maximal - minimal, minimal, initial_mu[0], initial_mu[1], 1.0],
                                   bounds=(
-                                      [0.0, -np.inf, initial_mu[0]-mu_radius[0], initial_mu[1]-mu_radius[1], -np.inf],
-                                      [ np.inf,  np.inf, initial_mu[0]+mu_radius[0], initial_mu[1]+mu_radius[1],  np.inf])
+                                      [0.0,     -2.0**18, initial_mu[0]-mu_radius[0], initial_mu[1]-mu_radius[1], 0.0],
+                                      [2.0**19,  2.0**18, initial_mu[0]+mu_radius[0], initial_mu[1]+mu_radius[1], 1e10])
                                   )
     res = (gauss(xy, *opt) - values)
     rmse = math.sqrt((res * res).sum() / len(values)),

@@ -121,7 +121,11 @@ class IRAFRadialProfileWidget(QWidget):
         x, y = np.asarray(x), np.asarray(y)
         gauss0 = lambda x, a, c, sig2: c + a * np.exp(-x**2/(2*sig2))
 
-        opt, cov = optimize.curve_fit(gauss0, x, y, p0=[1.0, 0.0, 1.0])
+        opt, cov = optimize.curve_fit(gauss0, x, y, p0=[1.0, 0.0, 1.0],
+                                      bounds=([-2.0**19, -2.0**16, 0.0],
+                                              [2.0**19,   2.0**16, 70]  # max fwhm=20
+                                              )
+                                      )
         res = gauss0(x, *opt) - y
         rmse = math.sqrt((res*res).sum()/len(res))
         try:
