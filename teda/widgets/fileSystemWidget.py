@@ -1,7 +1,7 @@
 from PySide6.QtCore import QDir
 from PySide6.QtGui import Qt, QAction
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileSystemModel, QTreeView, QListView, QVBoxLayout, \
-    QPushButton, QToolButton, QFileDialog, QSplitter
+    QPushButton, QToolButton, QFileDialog, QSplitter, QApplication
 
 from teda.icons import IconFactory
 
@@ -14,12 +14,19 @@ class FileSystemWidget(QWidget):
         self.currentRootPath = '/'
         self.currentPath = QDir.currentPath()
 
-        self.mainWindow = parent;
+        self.mainWindow = parent
 
         self.chooseDirAction = QAction(IconFactory.getIcon('folder'), 'Root directory', self, statusTip="Change root directory", triggered=self.chooseRootDir)
+
         self.showOFAction = QAction(IconFactory.getIcon('filter_alt'), 'Show only FITS files', self, statusTip="Show only FITS/all files", triggered=self.showOFFiles)
         self.showOFAction.setCheckable(True)
-        self.showOFAction.toggled.connect(self.showOFFiles)
+        # self.showOFAction.toggled.connect(self.showOFFiles)
+
+        self.refreshFilesAction = QAction(IconFactory.getIcon('refresh'), 'Auto-refresh files', self, statusTip="Auto-refresh on new files", triggered=self.refreshFiles)
+        self.refreshFilesAction.setCheckable(True)
+
+        self.sortFilesAction = QAction(IconFactory.getIcon('sort'), 'Reverse file sort', self, statusTip="Ascending/Descending sort of files (by name)", triggered=self.sortFiles)
+        self.sortFilesAction.setCheckable(True)
 
         self.chooseDirBtn = QToolButton()
         self.chooseDirBtn.setDefaultAction(self.chooseDirAction)
@@ -27,11 +34,18 @@ class FileSystemWidget(QWidget):
         self.showOFBtn = QToolButton()
         self.showOFBtn.setDefaultAction(self.showOFAction)
 
+        self.refreshFilesBtn = QToolButton()
+        self.refreshFilesBtn.setDefaultAction(self.refreshFilesAction)
+
+        self.sortFilesBtn = QToolButton()
+        self.sortFilesBtn.setDefaultAction(self.sortFilesAction)
 
         iconlayout = QHBoxLayout()
         iconlayout.setAlignment(Qt.AlignLeft)
         iconlayout.addWidget(self.chooseDirBtn)
         iconlayout.addWidget(self.showOFBtn)
+        iconlayout.addWidget(self.refreshFilesBtn)
+        iconlayout.addWidget(self.sortFilesBtn)
 
         self.viewsSplitter = QSplitter(Qt.Horizontal)
         self.viewsSplitter.splitterMoved.connect(self.splitterMoved)
@@ -51,6 +65,7 @@ class FileSystemWidget(QWidget):
         self.filesModel = QFileSystemModel(self)
         self.filesModel.setOption(QFileSystemModel.DontWatchForChanges, True)
         self.filesModel.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.filesModel.sort(0, Qt.DescendingOrder)
         self.filesModel.setNameFilterDisables(False)
 
         self.files = QListView()
@@ -80,7 +95,7 @@ class FileSystemWidget(QWidget):
 
     def splitterMoved(self, pos, index):
         if pos == 0:
-            self.filesModel.setFilter(QDir.NoDot | QDir.AllEntries | QDir.DirsFirst | QDir.Type)
+            self.filesModel.setFilter(QDir.NoDot | QDir.AllEntries) # | QDir.DirsFirst | QDir.Type)
         elif pos == self.viewsSplitter.width()-self.viewsSplitter.handleWidth():
             self.dirsModel.setFilter(QDir.NoDotAndDotDot|QDir.AllEntries)
         else:
@@ -143,6 +158,18 @@ class FileSystemWidget(QWidget):
         else:
             self.dirsModel.setNameFilters(["*"])
             self.filesModel.setNameFilters(["*"])
+
+    def refreshFiles(self):
+        if self.refreshFilesAction.isChecked():
+            self.filesModel.setOption(QFileSystemModel.DontWatchForChanges, False)
+        else:
+            self.filesModel.setOption(QFileSystemModel.DontWatchForChanges, True)
+
+    def sortFiles(self):
+        if self.sortFilesAction.isChecked():
+            self.filesModel.sort(0, Qt.DescendingOrder)
+        else:
+            self.filesModel.sort(0, Qt.AscendingOrder)
 
     def writeSettings(self, settings):
         settings.beginGroup("fileWidget")

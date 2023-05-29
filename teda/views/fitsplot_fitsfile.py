@@ -1,8 +1,11 @@
+import logging
 from astropy.io import fits
 from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU)
 import traitlets as tr
 
 from .fitsplotcontrolled import FitsPlotterControlled
+
+logger = logging.getLogger(__name__.rsplit('.')[-1])
 
 
 class FitsPlotterFitsFile(FitsPlotterControlled):
@@ -34,8 +37,11 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
 
     def set_file(self, filename):
         if filename is not None:
-            self._huds = fits.open(filename, lazy_load_hdus=False)
-            self._huds.info()
+            try:
+                self._huds = fits.open(filename, lazy_load_hdus=False)
+                self._huds.info()
+            except (FileNotFoundError, OSError) as e:
+                logger.error(f'Can not open file {filename}: {e}')
         else:
             self._huds = None
         self.fitsfile = filename
@@ -76,13 +82,13 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
         try:
             fits.open(filename)
             return True
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             if showinfo:
-                print('Błąd w odczycie pliku')
+                logger.error(f'Can not find file {filename}: {e}')
             return False
-        except OSError:
+        except OSError as e:
             if showinfo:
-                print('Pusty lub błedny format pliku')
+                logger.error(f'Can not open file {filename}: {e}')
             return False
 
 

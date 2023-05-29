@@ -1,18 +1,19 @@
 [tool.poetry]
 name = "teda"
-version = "3.0.1"
+version = "3.1.0"
 description = "Yet Another FITS Viewer"
 authors = ["majkelx <mkalusz@camk.edu.pl>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "<3.12,>=3.8"
+python = "<3.12,>=3.9"
 pyside6 = "^6.5.0"
-astropy = "^5.2.2"
+astropy = ">5.2.2"
 matplotlib = "^3.7.1"
 scipy = "^1.10.1"
 traitlets = "^5.9.0"
+#pyaraucaria = "^2.7.0"
 
 [tool.poetry.scripts]
 teda = "teda.teda_fits:main"

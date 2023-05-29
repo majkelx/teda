@@ -221,7 +221,10 @@ class MainWindow(QMainWindow):
         else:
             filename = self.tedaCommandLine.openFile
         if filename:
-            self.open_fits(filename)
+            try:
+                self.open_fits(filename)
+            except (FileNotFoundError, OSError) as e:
+                print(f'Error opening last file {filename}: {e}')
 
     def readAppState(self):
         if self.tedaCommandLine.ignoreSettings:

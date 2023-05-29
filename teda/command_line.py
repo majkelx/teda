@@ -26,7 +26,7 @@ class TedaCommandLine(object):
         parser.setSingleDashWordOptionMode(QCommandLineParser.ParseAsLongOptions)
 
         model = QStringListModel(["i", "ignore-settings"])
-        ignoreSettingsOption = QCommandLineOption (model.stringList(), "Ingnore settings file")
+        ignoreSettingsOption = QCommandLineOption (model.stringList(), "Ignore settings file")
         parser.addOption(ignoreSettingsOption)
 
         model = QStringListModel(["f", "file"])
