@@ -12,28 +12,39 @@ Observatory optimized FITS Images viewer
 * Integrated ipython console with direct access to data and application
 
 ## Installation
+The safest and recommended way to install TeDa is to use `pipx`:
 ``` bash
-   pip install teda
-   teda_viewer 
+   pipx install teda
+   teda 
 ``` 
+Consult [pipx documentation](https://pipxproject.github.io/pipx/) for installation instructions.
+
 ### Optional dependencies
-To use ipython console the `qtconsole` package is needed, additionally:
+To use ipython console the `console` extra should be specified.
+This extra installs `ipython` and `qtconsole` packages.
 ``` bash
-    pip install qtconsole
-``` 
+    pipx install teda[console]
+```
+
 For directory scanning functionality, the `watchdog` package should be installed, e.g. 
 ``` bash
-    pip install watchdog
+    pipx install teda[watchdog]
 ``` 
 
 ## Run
 The installation scripts should install the command:
 ```
-    teda_viewer
+    teda
 ```
-Try 
+if it is not working, try:
 ```
-    teda_viewer --help
+    pipx ensurepath 
+```
+to add pipx-installed binaries to your path. 
+
+## Command line parameters
+```
+    teda --help
 ```
 for list of command line parameters.
 
@@ -61,15 +72,10 @@ Together with the pixels values, the radial profile presents 1D fit of
    
 
 ## Integrated Python Console
-In order to use integrated python console the `qtconsole` module, and it's
-dependencies (jupyter related) have to be installed. This is not done by
-default `pip` installation to keep number of dependencies reasonably small.
-Install `qtconsole` by:
-``` bash
-    pip install qtconsole
-``` 
+In order to use integrated python console the `console` extra dependency group have to be installed
 
 The console is available form menu **View/Python Console**
+
 ### Predefined variables
 The console has a number of predefined variables set:
 * `ax: WCSAxesSubplot` main plotting axes.
@@ -113,8 +119,8 @@ avoiding FITS reload when working.
 After un-pausing (manually or after idle 5 seconds when auto-pause) the newest
 FITS will be loaded if any new files appeared during the pause.
 
-Directory scanning needs the [`watchdog`](https://pypi.org/project/watchdog/) component to be 
-installed manually (optional dependence).
+Directory scanning needs the `watchdog` extra dependency to be 
+installed (see Installation above).
 
 ## Directory Panel
 The Directory Panel can be shown using menu command **View-Directory view**.
@@ -127,14 +133,13 @@ User can collapse any of them using divider handle and use only remaining one.
 If the tree view is the only visible, it shows directories and files as well.      
 
 ## Development version install
+TeDa uses [poetry](https://python-poetry.org/) for development and packaging.
+
 ``` bash
 
     git clone https://github.com/majkelx/teda.git
     cd teda
-    python -m venv venv
-    source ./venv/bin/activate
-    pip install -r requirements.txt
-    pip install -e .
+    poetry install
 ```
 
 ## Bugs, remarks, greetings and contribution 
@@ -142,4 +147,4 @@ Please use [GitHub issues tracker](https://github.com/majkelx/teda/issues)
 and [pull requests](https://github.com/majkelx/teda/pulls).
 
 
-@2020  [AkondLab](http://www.akond.com) for the [Araucaria Project](https://araucaria.camk.edu.pl).
+@2020-2023  [AkondLab](http://www.akond.com) for the [Araucaria Project](https://araucaria.camk.edu.pl).

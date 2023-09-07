@@ -188,9 +188,9 @@ class FileSystemWidget(QWidget):
         self.viewsSplitter.restoreState(settings.value("splitterState"))
         rootPath = settings.value("rootPath")
         path = settings.value("path")
-        self.showOFAction.setChecked(settings.value("showOF"))
-        self.refreshFilesAction.setChecked(settings.value("refresh"))
-        self.sortFilesAction.setChecked(settings.value("sort"))
+        self.showOFAction.setChecked(settings.value("showOF") == True)
+        self.refreshFilesAction.setChecked(settings.value("refresh") == True)
+        self.sortFilesAction.setChecked(settings.value("sort") == True)
         settings.endGroup()
 
         if rootPath is None:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "teda"
-version = "3.1.0"
+version = "3.1.2"
 description = "Yet Another FITS Viewer"
 authors = ["majkelx <mkalusz@camk.edu.pl>"]
 license = "MIT"
@@ -14,9 +14,16 @@ matplotlib = "^3.7.1"
 scipy = "^1.10.1"
 traitlets = "^5.9.0"
 #pyaraucaria = "^2.7.0"
+qtconsole = {version="^5.4.4", optional=true}
+watchdog = {version="^3.0.0", optional=true}
 
 [tool.poetry.scripts]
 teda = "teda.teda_fits:main"
+
+[tool.poetry.extras]
+console = ["qtconsole"]
+watchdog = ["watchdog"]
+
 
 [build-system]
 requires = ["poetry-core"]
