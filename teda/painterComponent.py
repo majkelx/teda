@@ -294,9 +294,9 @@ class PainterComponent(HasTraits):
             self.listOfPaintedShapes.append(shap)
 
     def centerRadialProfile(self, x, y, r, force=False):
-        #self.tempCanvas w tym jest aktualny canvas
-        #tu centrowanie
-        #zwrócić nowe x,y
+        # self.tempCanvas holds the current canvas
+        # Perform centering here
+        # Return new x, y coordinates
         # if force is False, center only if self.auto_center
         if not force and not self.auto_center:
             return x,y
@@ -394,7 +394,7 @@ class DraggablePoint:
         # restore the background region
         canvas.restore_region(self.background)
 
-        #zaznaczenie na przesuwaniu
+        # Highlight/select on drag
         if self.movingStart == False:
             self.movingStart = True
             self.painterElement.select()

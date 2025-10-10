@@ -106,7 +106,7 @@ class ScanToolbar(QObject):
             self.scanAct.setVisible(False)
             self.stopAct.setVisible(True)
             self.pauseAct.setVisible(True)
-            self.worker_thread.start() #powinno tu być ale jest w create
+            self.worker_thread.start() # Should be here but it's in create
             self.worker.setActive(True)
             self.activeScan = True
             self.worker.setFileName(fileName)
@@ -168,7 +168,7 @@ class ScanToolbar(QObject):
             self.worker = WorkerObject()
             self.worker_thread = QtCore.QThread()
             self.worker.moveToThread(self.worker_thread)
-            #self.worker_thread.start() # powinno być na przyciskach ale i tak nie ubijam tego threada
+            # self.worker_thread.start() should be in button handlers, but thread cleanup wasn't working
 
             # Connect any worker signals
             self.worker.signalStatus.connect(self.updateStatus)
@@ -224,9 +224,9 @@ class ScanToolbar(QObject):
                         self.parent.open_fits(status)
                         self.lastScanedFits = None
                     except FileNotFoundError:
-                        print('Błąd w odczycie pliku')
+                        print('Error reading file')
                     except OSError:
-                        print('Pusty lub błedny format pliku')
+                        print('Empty or invalid file format')
             else:
                 if self.parent.fits_image.isFitsFile(status, False):
                     self.lastScanedFits = status
@@ -316,9 +316,9 @@ class WorkerObject(QtCore.QObject):
 
     def setActive(self, val):
         self.active = val
-        #chciałem tu zatrzymać obserwer by thread zatrzymać ale nie działąło
-        #if not val:
-        #    self.observer.stop()
+        # Tried to stop observer here to stop thread but it didn't work
+        # if not val:
+        #     self.observer.stop()
 
 
     @QtCore.Slot()

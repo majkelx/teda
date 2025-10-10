@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
         try:
             self.openLastFits()
         except FileNotFoundError:
-            print('Błąd w odczycie lub brak ostatio wczytanego pliku')
+            print('Error reading or missing last loaded file')
 
     def closeEvent(self, event: PySide6.QtGui.QCloseEvent):
         self.writeAppState()
@@ -771,7 +771,7 @@ class MainWindow(QMainWindow):
     #     self.zoom_view_widget.updateFits(self.fits_image)
 
 class QWidgetCustom(QWidget):
-    #nakładka na QWidget dla eventu leave
+    # Wrapper for QWidget to handle leave event
     def __init__(self, parent = None):
         QWidget.__init__(self, parent)
 
