@@ -245,18 +245,19 @@ class PainterComponent(HasTraits):
                 ax.set_ylim(yli1 - self.dy, yli2 - self.dy)
                 self.movingViewX = xli1 - self.dx
                 self.movingViewY = yli1 - self.dy
-                self.tempCanvas.draw()
+                # Use draw_idle() for Qt's automatic coalescing (Phase 2.4)
+                self.tempCanvas.draw_idle()
 
 
     def onMovingRelease(self,event):
         if not self.eventInShapeFlag:
             if self.startMoving:
-                self.tempCanvas.draw()
+                # Use draw_idle() for Qt's automatic coalescing (Phase 2.4)
+                self.tempCanvas.draw_idle()
                 self.press = None
                 self.curr_lim = None
                 self.dx = 0
                 self.dy = 0
-                self.tempCanvas.draw()
         self.eventInShapeFlag = False
         self.startMoving = False
 
