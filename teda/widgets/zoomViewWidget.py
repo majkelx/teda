@@ -36,5 +36,7 @@ class ZoomViewWidget(QWidget):
         self.fits_image.disconnectEvents()
 
     def setXYofZoom(self, fits,x ,y ,zoom=1):
-        self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits, idle=False)
+        # Use idle=True to let Qt coalesce rapid updates automatically (Phase 2.1)
+        # This prevents synchronous canvas.draw() on every mouse move
+        self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits, idle=True)
 

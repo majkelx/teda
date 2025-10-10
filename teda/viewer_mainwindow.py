@@ -63,6 +63,13 @@ class MainWindow(QMainWindow):
         self.centralWidgetcordX = 0
         self.centralWidgetcordY = 0
 
+        # Mouse event debouncing for performance (Phase 2.1)
+        self._mouse_timer = QtCore.QTimer()
+        self._mouse_timer.setSingleShot(True)
+        self._mouse_timer.timeout.connect(self._update_mouse_widgets)
+        self._pending_mouse_x = None
+        self._pending_mouse_y = None
+
         self.painterComponent = PainterComponent(self.fits_image)
         # self.painterComponent.startMovingEvents(self.central_widget)
         self.painterComponent.setCanvas(self.central_widget)
@@ -691,24 +698,43 @@ class MainWindow(QMainWindow):
             self.full_view_widget.updateMiniatureShapeXYonly(self.centralWidgetcordX, self.centralWidgetcordY)
 
     def onMouseMoveOnImage(self, change):
-        display = ''
-        val = 0
-        if change.new is not None:
-            display = f'{change.new:f}'
-            val = change.new
+        # IMMEDIATE updates (critical for responsive UI - no lag)
+        val = change.new if change.new is not None else 0
+
         if change.name == 'mouse_xdata':
             # self.mouse_x_label.setText(display)
             self.current_x_coord = val
             self.cursor_coords.set_img_x(change.new)
+            self._pending_mouse_x = change.new
         elif change.name == 'mouse_ydata':
             # self.mouse_y_label.setText(display)
             self.current_y_coord = val
             self.cursor_coords.set_img_y(change.new)
-        if display != '':
-            self.zoom_view_widget.setXYofZoom(self.fits_image, self.current_x_coord, self.current_y_coord, self.fits_image.zoom)
+            self._pending_mouse_y = change.new
+
+        # Update zoom widget IMMEDIATELY - user needs instant visual feedback
+        # (Optimization is in the zoom widget itself using draw_idle() instead of draw())
+        if change.new is not None:
+            self.zoom_view_widget.setXYofZoom(
+                self.fits_image,
+                self.current_x_coord,
+                self.current_y_coord,
+                self.fits_image.zoom
+            )
+
+        # DEBOUNCED updates (non-critical operations - 50ms delay)
+        if change.new is not None:
+            self._mouse_timer.start(50)  # Restart 50ms timer
+
+    def _update_mouse_widgets(self):
+        """Deferred update of non-critical operations - called after 50ms mouse idle (Phase 2.1)"""
+        if self._pending_mouse_x is not None and self._pending_mouse_y is not None:
+            # Set focus if needed
             if not self.hasFocus():
                 self.setFocus()
-            if self.scanObject.activeScan and self.scanObject.enableAutopause:#reser autopause
+
+            # Autopause handling
+            if self.scanObject.activeScan and self.scanObject.enableAutopause:
                 if not self.scanObject.obserwableValue.autopauseFlag:
                     self.scanObject.obserwableValue.autopauseFlag = True
 
