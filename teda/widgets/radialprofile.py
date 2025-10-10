@@ -2,7 +2,7 @@ import numpy as np
 import PySide6
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 
 class RadialProfileWidget(QWidget):

@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (QApplication, QLabel, QDialog, QDockWidget, QWidg
                                QComboBox)
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 from teda.version import __version__
 from teda.views.fitsplot import FitsPlotter

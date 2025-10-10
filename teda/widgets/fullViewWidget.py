@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from teda.views.fitsplotcontrolled import (FitsPlotterControlled)
 from teda.painterComponent import PainterComponent
 

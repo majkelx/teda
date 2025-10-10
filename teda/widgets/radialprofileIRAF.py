@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure, Axes
 import matplotlib.ticker as ticker
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from teda.views.fitsplot import coo_data_to_index, coo_index_to_data
 
 import numpy as np
