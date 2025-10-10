@@ -3,7 +3,7 @@ import os
 
 from PySide6 import QtCore, QtGui
 from PySide6.QtGui import QAction
-from PySide6.QtCore import QObject, QEvent, QSettings
+from PySide6.QtCore import QObject, QEvent, QSettings, QMutex, QMutexLocker
 from PySide6.QtWidgets import QFileDialog, QApplication, QMessageBox
 import time
 from teda.icons import IconFactory
@@ -19,7 +19,8 @@ class ScanToolbar(QObject):
         super().__init__()
 
         self.parent = parent
-        self.activeScan=False
+        self.activeScan = False
+        self.mutex = QMutex()  # Protect shared state
 
         self.worker = None
         self.worker_thread = None
@@ -116,36 +117,42 @@ class ScanToolbar(QObject):
             #self.startAutopauseTimer()
 
     def stopScan(self):
-        #self.worker.setActive(False)
+        locker = QMutexLocker(self.mutex)
         self.scanAct.setVisible(True)
         self.stopAct.setVisible(False)
         self.pauseAct.setVisible(False)
         self.resumeAct.setVisible(False)
         self.lastScanedFits = None
         self.activeScan = False
+        locker.unlock()  # Unlock before calling forceWorkerStop
         self.forceWorkerStop()
         self.obserwableValue.autopauseFlag = False
         self.hideAutopauseButton()
 
     def pauseScan(self):
-        #self.worker.setActive(False)
+        locker = QMutexLocker(self.mutex)
         self.pauseAct.setVisible(False)
         self.resumeAct.setVisible(True)
         self.activeScan = False
+        locker.unlock()  # Unlock before calling forceWorkerStop
         self.forceWorkerStop()
         self.obserwableValue.autopauseFlag = False
         self.hideAutopauseButton()
 
     def resumeScan(self):
+        locker = QMutexLocker(self.mutex)
         self.worker.setActive(True)
         self.pauseAct.setVisible(True)
         self.resumeAct.setVisible(False)
-        #self.worker_thread.start()
-        if self.lastScanedFits!=None:#load fits if appeared when paused
-            self.parent.open_fits(self.lastScanedFits)
+        # Load fits if appeared when paused
+        if self.lastScanedFits is not None:
+            pending_file = self.lastScanedFits
             self.lastScanedFits = None
+            locker.unlock()
+            self.parent.open_fits(pending_file)
+            locker.relock()
         self.activeScan = True
-        self.lastScanedFits
+        locker.unlock()
         self.BtnResumeScan.trigger()
         self.obserwableValue.autopauseFlag = True
         self.showAutopauseButton()
@@ -173,14 +180,20 @@ class ScanToolbar(QObject):
 
 
     def forceWorkerStop(self):
-        #self.worker.stopWork()
-        if self.worker_thread.isRunning():
+        """Properly stop worker thread and observer"""
+        if self.worker is not None:
+            # Signal worker to stop
             self.worker.setActive(False)
-            #nie udaje mi sie ubić tego worker_thread
-            #print('Terminating thread.')
-            #self.worker_thread.terminate() #lub quit
-            #print('Waiting for thread termination.')
-            #self.worker_thread.wait()
+
+        if self.worker_thread is not None and self.worker_thread.isRunning():
+            # Request thread to quit cleanly
+            self.worker_thread.quit()
+            # Wait up to 5 seconds for thread to finish
+            if not self.worker_thread.wait(5000):
+                # If thread doesn't stop gracefully, terminate it
+                print('Warning: Thread did not stop gracefully, terminating...')
+                self.worker_thread.terminate()
+                self.worker_thread.wait()
 
 
 
@@ -191,29 +204,35 @@ class ScanToolbar(QObject):
 
     @QtCore.Slot(str)
     def updateStatus(self, status):
-        if status=="1secPing":
+        if status == "1secPing":
             self.autopauseTimer()
         else:
-            if not self.obserwableValue.autopauseFlag:
-                if self.activeScan: # Wprowadzona flaga by ignorować sygnał gdy skan zatrzymany
-                    time.sleep(1)
-                    if self.parent.fits_image.isFitsFile(status,True):
-                        print(status)
-                        try:
-                            self.parent.open_fits(status)
-                            self.lastScanedFits = None
-                        except FileNotFoundError:
-                            print('Błąd w odczycie pliku')
-                        except OSError:
-                            print('Pusty lub błedny format pliku')
-                else:
-                    time.sleep(1)
-                    if self.parent.fits_image.isFitsFile(status, False):
-                        self.lastScanedFits = status
+            # Defer file loading to avoid blocking the UI thread
+            # Use QTimer.singleShot to add a small delay without blocking
+            QtCore.QTimer.singleShot(1000, lambda: self._loadFile(status))
+
+    def _loadFile(self, status):
+        """Helper method to load FITS file without blocking UI"""
+        # Use mutex to protect access to shared state
+        locker = QMutexLocker(self.mutex)
+
+        if not self.obserwableValue.autopauseFlag:
+            if self.activeScan:
+                if self.parent.fits_image.isFitsFile(status, True):
+                    print(status)
+                    try:
+                        self.parent.open_fits(status)
+                        self.lastScanedFits = None
+                    except FileNotFoundError:
+                        print('Błąd w odczycie pliku')
+                    except OSError:
+                        print('Pusty lub błedny format pliku')
             else:
-                time.sleep(1)
                 if self.parent.fits_image.isFitsFile(status, False):
                     self.lastScanedFits = status
+        else:
+            if self.parent.fits_image.isFitsFile(status, False):
+                self.lastScanedFits = status
 
     def autopauseTimer(self):
         if self.obserwableValue.autopauseFlag:
@@ -309,12 +328,17 @@ class WorkerObject(QtCore.QObject):
         self.observer.schedule(self.event_handler, path=self.filename, recursive=False)
         self.observer.start()
         try:
-            while True:
+            while self.active:  # Check active flag to allow clean shutdown
                 time.sleep(0.5)
-                self.signalStatus.emit("1secPing")
+                if self.active:  # Check again after sleep
+                    self.signalStatus.emit("1secPing")
         except KeyboardInterrupt:
-            self.observer.stop()
-        self.observer.join()
+            pass
+        finally:
+            # Always stop observer when exiting
+            if self.observer is not None:
+                self.observer.stop()
+                self.observer.join()
 
     @QtCore.Slot()
     def stopWork(self):
