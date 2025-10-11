@@ -4,8 +4,7 @@ import math
 import json
 
 import traitlets as tr
-from numpy import *
-import math
+import numpy as np
 import astropy.visualization as vis
 import matplotlib
 import matplotlib.pyplot as plt
@@ -486,7 +485,7 @@ class FitsPlotter(tr.HasTraits):
         try:
             return self.data[coo_data_to_index([x,y])]
         except LookupError:
-            return nan
+            return np.nan
 
     @staticmethod
     def calc_new_limits(cur_lim, full_lim, stationary, zoom):

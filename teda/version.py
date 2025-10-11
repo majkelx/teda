@@ -1,6 +1,6 @@
 """TeDa version"""
 
-# Edit version below
-version_tuple = (3, 1, 2)
+# Edit version below, same in ../pyproject.toml
+version_tuple = (4, 0, 0)
 
 __version__ = '.'.join([str(n) for n in version_tuple])

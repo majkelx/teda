@@ -3,7 +3,7 @@ from .painterShapes.CircleCenterShape import (CircleCenterShape)
 from .painterShapes.rectangleMinatureShape import (RectangleMiniatureShape)
 import matplotlib.pyplot as plt
 from traitlets import Float, Int, HasTraits, Bool, observe
-from math import *
+import math
 
 from .fitting import fit_gauss_2d_c
 
@@ -174,7 +174,7 @@ class PainterComponent(HasTraits):
             self.tempcircle = None
         xcord = [x1,x2]
         ycord = [y1,y2]
-        r = sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2))
+        r = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         self.tempcircle = plt.Circle((x1, y1), r, color='g', fill=False)
         ax.add_patch(self.tempcircle)
         self.templine = ax.plot(xcord, ycord, linewidth=1, color='g')
@@ -241,7 +241,7 @@ class PainterComponent(HasTraits):
             self.startpainting = 'false'
             self._circle_motion_counter = 0  # BUG FIX #6: Reset counter
             self.hideLine(self.tempCanvas)
-            r=sqrt(pow((event.xdata-self.clicked['x']),2)+pow((event.ydata-self.clicked['y']),2))
+            r = math.sqrt((event.xdata - self.clicked['x'])**2 + (event.ydata - self.clicked['y'])**2)
             if r == 0:
                 r = 15
             self.add(self.clicked['x'], self.clicked['y'], r, self.actualShape)
