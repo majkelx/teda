@@ -34,6 +34,7 @@ from teda.icons import IconFactory
 from teda import draggingComponent
 from . import console
 from .widgets.fileSystemWidget import FileSystemWidget
+from .help_content import HELP_TEXT
 
 
 class MainWindow(QMainWindow):
@@ -289,6 +290,24 @@ class MainWindow(QMainWindow):
         if not paragraph:
             return
 
+    def showHelp(self):
+        """Display TeDa quick help guide (Phase 6.14)"""
+        from PySide6.QtWidgets import QDialog, QTextBrowser, QVBoxLayout
+
+        help_dialog = QDialog(self)
+        help_dialog.setWindowTitle("TeDa FITS Viewer - Quick Help")
+        help_dialog.resize(700, 600)
+
+        text_browser = QTextBrowser()
+        text_browser.setHtml(HELP_TEXT)
+        text_browser.setOpenExternalLinks(True)
+
+        layout = QVBoxLayout()
+        layout.addWidget(text_browser)
+        help_dialog.setLayout(layout)
+
+        help_dialog.exec()
+
     def about(self):
         QMessageBox.about(self, "TeDa FITS Viewer",
                           f"TeDa FITS Viewer {__version__} <br/>"
@@ -336,6 +355,7 @@ class MainWindow(QMainWindow):
                                "&Save", self, shortcut=QKeySequence.Save, statusTip="Save FITS view",
                                triggered=self.save_dialog)
         self.quitAct = QAction("&Quit", self, shortcut="Ctrl+Q", statusTip="Quit the application", triggered=self.close)
+        self.helpAct = QAction("&TeDa Help", self, shortcut=QKeySequence.HelpContents, statusTip="Show TeDa quick help guide", triggered=self.showHelp)
         self.aboutAct = QAction("&About", self, statusTip="Show the application's About box", triggered=self.about)
         self.aboutQtAct = QAction("About &Qt", self, statusTip="Show the Qt library's About box", triggered=QApplication.instance().aboutQt)
 
@@ -447,6 +467,8 @@ class MainWindow(QMainWindow):
         self.menuBar().addSeparator()
 
         self.helpMenu = self.menuBar().addMenu("&Help")
+        self.helpMenu.addAction(self.helpAct)
+        self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.aboutAct)
         self.helpMenu.addAction(self.aboutQtAct)
 
@@ -908,6 +930,8 @@ class MainWindow(QMainWindow):
     def resetLayoutAction(self):
         """Menu action to reset layout (Phase 6.1)"""
         self.clearLayoutSettings()
+        # Prevent saving settings on exit to preserve the reset
+        self.tedaCommandLine.ignoreSettings = True
         QMessageBox.information(self, "Layout Reset",
                                 "Window layout has been reset to defaults.\n"
                                 "Please restart TeDa for changes to take effect.")
