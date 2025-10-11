@@ -19,19 +19,37 @@ class TedaCommandLine(object):
     def __init__(self):
         self.openFile = None
         self.ignoreSettings = False
+        self.resetLayout = False  # Phase 6.1
+        self.resetConfig = False  # Phase 6.2
 
     def parseCommandLine(self, parser):    # QCommandLineParser
 
-        parser.setApplicationDescription(QApplication.applicationName())
+        parser.setApplicationDescription("TeDa - Telescope Data viewer for FITS astronomical images")
         parser.setSingleDashWordOptionMode(QCommandLineParser.ParseAsLongOptions)
 
+        # Options
         model = QStringListModel(["i", "ignore-settings"])
-        ignoreSettingsOption = QCommandLineOption (model.stringList(), "Ignore settings file")
+        ignoreSettingsOption = QCommandLineOption(model.stringList(),
+            "Ignore all saved settings (layout, config, last file)")
         parser.addOption(ignoreSettingsOption)
 
+        model = QStringListModel(["reset-layout"])
+        resetLayoutOption = QCommandLineOption(model.stringList(),
+            "Reset window layout and dock positions to defaults")
+        parser.addOption(resetLayoutOption)
+
+        model = QStringListModel(["reset-config"])
+        resetConfigOption = QCommandLineOption(model.stringList(),
+            "Reset all configuration (includes layout, sliders, pins, last file)")
+        parser.addOption(resetConfigOption)
+
+        # Legacy --file option (kept for backward compatibility)
         model = QStringListModel(["f", "file"])
-        openFileOption = QCommandLineOption(model.stringList(), "Open file", "file")
+        openFileOption = QCommandLineOption(model.stringList(), "Open FITS file (legacy, use positional argument instead)", "file")
         parser.addOption(openFileOption)
+
+        # Positional argument for file
+        parser.addPositionalArgument("file", "FITS file to open", "[file]")
 
         helpOption = parser.addHelpOption()
         versionOption = parser.addVersionOption()
@@ -43,10 +61,22 @@ class TedaCommandLine(object):
         if (parser.isSet(helpOption)):
             return ParseResult(CommandLineParseResult.CommandLineHelpRequested, None)
 
-        if (parser.isSet(openFileOption)):
+        # Handle reset options (Phase 6.1, 6.2)
+        if parser.isSet(resetLayoutOption):
+            self.resetLayout = True
+
+        if parser.isSet(resetConfigOption):
+            self.resetConfig = True
+            self.resetLayout = True  # resetConfig includes resetLayout
+
+        # Handle file argument (positional takes precedence over --file option)
+        positionalArgs = parser.positionalArguments()
+        if len(positionalArgs) > 0:
+            self.openFile = positionalArgs[0]
+        elif parser.isSet(openFileOption):
             file = parser.value(openFileOption)
-            if file is None or len(file) == 0 :
-                return ParseResult(CommandLineParseResult.CommandLineError, "No file to open spefified ")
+            if file is None or len(file) == 0:
+                return ParseResult(CommandLineParseResult.CommandLineError, "No file to open specified")
             self.openFile = file
 
         if parser.isSet(ignoreSettingsOption):

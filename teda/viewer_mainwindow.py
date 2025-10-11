@@ -88,6 +88,9 @@ class MainWindow(QMainWindow):
 
         self.painterComponent.observe(lambda change: self.onAutoCenterChange(change), ['auto_center'])
 
+        # Handle reset options before reading settings (Phase 6.1, 6.2)
+        self.handleResetOptions()
+
         self.readWindowSettings()
         self.readAppState()
 
@@ -381,6 +384,10 @@ class MainWindow(QMainWindow):
                                   statusTip='Show/Hide Dynamic Scale',
                                   triggered=self.dynamicScaleDockWidgetTriggerActions)
 
+        self.resetLayoutAct = QAction('Reset Layout', self,
+                                      statusTip="Reset window layout and dock positions to defaults",
+                                      triggered=self.resetLayoutAction)
+
         self.panningAct.setCheckable(True)
         self.panningAct.setChecked(True)
         self.circleAct.setCheckable(True)
@@ -433,6 +440,8 @@ class MainWindow(QMainWindow):
 
         self.viewMenu = self.menuBar().addMenu("&View")
         self.viewMenu.addAction(self.qtConsoleAct)
+        self.viewMenu.addSeparator()
+        self.viewMenu.addAction(self.resetLayoutAct)
         self.viewMenu.addSeparator()
 
         self.menuBar().addSeparator()
@@ -886,6 +895,43 @@ class MainWindow(QMainWindow):
             shape_y + shape_radius >= y_min and shape_y - shape_radius <= y_max):
             return True
         return False
+
+    def handleResetOptions(self):
+        """Handle --reset-layout and --reset-config CLI options (Phase 6.1, 6.2)"""
+        if self.tedaCommandLine.resetConfig:
+            self.clearAllSettings()
+            print("All configuration has been reset to defaults")
+        elif self.tedaCommandLine.resetLayout:
+            self.clearLayoutSettings()
+            print("Window layout has been reset to defaults")
+
+    def resetLayoutAction(self):
+        """Menu action to reset layout (Phase 6.1)"""
+        self.clearLayoutSettings()
+        QMessageBox.information(self, "Layout Reset",
+                                "Window layout has been reset to defaults.\n"
+                                "Please restart TeDa for changes to take effect.")
+
+    def clearLayoutSettings(self):
+        """Clear layout-specific settings (Phase 6.1)"""
+        settings = QSettings()
+        # Clear window geometry and state
+        settings.beginGroup("MainWindow")
+        settings.remove("size")
+        settings.remove("pos")
+        settings.endGroup()
+        settings.remove("geometry")
+        settings.remove("windowState")
+        # Clear widget-specific layout settings
+        settings.beginGroup("fileWidget")
+        settings.remove("splitterGeometry")
+        settings.remove("splitterState")
+        settings.endGroup()
+
+    def clearAllSettings(self):
+        """Clear all configuration settings (Phase 6.2)"""
+        settings = QSettings()
+        settings.clear()  # Clear everything
 
     def readWindowSettings(self):
         if self.tedaCommandLine.ignoreSettings:
