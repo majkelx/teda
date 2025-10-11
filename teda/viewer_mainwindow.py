@@ -576,7 +576,7 @@ class MainWindow(QMainWindow):
         # Scale
         self.dynamic_scale_dock = QDockWidget("Dynamic Scale", self)
         self.dynamic_scale_dock.setObjectName("SCALE")
-        self.dynamic_scale_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.dynamic_scale_dock.setAllowedAreas(Qt.NoDockWidgetArea)  # Phase 6.3: Prevent docking
         self.scaleWidget = ScaleWidget(self, scales_model=self.scales_model, cmap_model=self.cmaps)
         self.dynamic_scale_dock.setWidget(self.scaleWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dynamic_scale_dock)
