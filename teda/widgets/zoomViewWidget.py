@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from teda.views.fitsplotzoomed import FitsPlotterZoomed
+from teda.painterComponent import PainterComponent
 
 
 class ZoomViewWidget(QWidget):
@@ -20,6 +21,11 @@ class ZoomViewWidget(QWidget):
 
         self.ax = self.fig.add_subplot(111)
         self.ax.set_axis_off()
+
+        # Add PainterComponent for overlay shapes (read-only, no interaction)
+        self.painterComponent = PainterComponent(self.fits_image)
+        self.painterComponent.setCanvas(self.canvas)
+        self.painterComponent.disableInteraction()  # Read-only overlays
 
         figure_layout.addWidget(self.canvas)
         self.setLayout(figure_layout)

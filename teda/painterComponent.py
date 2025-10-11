@@ -2,7 +2,7 @@ from .painterShapes.circleShape import (CircleShape)
 from .painterShapes.CircleCenterShape import (CircleCenterShape)
 from .painterShapes.rectangleMinatureShape import (RectangleMiniatureShape)
 import matplotlib.pyplot as plt
-from traitlets import Float, Int, HasTraits, Bool
+from traitlets import Float, Int, HasTraits, Bool, observe
 from math import *
 
 from .fitting import fit_gauss_2d_c
@@ -22,6 +22,9 @@ class PainterComponent(HasTraits):
 
     auto_center = Bool(True)
 
+    # Observable flag for shape changes (overlay sync)
+    shapes_changed = Bool(False)
+
     def __init__(self, fits_plotter):
         self.shapes = []
         self.centerCircle = []
@@ -37,6 +40,7 @@ class PainterComponent(HasTraits):
         self.draggableActive = False
         self.eventInShapeFlag = False
         self.fits_plotter = fits_plotter
+        self.interactionEnabled = True  # For read-only overlay views
 
 
     def add(self, x, y, size = 15,type="circle",size2=0):
@@ -60,30 +64,41 @@ class PainterComponent(HasTraits):
     def paintAllShapes(self, axes):
         # axes.patches.clear()
         # axes.lines.clear()
+        print(f"[paintAllShapes] axes={axes}, interactionEnabled={self.interactionEnabled}")
+        print(f"[paintAllShapes] Before clear: patches={len(axes.patches)}, lines={len(axes.lines)}")
         for p in axes.patches:
             p.remove()
         for p in axes.lines:
             p.remove()
         self.listOfPaintedShapes = []
         self.drs = []
+        print(f"[paintAllShapes] Painting {len(self.shapes)} circles, {len(self.centerCircle)} centerCircles, {len(self.rectangleMiniature)} rectangles")
         for shape in self.shapes:
             shap=shape.paintShape(axes)
             self.listOfPaintedShapes.append(shap)
-            dr = DraggablePoint(shap, shape, self)
-            dr.connect()
-            self.drs.append(dr)
+            print(f"[paintAllShapes] Painted circle, returned shap={shap}")
+            if self.interactionEnabled:  # Only create draggables if interaction enabled
+                dr = DraggablePoint(shap, shape, self)
+                dr.connect()
+                self.drs.append(dr)
         for shape in self.centerCircle:
             shap=shape.paintShape(axes)
             self.listOfPaintedShapes.append(shap)
-            dr = DraggablePoint(shap, shape, self)
-            dr.connect()
-            self.drs.append(dr)
+            print(f"[paintAllShapes] Painted centerCircle, returned shap={shap}")
+            if self.interactionEnabled:  # Only create draggables if interaction enabled
+                dr = DraggablePoint(shap, shape, self)
+                dr.connect()
+                self.drs.append(dr)
         for shape in self.rectangleMiniature:
             shap=shape.paintShape(axes)
             self.listOfPaintedShapes.append(shap)
-            dr = DraggablePoint(shap, shape, self)
-            dr.connect()
-            self.drs.append(dr)
+            print(f"[paintAllShapes] Painted rectangle, returned shap={shap}")
+            if self.interactionEnabled:  # Only create draggables if interaction enabled
+                dr = DraggablePoint(shap, shape, self)
+                dr.connect()
+                self.drs.append(dr)
+        print(f"[paintAllShapes] After painting: patches={len(axes.patches)}, lines={len(axes.lines)}")
+        print(f"[paintAllShapes] Calling tempCanvas.draw_idle(), canvas={self.tempCanvas}")
         self.tempCanvas.draw_idle()
 
     def makeAllShapesDraggable(self, axes):
@@ -114,6 +129,16 @@ class PainterComponent(HasTraits):
     def disableAllShapesDraggable(self):
         self.draggableActive = False
         self.drs = []
+
+    def disableInteraction(self):
+        """Disable all interaction for read-only overlay views"""
+        self.interactionEnabled = False
+        self.draggableActive = False
+        self.drs = []
+
+    def notifyShapesChanged(self):
+        """Notify observers that shapes have changed (toggle to trigger)"""
+        self.shapes_changed = not self.shapes_changed
 
     def getAllShapes(self):
         return self.shapes
@@ -202,11 +227,19 @@ class PainterComponent(HasTraits):
             if self.startpainting == 'true':
                 self.paintLine(self.tempCanvas,self.clicked['x'],event.xdata,self.clicked['y'],event.ydata)
                 self.tempCanvas.draw_idle()
+                # BUG FIX #6: Notify shape changes during circle creation (throttled)
+                # This syncs temporary circle to zoom/full windows as user drags
+                if not hasattr(self, '_circle_motion_counter'):
+                    self._circle_motion_counter = 0
+                self._circle_motion_counter += 1
+                if self._circle_motion_counter % 3 == 0:  # Throttle to every 3rd frame
+                    self.notifyShapesChanged()
 
 
     def onAddCircleRelease(self, event):
         if not self.eventInShapeFlag:
             self.startpainting = 'false'
+            self._circle_motion_counter = 0  # BUG FIX #6: Reset counter
             self.hideLine(self.tempCanvas)
             r=sqrt(pow((event.xdata-self.clicked['x']),2)+pow((event.ydata-self.clicked['y']),2))
             if r == 0:
@@ -215,6 +248,7 @@ class PainterComponent(HasTraits):
             ax = self.tempCanvas.figure.axes[0]
             self.paintAllShapes(ax)
             self.tempCanvas.draw_idle()
+            self.notifyShapesChanged()  # Notify observers (overlay sync)
         self.eventInShapeFlag = False
 
     def onMovingClick(self,event):
@@ -273,6 +307,7 @@ class PainterComponent(HasTraits):
         self.paintAllShapes(axes)
         if self.draggableActive:
             self.makeAllShapesDraggable(axes)
+        self.notifyShapesChanged()  # Notify observers (overlay sync)
 
     def eventInShape(self, event):
         inShapeClicked = False
@@ -329,6 +364,7 @@ class DraggablePoint:
         self.press = None
         self.background = None
         self.movingStart = False
+        self.motion_counter = 0  # BUG FIX #2: Counter for throttling drag updates
 
     def connect(self):
         'connect to all the events we need'
@@ -410,6 +446,12 @@ class DraggablePoint:
         # blit just the redrawn area
         canvas.blit(axes.bbox)
 
+        # BUG FIX #2: Notify shape changes during drag (throttled to every 3rd frame)
+        # This syncs zoom/full windows in real-time as user drags shapes
+        self.motion_counter += 1
+        if self.motion_counter % 3 == 0:  # Only notify every 3rd motion event
+            self.paintComp.notifyShapesChanged()
+
     def on_release(self, event):
         'on release we reset the press data'
         if DraggablePoint.lock is not self:
@@ -417,6 +459,7 @@ class DraggablePoint:
 
         self.press = None
         DraggablePoint.lock = None
+        self.motion_counter = 0  # BUG FIX #2: Reset counter on release
 
         # turn off the current animation property and reset the background
         self.point.set_animated(False)
@@ -436,10 +479,18 @@ class DraggablePoint:
                     self.paintComp.ccenter_x = self.painterElement.x
                     self.paintComp.ccenter_y = self.painterElement.y
                     self.paintComp.cradius = self.painterElement.size
+                    # Repaint all shapes to ensure autocenter position updates visually
+                    self.paintComp.paintAllShapes(axes)
+                    self.paintComp.fillListOfPaintedShapes()
+                else:
                     self.point = self.painterElement.refreshShape(axes)
+            self.paintComp.notifyShapesChanged()  # Notify observers (overlay sync)
 
-        self.point.figure.canvas.draw_idle()
-        self.paintComp.fillListOfPaintedShapes()
+        if not (self.movingStart and hasattr(self.painterElement, 'shapeType') and
+                self.painterElement.shapeType == 'centerCircle'):
+            # Only draw if we didn't already repaint everything for autocenter
+            self.point.figure.canvas.draw_idle()
+            self.paintComp.fillListOfPaintedShapes()
         self.movingStart = False
 
     def disconnect(self):

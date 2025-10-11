@@ -18,6 +18,8 @@ from teda.views.fitsplot import FitsPlotter
 from teda.views.fitsplot_fitsfile import FitsPlotterFitsFile
 from teda.models.coordinates import CoordinatesModel
 from teda.painterComponent import PainterComponent
+from teda.painterShapes.circleShape import CircleShape
+from teda.painterShapes.CircleCenterShape import CircleCenterShape
 from teda.widgets.radialprofile import RadialProfileWidget
 from teda.widgets.fullViewWidget import FullViewWidget
 from teda.widgets.zoomViewWidget import ZoomViewWidget
@@ -101,6 +103,9 @@ class MainWindow(QMainWindow):
         self.full_view_widget.painterComponent.observe(lambda change: self.onRectangleInWidgetMove(change), ['viewX', 'viewY'])
         self.painterComponent.observe(lambda change: self.movingCentralWidget(change), ['movingViewX', 'movingViewY'])
         self.fits_image.observe(lambda change: self.onMouseZoomOnImage(change), ['viewBounaries_versionno'])
+
+        # Overlay synchronization: observe shape changes in main painter (Phase 2.5)
+        self.painterComponent.observe(lambda change: self.onShapesChanged(change), ['shapes_changed'])
 
         # open last fits
         try:
@@ -205,8 +210,17 @@ class MainWindow(QMainWindow):
 
         self.updateHeaderData()
 
+        # BUG FIX #5: Update zoom/full widgets BEFORE setting viewport coordinates
+        # This ensures full_view_widget.fits_image.ax exists when rectangle is created
         self.zoom_view_widget.updateFits(self.fits_image)
         self.full_view_widget.updateFits(self.fits_image)
+
+        # BUG FIX #5: Now initialize viewport boundaries - this will trigger observer
+        # Observer will call updateMiniatureShape() which will create the rectangle
+        # on the correct axes (full_view_widget.fits_image.ax which now exists)
+        if self.fits_image.ax is not None:
+            self.fits_image.setCordsToTraitlets()
+
         self.saveLastFits()
 
     def saveLastFits(self):
@@ -721,6 +735,9 @@ class MainWindow(QMainWindow):
                 self.current_y_coord,
                 self.fits_image.zoom
             )
+            # BUG FIX #4: Re-sync shapes after zoom viewport moves
+            # Otherwise shapes disappear or show wrong region when mouse moves
+            self.syncShapesToZoomView()
 
         # DEBOUNCED updates (non-critical operations - 50ms delay)
         if change.new is not None:
@@ -749,6 +766,126 @@ class MainWindow(QMainWindow):
             changed = True
         if changed:
             self.full_view_widget.updateMiniatureShape(self.fits_image.viewX,self.fits_image.viewY,self.fits_image.viewW,self.fits_image.viewH)
+
+    def onShapesChanged(self, change):
+        """Handle shape changes in main painter - sync to full and zoom views (Phase 2.5)"""
+        self.syncShapesToFullView()
+        self.syncShapesToZoomView()
+
+    def syncShapesToFullView(self):
+        """Synchronize shapes from main painter to full-image view (Phase 2.5)"""
+        full_painter = self.full_view_widget.painterComponent
+        main_painter = self.painterComponent
+
+        # Get full view axes - use fits_image.ax if available (after plot()), otherwise widget.ax
+        full_ax = self.full_view_widget.fits_image.ax
+        if full_ax is None:
+            full_ax = self.full_view_widget.ax
+
+        if full_ax is None:
+            return
+
+        # Clear existing synced shapes (keep viewport rectangle)
+        full_painter.shapes = []
+        full_painter.centerCircle = []
+
+        # Create NEW shape instances from main painter circles
+        for circle in main_painter.shapes:
+            # BUG FIX #1: Use originColor (base color) instead of color (which includes selection state)
+            new_circle = CircleShape(circle.x, circle.y, circle.size, color=circle.originColor)
+            full_painter.shapes.append(new_circle)
+
+        # Create NEW shape instances from main painter center circles
+        for center in main_painter.centerCircle:
+            # BUG FIX #1: Use originColor (base color) instead of color (which includes selection state)
+            new_center = CircleCenterShape(center.x, center.y, center.size, color=center.originColor)
+            full_painter.centerCircle.append(new_center)
+
+        # Repaint all shapes
+        full_painter.paintAllShapes(full_ax)
+
+        # BUG FIX #6: Draw temporary circle during creation (click-drag preview)
+        if (hasattr(main_painter, 'tempcircle') and main_painter.tempcircle is not None and
+            hasattr(main_painter, 'startpainting') and main_painter.startpainting == 'true'):
+            import matplotlib.pyplot as plt
+            temp_center = main_painter.tempcircle.center
+            temp_radius = main_painter.tempcircle.radius
+            temp_circle_patch = plt.Circle(temp_center, temp_radius, color='g', fill=False, linestyle='--')
+            full_ax.add_patch(temp_circle_patch)
+            full_painter.tempCanvas.draw_idle()
+
+        # BUG FIX #3: Keep only viewport rectangle draggable, remove circle draggables
+        # Circles should be read-only in full view, only viewport boundary should be draggable
+        full_painter.drs = [dr for dr in full_painter.drs
+                            if hasattr(dr.painterElement, 'shapeType') and
+                            dr.painterElement.shapeType == 'rectangleMiniature']
+
+    def syncShapesToZoomView(self):
+        """Synchronize shapes from main painter to zoom view (Phase 2.5)"""
+        zoom_painter = self.zoom_view_widget.painterComponent
+        main_painter = self.painterComponent
+
+        # Get zoom view axes - use fits_image.ax if available (after plot()), otherwise widget.ax
+        zoom_ax = self.zoom_view_widget.fits_image.ax
+        if zoom_ax is None:
+            zoom_ax = self.zoom_view_widget.ax
+
+        if zoom_ax is None:
+            return
+
+        x_min, x_max = zoom_ax.get_xlim()
+        y_min, y_max = zoom_ax.get_ylim()
+
+        # Clear existing synced shapes
+        zoom_painter.shapes = []
+        zoom_painter.centerCircle = []
+
+        # Create NEW shape instances for circles that overlap zoom region
+        for circle in main_painter.shapes:
+            overlaps = self._shapeOverlapsRegion(circle, x_min, x_max, y_min, y_max)
+            if overlaps:
+                # BUG FIX #1: Use originColor (base color) instead of color (which includes selection state)
+                new_circle = CircleShape(circle.x, circle.y, circle.size, color=circle.originColor)
+                zoom_painter.shapes.append(new_circle)
+
+        # Create NEW shape instances for center circles that overlap zoom region
+        for center in main_painter.centerCircle:
+            overlaps = self._shapeOverlapsRegion(center, x_min, x_max, y_min, y_max)
+            if overlaps:
+                # BUG FIX #1: Use originColor (base color) instead of color (which includes selection state)
+                new_center = CircleCenterShape(center.x, center.y, center.size, color=center.originColor)
+                zoom_painter.centerCircle.append(new_center)
+
+        # Repaint all shapes (read-only - no dragging)
+        zoom_painter.paintAllShapes(zoom_ax)
+
+        # BUG FIX #6: Draw temporary circle during creation (click-drag preview)
+        if (hasattr(main_painter, 'tempcircle') and main_painter.tempcircle is not None and
+            hasattr(main_painter, 'startpainting') and main_painter.startpainting == 'true'):
+            import matplotlib.pyplot as plt
+            temp_center = main_painter.tempcircle.center
+            temp_radius = main_painter.tempcircle.radius
+            # Only draw if temporary circle overlaps with zoom region
+            if self._shapeOverlapsRegion(type('obj', (object,), {
+                'x': temp_center[0], 'y': temp_center[1], 'size': temp_radius
+            })(), x_min, x_max, y_min, y_max):
+                temp_circle_patch = plt.Circle(temp_center, temp_radius, color='g', fill=False, linestyle='--')
+                zoom_ax.add_patch(temp_circle_patch)
+                zoom_painter.tempCanvas.draw_idle()
+
+    def _shapeOverlapsRegion(self, shape, x_min, x_max, y_min, y_max):
+        """Check if a shape overlaps with given region (Phase 2.5)"""
+        # Shape is a circle with center (x, y) and radius size
+        # Check if circle center + radius overlaps with region
+        shape_x = shape.x
+        shape_y = shape.y
+        shape_radius = shape.size
+
+        # Simple bounding box check
+        if (shape_x + shape_radius >= x_min and shape_x - shape_radius <= x_max and
+            shape_y + shape_radius >= y_min and shape_y - shape_radius <= y_max):
+            return True
+        return False
 
     def readWindowSettings(self):
         if self.tedaCommandLine.ignoreSettings:
