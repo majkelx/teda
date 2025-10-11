@@ -1,7 +1,7 @@
 from PySide6.QtCore import QDir
 from PySide6.QtGui import Qt, QAction
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileSystemModel, QTreeView, QListView, QVBoxLayout, \
-    QPushButton, QToolButton, QFileDialog, QSplitter, QApplication
+    QPushButton, QToolButton, QFileDialog, QSplitter, QApplication, QMenu
 
 from teda.icons import IconFactory
 
@@ -71,6 +71,9 @@ class FileSystemWidget(QWidget):
         self.files = QListView()
         self.files.setModel(self.filesModel)
         self.files.doubleClicked.connect(self.onFilesDoubleClick)
+        # Enable context menu for file browser (Phase 6.10)
+        self.files.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.files.customContextMenuRequested.connect(self.onFilesContextMenu)
 
         self.viewsSplitter.addWidget(self.dirs)
         self.viewsSplitter.addWidget(self.files)
@@ -128,6 +131,28 @@ class FileSystemWidget(QWidget):
                 self.mainWindow.open_fits(info.filePath())
             except FileNotFoundError:
                 self.setPath(self.currentPath) # refesh maybe?
+
+    def onFilesContextMenu(self, position):
+        """Context menu for file browser - copy file path (Phase 6.10)"""
+        # Get the index at the cursor position
+        index = self.files.indexAt(position)
+        if not index.isValid():
+            return  # No item under cursor
+
+        # Get file info
+        info = self.filesModel.fileInfo(index)
+
+        # Create context menu
+        menu = QMenu(self)
+        copy_path_action = menu.addAction("Copy Path")
+
+        # Show menu and get selected action
+        action = menu.exec_(self.files.viewport().mapToGlobal(position))
+
+        # Handle action
+        if action == copy_path_action:
+            file_path = info.filePath()
+            QApplication.clipboard().setText(file_path)
 
     def setPath(self, path):
         self.currentPath = path

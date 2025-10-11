@@ -11,16 +11,16 @@ class InfoWidget(QWidget):
 
         self.mainwindow = mainwindow
         self.filename = QLineEdit(mainwindow.filename)
-        self.filename.setEnabled(False)
+        self.filename.setReadOnly(True)  # Phase 6.11: Allow copy
 
         self.value = QLineEdit('')
-        self.value.setEnabled(False)
+        self.value.setReadOnly(True)  # Phase 6.11: Allow copy
 
         self.xy = QLineEdit('')
-        self.xy.setEnabled(False)
+        self.xy.setReadOnly(True)  # Phase 6.11: Allow copy
 
         self.wcs_coo = QLineEdit('')
-        self.wcs_coo.setEnabled(False)
+        self.wcs_coo.setReadOnly(True)  # Phase 6.11: Allow copy
 
         layout = QFormLayout()
         layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
@@ -39,6 +39,7 @@ class InfoWidget(QWidget):
 
     def on_filename_change(self, change):
         self.filename.setText(path.basename(change.new))
+        self.filename.setCursorPosition(0)  # Show beginning of filename
 
     def on_wcs_system_change(self, change):
         try:
@@ -49,15 +50,18 @@ class InfoWidget(QWidget):
 
     def on_wcs_change(self, change):
         self.wcs_coo.setText(change.new)
+        self.wcs_coo.setCursorPosition(0)  # Show beginning of WCS coordinates
 
     def on_xy_change(self, change):
         coords = self.mainwindow.cursor_coords
         x,y = coords.img_x, coords.img_y
         if x is not None and y is not None:
             self.xy.setText(f'{x:.3f} {y:.3f}')
+            self.xy.setCursorPosition(0)  # Show beginning of coordinates
             val = self.mainwindow.fits_image.value(x,y)
             if val is not None and not np.isnan(val):
                 self.value.setText(f'{val:.5f}')
+                self.value.setCursorPosition(0)  # Show beginning of value
             else:
                 self.value.setText('')
         else:
