@@ -571,6 +571,14 @@ class MainWindow(QMainWindow):
         self.slidersAct.setChecked(True)
         self.sliderToolBar.addAction(self.slidersAct)
 
+        # Help toolbar - positioned on the right side of the window
+        self.helpToolBar = QtWidgets.QToolBar("Help Toolbar", self)
+        self.helpToolBar.setObjectName("helpToolBar")
+        # Create help button action with question_mark icon
+        self.helpButtonAct = QAction(IconFactory.getIcon('question_mark'), 'Quick Help', self,
+                                     statusTip="Show TeDa quick help guide", triggered=self.showHelp)
+        self.helpToolBar.addAction(self.helpButtonAct)
+        self.addToolBar(Qt.RightToolBarArea, self.helpToolBar)
 
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
@@ -579,6 +587,7 @@ class MainWindow(QMainWindow):
         self.viewMenu.addAction(self.zoomToolBar.toggleViewAction())
         self.viewMenu.addAction(self.mouseActionToolBar.toggleViewAction())
         self.viewMenu.addAction(self.sliderToolBar.toggleViewAction())
+        self.viewMenu.addAction(self.helpToolBar.toggleViewAction())
         self.viewMenu.addSeparator()
 
     def nextHDU(self):
