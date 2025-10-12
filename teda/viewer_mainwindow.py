@@ -414,6 +414,10 @@ class MainWindow(QMainWindow):
         self.fits_image.plot_grid = self.wcsGridAct.isChecked()
 
     def createActions(self):
+        # TeDa icon button - shows About dialog
+        self.tedaIconAct = QAction(IconFactory.getIcon('teda'), 'About TeDa', self,
+                                   statusTip="About TeDa FITS Viewer", triggered=self.about)
+
         # ico1 = QPixmap('/Users/mka/projects/astro/teda/icons/png.png')
         # self.openAct = QAction(ico1, "&Open", self, shortcut=QKeySequence.Open, statusTip="Open FITS file", triggered=self.open)
         self.openAct = QAction(IconFactory.getIcon('note_add'),
@@ -544,6 +548,7 @@ class MainWindow(QMainWindow):
 
     def createToolBars(self):
         self.fileToolBar = self.addToolBar("File Toolbar")
+        self.fileToolBar.addAction(self.tedaIconAct)  # TeDa icon - leftmost
         self.fileToolBar.addAction(self.openAct)
         self.fileToolBar.addAction(self.saveAct)
 
