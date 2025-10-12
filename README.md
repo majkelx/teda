@@ -7,9 +7,18 @@ Observatory optimized FITS Images viewer
 ## Key Features
 * Flexible windows and widgets layout
 * WCS support
-* Radial Profile with gaussoide fit (try `r`-key)
+* **Radial Profile** with gaussian fit - press `R` key at cursor position
+  * Displays FWHM, RMS, and sky level
+  * Shows area statistics (mean, std, range) in status bar
+* **Linear Profile** - keyboard shortcuts for quick positioning:
+  * `H` - horizontal line at cursor Y
+  * `V` - vertical line at cursor X
+  * `D` - diagonal line (45°), `Shift+D` - diagonal (135°)
+  * Shows profile statistics in status bar
+* **Real-time Statistics** in status bar for Linear profile, Radial area, and whole Image
 * Scan mode: observes directory for changes and automatically opens new FITS
 * Integrated ipython console with direct access to data and application
+* **Quick Help** with keyboard shortcuts reference (press `?` button or F1)
 
 ## Installation
 The safest and recommended way to install TeDa is to use `pipx`:
@@ -43,10 +52,26 @@ if it is not working, try:
 to add pipx-installed binaries to your path. 
 
 ## Command line parameters
+
+Open specific FITS file:
+```bash
+    teda /path/to/file.fits
 ```
+
+Open with file explorer set to specific directory:
+```bash
+    teda /path/to/directory
+```
+
+View all command line options:
+```bash
     teda --help
 ```
-for list of command line parameters.
+
+Useful options:
+* `--reset-layout` - Reset window layout to defaults
+* `--reset-config` - Reset all configuration (layout, sliders, pins, last file)
+* `-i` or `--ignore-settings` - Start without loading saved configuration
 
 ## Dynamic Scale and Color
 The dynamic scale of the image, and color mapping can be adjusted form 
@@ -58,17 +83,51 @@ on the top ot the list. This can be done via context (right-click) menu.
 
 The set of pinned keys is saved and preserved between sessions.  
 
+## Keyboard Shortcuts
+
+TeDa provides convenient keyboard shortcuts for fast workflow:
+
+* `R` - Create radial profile at cursor position (with gaussian fit)
+* `H` - Horizontal line profile at cursor Y
+* `V` - Vertical line profile at cursor X
+* `D` - Diagonal line profile (45° /)
+* `Shift+D` - Diagonal line profile (135° \)
+* `Del` - Delete selected shape
+* `Ctrl+Drag` - Adjust image brightness/contrast dynamically
+* `Ctrl+O` - Open FITS file
+* `Ctrl+S` - Save image view
+* `F1` - Show quick help with all shortcuts
+
+Press the `?` button in the toolbar for complete keyboard shortcuts reference.
+
 ## Radial Profile
-The **Radial Profile** button turns on the mode of selecting targets for 
-the radial profile analysis. Make sure the radial profile panel is visible 
-(View/Radial Profile). The shortcut for displaying radial profile of the star 
-under cursor is the **R**-key.
+The **Radial Profile** button turns on the mode of selecting targets for
+the radial profile analysis. Make sure the radial profile panel is visible
+(View/Radial Profile). The shortcut for displaying radial profile of the star
+under cursor is the **R** key.
 
 The centroid of the star is corrected within small (be precise!) radius
-using the bivariate gaussoide fit.
+using the bivariate gaussian fit.
 
-Together with the pixels values, the radial profile presents 1D fit of
-"gaussian(r) + sky". This fit provides information of presented fwhm and sky level.
+Together with the pixel values, the radial profile presents 1D fit of
+"gaussian(r) + sky". This fit provides FWHM and sky level information on the chart.
+
+**Status bar** displays area statistics (mean, median, std, min, max) for all pixels
+within the encircled area, calculated in background for performance.
+
+## Linear Profile
+The **Linear Profile** tool (timeline icon in toolbar) allows analyzing intensity
+along a line. Quick keyboard shortcuts:
+
+* `H` - Horizontal line at cursor Y position (full width)
+* `V` - Vertical line at cursor X position (full height)
+* `D` - Diagonal line at 45° (/) passing through cursor
+* `Shift+D` - Diagonal line at 135° (\) passing through cursor
+
+Or use the toolbar button to draw custom lines interactively.
+
+The **Linear Profile** panel displays the intensity plot, and the **status bar**
+shows profile statistics (mean, std, value range) for all pixels along the line.
    
 
 ## Integrated Python Console
@@ -147,4 +206,4 @@ Please use [GitHub issues tracker](https://github.com/majkelx/teda/issues)
 and [pull requests](https://github.com/majkelx/teda/pulls).
 
 
-@2020-2023  [AkondLab](http://www.akond.com) for the [Araucaria Project](https://araucaria.camk.edu.pl).
+@2020-2025  [AkondAstro](https://akond.space) for the [Araucaria Project](https://araucaria.camk.edu.pl).
