@@ -18,6 +18,7 @@ class ParseResult(object):
 class TedaCommandLine(object):
     def __init__(self):
         self.openFile = None
+        self.openDirectory = None  # Directory to open in file explorer
         self.ignoreSettings = False
         self.resetLayout = False  # Phase 6.1
         self.resetConfig = False  # Phase 6.2
@@ -48,8 +49,8 @@ class TedaCommandLine(object):
         openFileOption = QCommandLineOption(model.stringList(), "Open FITS file (legacy, use positional argument instead)", "file")
         parser.addOption(openFileOption)
 
-        # Positional argument for file
-        parser.addPositionalArgument("file", "FITS file to open", "[file]")
+        # Positional argument for file or directory
+        parser.addPositionalArgument("path", "FITS file to open or directory to browse", "[path]")
 
         helpOption = parser.addHelpOption()
         versionOption = parser.addVersionOption()
@@ -69,10 +70,19 @@ class TedaCommandLine(object):
             self.resetConfig = True
             self.resetLayout = True  # resetConfig includes resetLayout
 
-        # Handle file argument (positional takes precedence over --file option)
+        # Handle path argument (positional takes precedence over --file option)
+        # Can be either a file or directory
+        import os
         positionalArgs = parser.positionalArguments()
         if len(positionalArgs) > 0:
-            self.openFile = positionalArgs[0]
+            path = positionalArgs[0]
+            if os.path.isdir(path):
+                self.openDirectory = path
+            elif os.path.isfile(path):
+                self.openFile = path
+            else:
+                # Path doesn't exist - treat as file (will error when trying to open)
+                self.openFile = path
         elif parser.isSet(openFileOption):
             file = parser.value(openFileOption)
             if file is None or len(file) == 0:
