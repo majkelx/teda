@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from teda.views.fitsplotcontrolled import (FitsPlotterControlled)
 from teda.painterComponent import PainterComponent
 
@@ -46,21 +46,28 @@ class FullViewWidget(QWidget):
         # self.fig.canvas.draw_idle()
 
     def updateMiniatureShape(self,x,y,size,size2):
+        # BUG FIX #5: Use fits_image.ax (where FITS is displayed) instead of widget.ax
+        # These are different axes objects - widget.ax is from __init__, fits_image.ax is created by plot()
+        ax = self.fits_image.ax if self.fits_image.ax is not None else self.ax
+
         if self.painterComponent.rectangleMiniature.__len__()==0:
             self.painterComponent.add(x, y, size=size, type="rectangleMiniature", size2=size2)
-            self.painterComponent.paintAllShapes(self.ax)
+            self.painterComponent.paintAllShapes(ax)
         else:
-            self.painterComponent.rectangleMiniature[0].repaintShape(self.ax, x, y, size, self.painterComponent.rectangleMiniature[0].color, size2)
+            self.painterComponent.rectangleMiniature[0].repaintShape(ax, x, y, size, self.painterComponent.rectangleMiniature[0].color, size2)
             self.painterComponent.tempCanvas.draw_idle()
         #self.painterComponent.paintAllShapes(self.ax)
         #self.painterComponent.makeAllShapesDraggable(self.ax)
 
     def updateMiniatureShapeXYonly(self,x,y):
+        # BUG FIX #5: Use fits_image.ax (where FITS is displayed) instead of widget.ax
+        ax = self.fits_image.ax if self.fits_image.ax is not None else self.ax
+
         if self.painterComponent.rectangleMiniature.__len__() == 0:
-            self.painterComponent.add(x, y, size=self.ax.viewLim.width, type="rectangleMiniature", size2=self.ax.viewLim.height)
-            self.painterComponent.paintAllShapes(self.ax)
+            self.painterComponent.add(x, y, size=ax.viewLim.width, type="rectangleMiniature", size2=ax.viewLim.height)
+            self.painterComponent.paintAllShapes(ax)
         else:
-            self.painterComponent.rectangleMiniature[0].repaintShapeXY(self.ax, x, y)
+            self.painterComponent.rectangleMiniature[0].repaintShapeXY(ax, x, y)
             self.painterComponent.tempCanvas.draw_idle()
         #self.painterComponent.paintAllShapes(self.ax)
         #self.painterComponent.makeAllShapesDraggable(self.ax)

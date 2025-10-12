@@ -97,3 +97,6 @@ uploads/
 files/
 work/
 static/
+CLAUDE.md
+poetry.lock
+sample-images

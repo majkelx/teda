@@ -32,13 +32,13 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
 
     def open(self):
         if self._huds is None and self.fitsfile:
-            self._huds = fits.open(self.fitsfile, lazy_load_hdus=False)
+            self._huds = fits.open(self.fitsfile, lazy_load_hdus=True, memmap=True)
             self._huds.info()
 
     def set_file(self, filename):
         if filename is not None:
             try:
-                self._huds = fits.open(filename, lazy_load_hdus=False)
+                self._huds = fits.open(filename, lazy_load_hdus=True, memmap=True)
                 self._huds.info()
             except (FileNotFoundError, OSError) as e:
                 logger.error(f'Can not open file {filename}: {e}')

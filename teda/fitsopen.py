@@ -9,7 +9,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
-from numpy import *
 
 class FitsOpen(object):
     """Open clear fits"""
@@ -25,7 +24,7 @@ class FitsOpen(object):
 
     def open(self):
         if self._hdus is None:
-            self._hdus = fits.open(self.fitsfile, lazy_load_hdus=False)
+            self._hdus = fits.open(self.fitsfile, lazy_load_hdus=True, memmap=True)
             self._hdus.info()
 
     @property

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=TeDa FITS Viewer
+GenericName=FITS Image Viewer
+Comment=Observatory optimized FITS astronomical images viewer
+Exec=teda %F
+Icon=teda
+Terminal=false
+Categories=Science;Astronomy;Education;
+MimeType=image/fits;application/fits;
+Keywords=FITS;astronomy;image;viewer;observatory;
+StartupNotify=true
+StartupWMClass=teda

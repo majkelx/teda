@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from teda.views.fitsplotzoomed import FitsPlotterZoomed
+from teda.painterComponent import PainterComponent
 
 
 class ZoomViewWidget(QWidget):
@@ -21,6 +22,11 @@ class ZoomViewWidget(QWidget):
         self.ax = self.fig.add_subplot(111)
         self.ax.set_axis_off()
 
+        # Add PainterComponent for overlay shapes (read-only, no interaction)
+        self.painterComponent = PainterComponent(self.fits_image)
+        self.painterComponent.setCanvas(self.canvas)
+        self.painterComponent.disableInteraction()  # Read-only overlays
+
         figure_layout.addWidget(self.canvas)
         self.setLayout(figure_layout)
         self.setMinimumHeight(200)
@@ -36,5 +42,7 @@ class ZoomViewWidget(QWidget):
         self.fits_image.disconnectEvents()
 
     def setXYofZoom(self, fits,x ,y ,zoom=1):
-        self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits, idle=False)
+        # Use idle=True to let Qt coalesce rapid updates automatically (Phase 2.1)
+        # This prevents synchronous canvas.draw() on every mouse move
+        self.fits_image.moveToXYcordsWithZoom(x,y,zoom*8,fits, idle=True)
 
