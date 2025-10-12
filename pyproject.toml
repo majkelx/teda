@@ -5,6 +5,7 @@ description = "Yet Another FITS Viewer"
 authors = ["majkelx <mkalusz@camk.edu.pl>"]
 license = "MIT"
 readme = "README.md"
+include = ["assets/*"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.14"

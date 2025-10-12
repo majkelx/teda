@@ -22,6 +22,8 @@ class TedaCommandLine(object):
         self.ignoreSettings = False
         self.resetLayout = False  # Phase 6.1
         self.resetConfig = False  # Phase 6.2
+        self.installDesktop = False  # Install desktop entry (Linux only)
+        self.uninstallDesktop = False  # Uninstall desktop entry (Linux only)
 
     def parseCommandLine(self, parser):    # QCommandLineParser
 
@@ -43,6 +45,16 @@ class TedaCommandLine(object):
         resetConfigOption = QCommandLineOption(model.stringList(),
             "Reset all configuration (includes layout, sliders, pins, last file)")
         parser.addOption(resetConfigOption)
+
+        model = QStringListModel(["install-desktop"])
+        installDesktopOption = QCommandLineOption(model.stringList(),
+            "Install desktop entry and icon (Linux only)")
+        parser.addOption(installDesktopOption)
+
+        model = QStringListModel(["uninstall-desktop"])
+        uninstallDesktopOption = QCommandLineOption(model.stringList(),
+            "Uninstall desktop entry and icon (Linux only)")
+        parser.addOption(uninstallDesktopOption)
 
         # Legacy --file option (kept for backward compatibility)
         model = QStringListModel(["f", "file"])
@@ -91,5 +103,11 @@ class TedaCommandLine(object):
 
         if parser.isSet(ignoreSettingsOption):
             self.ignoreSettings = True
+
+        if parser.isSet(installDesktopOption):
+            self.installDesktop = True
+
+        if parser.isSet(uninstallDesktopOption):
+            self.uninstallDesktop = True
 
         return ParseResult(CommandLineParseResult.CommandLineOk, None)

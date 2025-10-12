@@ -14,8 +14,11 @@ Observatory optimized FITS Images viewer
   * `H` - horizontal line at cursor Y
   * `V` - vertical line at cursor X
   * `D` - diagonal line (45°), `Shift+D` - diagonal (135°)
+  * Free hand line drawing with mouse
   * Shows profile statistics in status bar
 * **Real-time Statistics** in status bar for Linear profile, Radial area, and whole Image
+* Integrated file browser with directory tree and files list for quick navigation and opening
+* Pinnable FITS header cards
 * Scan mode: observes directory for changes and automatically opens new FITS
 * Integrated ipython console with direct access to data and application
 * **Quick Help** with keyboard shortcuts reference (press `?` button or F1)
@@ -23,10 +26,26 @@ Observatory optimized FITS Images viewer
 ## Installation
 The safest and recommended way to install TeDa is to use `pipx`:
 ``` bash
-   pipx install teda
-   teda 
-``` 
-Consult [pipx documentation](https://pipxproject.github.io/pipx/) for installation instructions.
+pipx install teda
+```
+
+### Linux Desktop Integration
+After installation on Linux, you can add TeDa to your application menu:
+```bash
+teda --install-desktop
+```
+
+This will:
+* Install the application icon and desktop entry
+* Make TeDa appear in your application menu
+* Add TeDa to favorites panel (on GNOME/Ubuntu)
+
+To remove the desktop entry:
+```bash
+teda --uninstall-desktop
+```
+
+Consult [pipx documentation](https://pipxproject.github.io/pipx/) for pipx installation instructions.
 
 ### Optional dependencies
 To use ipython console the `console` extra should be specified.
@@ -41,15 +60,17 @@ For directory scanning functionality, the `watchdog` package should be installed
 ``` 
 
 ## Run
-The installation scripts should install the command:
+After installation, run TeDa from terminal:
+```bash
+teda
 ```
-    teda
+
+If the command is not found, ensure pipx binaries are in your PATH:
+```bash
+pipx ensurepath
 ```
-if it is not working, try:
-```
-    pipx ensurepath 
-```
-to add pipx-installed binaries to your path. 
+
+On Linux, after running `teda --install-desktop`, you can also launch TeDa from your application menu. 
 
 ## Command line parameters
 

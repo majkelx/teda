@@ -36,6 +36,16 @@ def main():
         parser.showHelp()
         return 0
 
+    # Handle desktop entry installation/uninstallation (Linux only)
+    if tcl.installDesktop:
+        from teda.desktop_install import install_desktop_entry
+        success = install_desktop_entry()
+        return 0 if success else 1
+
+    if tcl.uninstallDesktop:
+        from teda.desktop_install import uninstall_desktop_entry
+        success = uninstall_desktop_entry()
+        return 0 if success else 1
 
     mainWin = MainWindow(tcl)
     # mainWin.resize(800, 600)   # now in config, see: MainWindow.readWindowSettings
