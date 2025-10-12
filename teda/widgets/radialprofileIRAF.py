@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout
+from PySide6.QtCore import QThread, Signal
 from matplotlib.figure import Figure, Axes
 import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -8,7 +9,47 @@ import numpy as np
 import math
 from scipy import optimize
 
+
+class RadialStatsCalculator(QThread):
+    """Background thread for radial profile area statistics calculation."""
+    finished = Signal(dict)  # Emits {mean, median, std, min, max}
+
+    def __init__(self, values):
+        super().__init__()
+        self.values = values
+        self._cancel = False
+
+    def cancel(self):
+        """Request cancellation of ongoing calculation."""
+        self._cancel = True
+
+    def run(self):
+        """Calculate statistics from all pixels in encircled area."""
+        if self._cancel or not self.values:
+            return
+
+        try:
+            values_array = np.array(self.values)
+
+            if values_array.size == 0:
+                return
+
+            stats = {
+                'mean': float(np.mean(values_array)),
+                'median': float(np.median(values_array)),
+                'std': float(np.std(values_array)),
+                'min': float(np.amin(values_array)),
+                'max': float(np.amax(values_array)),
+            }
+
+            if not self._cancel:
+                self.finished.emit(stats)
+        except Exception as e:
+            print(f"Error calculating radial profile statistics: {e}")
+
 class IRAFRadialProfileWidget(QWidget):
+
+    stats_updated = Signal(dict)  # Emits stats when calculation completes
 
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,6 +58,7 @@ class IRAFRadialProfileWidget(QWidget):
         self.x = 500
         self.y = 675
         self.radius = 20
+        self.stats_calculator = None  # Background stats calculator
         figure_layout = QHBoxLayout()
         self.fig = Figure(figsize=(2.5, 2.5))
         # self.fig.tight_layout()
@@ -101,6 +143,20 @@ class IRAFRadialProfileWidget(QWidget):
         except Exception as e:
             print('Radial Profile:', e)
             pass
+
+        # Calculate area statistics in background thread
+        # Get all pixel values within the circle (re-use calc_profile result)
+        _, circle_values = self.calc_profile()
+        if circle_values:
+            # Cancel any ongoing calculation
+            if self.stats_calculator is not None and self.stats_calculator.isRunning():
+                self.stats_calculator.cancel()
+                self.stats_calculator.wait(100)  # Wait up to 100ms
+
+            # Start new calculation
+            self.stats_calculator = RadialStatsCalculator(circle_values)
+            self.stats_calculator.finished.connect(self.stats_updated.emit)
+            self.stats_calculator.start()
 
         # self.ax.autoscale()
         self.ax.relim()

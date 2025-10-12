@@ -287,6 +287,13 @@ class MainWindow(QMainWindow):
         settings.endGroup()
 
     def openLastFits(self):
+        # Handle directory parameter from CLI
+        if self.tedaCommandLine.openDirectory is not None:
+            self.file_widget.setPath(self.tedaCommandLine.openDirectory)
+            print(f'File explorer set to directory: {self.tedaCommandLine.openDirectory}')
+            return
+
+        # Handle file parameter from CLI or settings
         if (self.tedaCommandLine.openFile is None):
             if self.tedaCommandLine.ignoreSettings:
                 return
@@ -347,10 +354,15 @@ class MainWindow(QMainWindow):
 
         help_dialog = QDialog(self)
         help_dialog.setWindowTitle("TeDa FITS Viewer - Quick Help")
-        help_dialog.resize(700, 600)
+        help_dialog.resize(750, 650)
 
         text_browser = QTextBrowser()
-        text_browser.setHtml(HELP_TEXT)
+
+        # Resolve logo path
+        logo_path = os.path.join(os.path.dirname(__file__), 'img', 'akondastro_logo_dark.svg')
+        help_text = HELP_TEXT.format(logo_path=logo_path)
+
+        text_browser.setHtml(help_text)
         text_browser.setOpenExternalLinks(True)
 
         layout = QVBoxLayout()
@@ -360,26 +372,30 @@ class MainWindow(QMainWindow):
         help_dialog.exec()
 
     def about(self):
+        logo_path = os.path.join(os.path.dirname(__file__), 'img', 'akondastro_logo_dark.svg')
         QMessageBox.about(self, "TeDa FITS Viewer",
-                          f"TeDa FITS Viewer {__version__} <br/>"
-                          "Authors: <ul> "
+                          f"<div style='text-align: center;'>"
+                          f"<a href='https://akond.space'><img src='file://{logo_path}' alt='AkondAstro' style='max-width: 180px; margin: 10px 0;'></a>"
+                          f"<h3>TeDa FITS Viewer {__version__}</h3>"
+                          f"</div>"
+                          "<b>Authors:</b> <ul> "
                           "<li>Michał Brodniak</li>"
                           "<li>Konrad Górski</li>"
                           "<li>Mikołaj Kałuszyński</li>"
                           "<li>Edward Lis</li>"
                           "<li>Grzegorz Mroczkowski</li>"
                           "</ul>"
-                          "Created by <a href='https://akond.com'>Akond Lab</a> for The "
-                          "<a href='https://araucaria.camk.edu.pl'>Araucaria Project</a><br/>"
-                          "Licence: MIT <br/>"
-                          "3rd party work used: "
-                          "<a href='https://material.io/resources/icons/'> Google Material Icons</a>, "
-                          "<a href='https://www.astropy.org'> AstroPy</a>, "
-                          "<a href='https://doc.qt.io/qtforpython/'> Qt5/PySide6</a>, "
-                          "<a href='https://www.scipy.org'> SciPy</a>, and other..."
+                          "Created by <a href='https://akond.space'>AkondAstro</a> with cooperation of the "
+                          "<a href='https://ocm.camk.edu.pl'>OCM observatory</a><br/>"
+                          "<b>Licence:</b> MIT <br/>"
+                          "<b>3rd party work used:</b> "
+                          "<a href='https://material.io/resources/icons/'>Google Material Icons</a>, "
+                          "<a href='https://www.astropy.org'>AstroPy</a>, "
+                          "<a href='https://doc.qt.io/qtforpython/'>Qt5/PySide6</a>, "
+                          "<a href='https://www.scipy.org'>SciPy</a>, and other..."
                           "<br/><br/>"
-                          "Visit the <a href='https://github.com/majkelx/teda'>project's GitHub  page</a> for help"
-                          " and the issue tracker"
+                          "Visit the <a href='https://github.com/majkelx/teda'>project's GitHub page</a> for help "
+                          "and the issue tracker"
                           )
 
     def on_console_show(self):
@@ -571,14 +587,12 @@ class MainWindow(QMainWindow):
         self.slidersAct.setChecked(True)
         self.sliderToolBar.addAction(self.slidersAct)
 
-        # Help toolbar - positioned on the right side of the window
-        self.helpToolBar = QtWidgets.QToolBar("Help Toolbar", self)
-        self.helpToolBar.setObjectName("helpToolBar")
+        # Help toolbar - positioned in top toolbar row, as far right as possible
+        self.helpToolBar = self.addToolBar("Help Toolbar")
         # Create help button action with question_mark icon
         self.helpButtonAct = QAction(IconFactory.getIcon('question_mark'), 'Quick Help', self,
                                      statusTip="Show TeDa quick help guide", triggered=self.showHelp)
         self.helpToolBar.addAction(self.helpButtonAct)
-        self.addToolBar(Qt.RightToolBarArea, self.helpToolBar)
 
         self.viewMenu.addAction(self.fileToolBar.toggleViewAction())
         self.viewMenu.addAction(self.hduToolBar.toggleViewAction())
@@ -832,6 +846,13 @@ class MainWindow(QMainWindow):
         self._linear_stats_label.setToolTip("Linear profile statistics: mean (μ), std (σ), and value range [min-max]")
         self.statusBar().addPermanentWidget(self._linear_stats_label)
 
+        # Add permanent widget for radial profile statistics
+        self._radial_stats_label = QLabel("Radial: --")
+        self._radial_stats_label.setFrameStyle(QLabel.Panel | QLabel.Sunken)
+        self._radial_stats_label.setMinimumWidth(350)
+        self._radial_stats_label.setToolTip("Radial profile area statistics: mean (μ), std (σ), and value range [min-max]")
+        self.statusBar().addPermanentWidget(self._radial_stats_label)
+
         # Add permanent widget for image statistics
         self._stats_label = QLabel("Image: --")
         self._stats_label.setFrameStyle(QLabel.Panel | QLabel.Sunken)
@@ -858,6 +879,7 @@ class MainWindow(QMainWindow):
 
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
         self.radial_profile_iraf_widget = IRAFRadialProfileWidget(self.fits_image.data)
+        self.radial_profile_iraf_widget.stats_updated.connect(self._onRadialStatsCalculated)
         dock.setWidget(self.radial_profile_iraf_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
@@ -1279,6 +1301,27 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Error displaying linear profile statistics: {e}")
             self._linear_stats_label.setText("Linear: error")
+
+    def _onRadialStatsCalculated(self, stats):
+        """Handle calculated radial profile statistics and update status bar"""
+        try:
+            # Format: "Radial: μ=1234.5 σ=45.6 [1000-5000]"
+            text = (f"Radial: μ={stats['mean']:.1f} "
+                    f"σ={stats['std']:.1f} "
+                    f"[{stats['min']:.0f}-{stats['max']:.0f}]")
+            self._radial_stats_label.setText(text)
+
+            # Update tooltip with more details
+            tooltip = (f"Radial profile area statistics:\n"
+                       f"Mean (μ): {stats['mean']:.2f}\n"
+                       f"Median: {stats['median']:.2f}\n"
+                       f"Std Dev (σ): {stats['std']:.2f}\n"
+                       f"Min: {stats['min']:.2f}\n"
+                       f"Max: {stats['max']:.2f}")
+            self._radial_stats_label.setToolTip(tooltip)
+        except Exception as e:
+            print(f"Error displaying radial profile statistics: {e}")
+            self._radial_stats_label.setText("Radial: error")
 
     def handleResetOptions(self):
         """Handle --reset-layout and --reset-config CLI options (Phase 6.1, 6.2)"""
