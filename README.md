@@ -1,8 +1,15 @@
-# TeDa FITS Viewer
+# ![TeDa](img/teda_logo.png) TeDa FITS Viewer
 
 Observatory optimized FITS Images viewer
 
-![](img/teda.png)
+
+[![PyPI](https://img.shields.io/pypi/v/teda.svg)](https://pypi.org/project/teda/)
+[![Python Version](https://img.shields.io/pypi/pyversions/teda.svg)](https://pypi.org/project/teda/)
+[![License](https://img.shields.io/pypi/l/teda.svg)](https://pypi.org/project/teda/)
+[![Downloads](https://pepy.tech/badge/teda)](https://pepy.tech/project/teda)
+
+
+![TeDa Screenshot](img/teda.png)
 
 ## Key Features
 * Flexible windows and widgets layout
