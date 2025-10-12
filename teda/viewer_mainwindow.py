@@ -35,6 +35,34 @@ from teda import draggingComponent
 from . import console
 from .widgets.fileSystemWidget import FileSystemWidget
 from .help_content import HELP_TEXT
+import numpy as np
+
+
+class StatsCalculator(QtCore.QThread):
+    """Background thread to calculate image statistics (Phase 6.8)"""
+    finished = QtCore.Signal(dict)  # Emits {mean, median, std, min, max}
+
+    def __init__(self, data):
+        super().__init__()
+        self.data = data
+
+    def run(self):
+        """Calculate statistics in background to avoid blocking UI"""
+        try:
+            if self.data is None or self.data.size == 0:
+                return
+
+            # Use np.percentile for median (faster than np.median on large arrays)
+            stats = {
+                'mean': float(np.mean(self.data)),
+                'median': float(np.percentile(self.data, 50)),
+                'std': float(np.std(self.data)),
+                'min': float(np.amin(self.data)),
+                'max': float(np.amax(self.data)),
+            }
+            self.finished.emit(stats)
+        except Exception as e:
+            print(f"Error calculating image statistics: {e}")
 
 
 class MainWindow(QMainWindow):
@@ -72,6 +100,10 @@ class MainWindow(QMainWindow):
         self._mouse_timer.timeout.connect(self._update_mouse_widgets)
         self._pending_mouse_x = None
         self._pending_mouse_y = None
+
+        # Image statistics calculator (Phase 6.8)
+        self._stats_calculator = None
+        self._stats_label = None
 
         self.painterComponent = PainterComponent(self.fits_image)
         # self.painterComponent.startMovingEvents(self.central_widget)
@@ -226,6 +258,9 @@ class MainWindow(QMainWindow):
             self.fits_image.setCordsToTraitlets()
 
         self.saveLastFits()
+
+        # Phase 6.8: Calculate image statistics in background
+        self.calculateImageStatistics()
 
     def saveLastFits(self):
         if self.tedaCommandLine.ignoreSettings:
@@ -529,10 +564,12 @@ class MainWindow(QMainWindow):
     def nextHDU(self):
         self.fits_image.changeHDU(True, 1)
         self.updateHeaderData()
+        self.calculateImageStatistics()  # Phase 6.8: Update stats when HDU changes
 
     def prevHDU(self):
         self.fits_image.changeHDU(True, -1)
         self.updateHeaderData()
+        self.calculateImageStatistics()  # Phase 6.8: Update stats when HDU changes
 
     def updateHeaderData(self):
         self.headerWidget.setHeader()
@@ -601,7 +638,15 @@ class MainWindow(QMainWindow):
 
 
     def createStatusBar(self):
+        """Create status bar with permanent image statistics display (Phase 6.8)"""
         self.statusBar().showMessage("Ready")
+
+        # Add permanent widget for image statistics on the right side
+        self._stats_label = QLabel("Image: --")
+        self._stats_label.setFrameStyle(QLabel.Panel | QLabel.Sunken)
+        self._stats_label.setMinimumWidth(350)
+        self._stats_label.setToolTip("Whole image statistics: mean (μ), std (σ), and value range [min-max]")
+        self.statusBar().addPermanentWidget(self._stats_label)
 
     def createDockWindows(self):
         # Scale
@@ -917,6 +962,46 @@ class MainWindow(QMainWindow):
             shape_y + shape_radius >= y_min and shape_y - shape_radius <= y_max):
             return True
         return False
+
+    def calculateImageStatistics(self):
+        """Start background calculation of image statistics (Phase 6.8)"""
+        if self.fits_image.data is None:
+            self._stats_label.setText("Image: --")
+            return
+
+        # Cancel existing calculation if running
+        if self._stats_calculator is not None and self._stats_calculator.isRunning():
+            self._stats_calculator.quit()
+            self._stats_calculator.wait()
+
+        # Show calculating message
+        self._stats_label.setText("Image: calculating...")
+
+        # Start new calculation in background thread
+        self._stats_calculator = StatsCalculator(self.fits_image.data)
+        self._stats_calculator.finished.connect(self._onImageStatsCalculated)
+        self._stats_calculator.start()
+
+    def _onImageStatsCalculated(self, stats):
+        """Handle calculated image statistics and update status bar (Phase 6.8)"""
+        try:
+            # Format: "Image: μ=1234.5 σ=45.6 [1000-5000]"
+            text = (f"Image: μ={stats['mean']:.1f} "
+                    f"σ={stats['std']:.1f} "
+                    f"[{stats['min']:.0f}-{stats['max']:.0f}]")
+            self._stats_label.setText(text)
+
+            # Update tooltip with more details
+            tooltip = (f"Whole image statistics:\n"
+                       f"Mean (μ): {stats['mean']:.2f}\n"
+                       f"Median: {stats['median']:.2f}\n"
+                       f"Std Dev (σ): {stats['std']:.2f}\n"
+                       f"Min: {stats['min']:.2f}\n"
+                       f"Max: {stats['max']:.2f}")
+            self._stats_label.setToolTip(tooltip)
+        except Exception as e:
+            print(f"Error displaying image statistics: {e}")
+            self._stats_label.setText("Image: error")
 
     def handleResetOptions(self):
         """Handle --reset-layout and --reset-config CLI options (Phase 6.1, 6.2)"""
