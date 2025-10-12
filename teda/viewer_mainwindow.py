@@ -24,6 +24,7 @@ from teda.widgets.radialprofile import RadialProfileWidget
 from teda.widgets.fullViewWidget import FullViewWidget
 from teda.widgets.zoomViewWidget import ZoomViewWidget
 from teda.widgets.radialprofileIRAF import IRAFRadialProfileWidget
+from teda.widgets.linearProfileWidget import LinearProfileWidget
 from teda.widgets.headerTableWidget import HeaderTableWidget
 from teda.widgets.scaleWidget import ScaleWidget
 from teda.widgets.scanToolbar import ScanToolbar
@@ -143,6 +144,9 @@ class MainWindow(QMainWindow):
         # Overlay synchronization: observe shape changes in main painter (Phase 2.5)
         self.painterComponent.observe(lambda change: self.onShapesChanged(change), ['shapes_changed'])
 
+        # Line profile: observe line changes (Phase 6.6)
+        self.painterComponent.observe(lambda change: self.onLineProfileChanged(change), ['line_profile_changed'])
+
         # open last fits
         try:
             self.openLastFits()
@@ -168,6 +172,17 @@ class MainWindow(QMainWindow):
                 self.painterComponent.paintAllShapes(self.central_widget.figure.axes[0])
         if e.key() == Qt.Key_Control:
             self.isCmdPressed = True
+
+        # Line profile shortcuts (Phase 6.7)
+        if e.key() == Qt.Key_H:
+            self._positionLineHorizontal()
+        elif e.key() == Qt.Key_V:
+            self._positionLineVertical()
+        elif e.key() == Qt.Key_D:
+            if e.modifiers() & Qt.ShiftModifier:
+                self._positionLineDiagonal(135)  # Shift+D = backslash \
+            else:
+                self._positionLineDiagonal(45)  # D = forward slash /
 
     def keyReleaseEvent(self, event:PySide6.QtGui.QKeyEvent):
         if event.key() == Qt.Key_Control:
@@ -243,6 +258,7 @@ class MainWindow(QMainWindow):
 
         self.radial_profile_widget.set_data(self.fits_image.data)
         self.radial_profile_iraf_widget.set_data(self.fits_image.data)
+        self.linear_profile_widget.set_data(self.fits_image.data)
 
         self.updateHeaderData()
 
@@ -429,6 +445,8 @@ class MainWindow(QMainWindow):
                                   statusTip="Add Region", triggered=self.changeAddCircleStatus)
         self.centerCircleAct = QAction(IconFactory.getIcon('add_circle_outline'), 'Radial profile', self,
                                  statusTip="Radial profile with gaussoide fit [R]-key", triggered=self.changeAddCenterCircleStatus)
+        self.lineProfileAct = QAction(IconFactory.getIcon('timeline'), 'Line Profile', self,
+                                      statusTip="Draw line profile (h/v/d/D for quick positioning)", triggered=self.changeLineProfileStatus)
         self.autoCenterAct = QAction('Auto Center', self,
                                      statusTip="Automatically center cursor on star centroid",
                                      triggered=self.changeAutoCenter)
@@ -449,6 +467,7 @@ class MainWindow(QMainWindow):
         self.autoCenterAct.setCheckable(True)
         self.autoCenterAct.setChecked(self.painterComponent.auto_center)
         self.centerCircleAct.setCheckable(True)
+        self.lineProfileAct.setCheckable(True)
 
 
 
@@ -545,6 +564,7 @@ class MainWindow(QMainWindow):
         self.mouseActionToolBar.addAction(self.panningAct)
         self.mouseActionToolBar.addAction(self.circleAct)
         self.mouseActionToolBar.addAction(self.centerCircleAct)
+        self.mouseActionToolBar.addAction(self.lineProfileAct)
         self.mouseActionToolBar.addAction(self.deleteAct)
 
         self.sliderToolBar = self.addToolBar("Slider Toolbar")
@@ -621,11 +641,163 @@ class MainWindow(QMainWindow):
             self.painterComponent.startMovingEvents(self.central_widget)
             self.panningAct.toggle()
 
+    def changeLineProfileStatus(self):
+        """Activate/deactivate line profile drawing mode."""
+        if self.lineProfileAct.isChecked():
+            self.toogleOffRegionButtons()
+            self.lineProfileAct.toggle()
+            self.painterComponent.activateLineProfileMode()
+            # Auto-show linear profile widget when tool is activated
+            if not self.dockLinearProfile.isVisible():
+                self.dockLinearProfile.show()
+            print("[MainWindow] Line profile mode activated")
+        else:
+            self.painterComponent.deactivateLineProfileMode()
+            self.painterComponent.startMovingEvents(self.central_widget)
+            self.panningAct.toggle()
+            print("[MainWindow] Line profile mode deactivated")
+
     def changeAutoCenter(self):
         self.painterComponent.auto_center = self.autoCenterAct.isChecked()
 
     def deleteSelected(self):
         self.painterComponent.deleteSelectedShapes(self.central_widget.figure.axes[0])
+
+    # ===== Line Profile Keyboard Shortcuts (Phase 6.7) =====
+
+    def _positionLineHorizontal(self):
+        """Create or reposition line to horizontal (boundary-to-boundary) at cursor/center Y."""
+        if self.fits_image.data is None:
+            return
+
+        mouse_x, mouse_y = self._get_mouse_or_center_coords()
+
+        # Horizontal line at y = mouse_y, spanning full width
+        h, w = self.fits_image.data.shape
+        start_x, start_y = 1.0, mouse_y
+        end_x, end_y = float(w), mouse_y
+
+        self._createOrUpdateLine(start_x, start_y, end_x, end_y)
+
+    def _positionLineVertical(self):
+        """Create or reposition line to vertical (boundary-to-boundary) at cursor/center X."""
+        if self.fits_image.data is None:
+            return
+
+        mouse_x, mouse_y = self._get_mouse_or_center_coords()
+
+        # Vertical line at x = mouse_x, spanning full height
+        h, w = self.fits_image.data.shape
+        start_x, start_y = mouse_x, 1.0
+        end_x, end_y = mouse_x, float(h)
+
+        self._createOrUpdateLine(start_x, start_y, end_x, end_y)
+
+    def _positionLineDiagonal(self, angle_deg):
+        """Create or reposition line to diagonal (boundary-to-boundary) at given angle."""
+        if self.fits_image.data is None:
+            return
+
+        mouse_x, mouse_y = self._get_mouse_or_center_coords()
+
+        # Calculate boundary intersections for diagonal at given angle
+        h, w = self.fits_image.data.shape
+        start_x, start_y, end_x, end_y = self._calculateDiagonalEndpoints(
+            angle_deg, mouse_x, mouse_y, w, h
+        )
+
+        self._createOrUpdateLine(start_x, start_y, end_x, end_y)
+
+    def _createOrUpdateLine(self, start_x, start_y, end_x, end_y):
+        """Create new line or update existing line position."""
+        from teda.painterShapes.lineProfileShape import LineProfileShape
+
+        if self.painterComponent.lineProfile:
+            # Update existing line
+            line = self.painterComponent.lineProfile[0]
+            line.start_x, line.start_y = start_x, start_y
+            line.end_x, line.end_y = end_x, end_y
+            line.repaintShape()
+            # Repaint all shapes to refresh the view
+            ax = self.central_widget.figure.axes[0]
+            self.painterComponent.paintAllShapes(ax)
+        else:
+            # Create new line
+            line = LineProfileShape(start_x, start_y, end_x, end_y)
+            self.painterComponent.lineProfile.append(line)
+            ax = self.central_widget.figure.axes[0]
+            self.painterComponent.paintAllShapes(ax)
+
+        # Notify observers and show widget
+        self.painterComponent.notifyShapesChanged()
+        self.painterComponent.line_profile_changed = not self.painterComponent.line_profile_changed
+
+        # Auto-show linear profile widget
+        if not self.dockLinearProfile.isVisible():
+            self.dockLinearProfile.show()
+
+    def _calculateDiagonalEndpoints(self, angle_deg, cross_x, cross_y, img_width, img_height):
+        """
+        Calculate boundary-to-boundary diagonal line endpoints.
+
+        For 45° and 135° angles passing through (cross_x, cross_y).
+        Returns: (start_x, start_y, end_x, end_y)
+        """
+        import numpy as np
+
+        # Convert angle to slope
+        slope = np.tan(np.radians(angle_deg))
+
+        # Line equation: y - cross_y = slope * (x - cross_x)
+        # Find intersections with boundaries: x=1, x=width, y=1, y=height
+
+        intersections = []
+
+        # Left edge (x = 1)
+        y = cross_y + slope * (1.0 - cross_x)
+        if 1.0 <= y <= img_height:
+            intersections.append((1.0, y))
+
+        # Right edge (x = width)
+        y = cross_y + slope * (img_width - cross_x)
+        if 1.0 <= y <= img_height:
+            intersections.append((img_width, y))
+
+        # Top edge (y = 1)
+        if slope != 0:
+            x = cross_x + (1.0 - cross_y) / slope
+            if 1.0 <= x <= img_width:
+                intersections.append((x, 1.0))
+
+        # Bottom edge (y = height)
+        if slope != 0:
+            x = cross_x + (img_height - cross_y) / slope
+            if 1.0 <= x <= img_width:
+                intersections.append((x, img_height))
+
+        # Should have exactly 2 intersections
+        if len(intersections) >= 2:
+            start_x, start_y = intersections[0]
+            end_x, end_y = intersections[1]
+            return start_x, start_y, end_x, end_y
+
+        # Fallback (shouldn't happen)
+        return cross_x, 1.0, cross_x, img_height
+
+    def _get_mouse_or_center_coords(self):
+        """Get current mouse coords if inside image, else image center."""
+        # Check if mouse is inside main canvas and we have valid coordinates
+        if (hasattr(self, 'current_x_coord') and hasattr(self, 'current_y_coord') and
+            self.current_x_coord is not None and self.current_y_coord is not None and
+            self.current_x_coord > 0 and self.current_y_coord > 0):
+            return self.current_x_coord, self.current_y_coord
+
+        # Default to image center
+        if self.fits_image.data is not None:
+            h, w = self.fits_image.data.shape
+            return w / 2.0, h / 2.0
+
+        return 1.0, 1.0
 
     def toogleOffRegionButtons(self):
         if self.panningAct.isChecked():
@@ -634,14 +806,24 @@ class MainWindow(QMainWindow):
             self.circleAct.toggle()
         if self.centerCircleAct.isChecked():
             self.centerCircleAct.toggle()
+        if self.lineProfileAct.isChecked():
+            self.lineProfileAct.toggle()
         self.painterComponent.stopPainting(self.central_widget)
+        self.painterComponent.deactivateLineProfileMode()
 
 
     def createStatusBar(self):
-        """Create status bar with permanent image statistics display (Phase 6.8)"""
+        """Create status bar with permanent statistics display (Phase 6.8, 6.6)"""
         self.statusBar().showMessage("Ready")
 
-        # Add permanent widget for image statistics on the right side
+        # Add permanent widget for linear profile statistics
+        self._linear_stats_label = QLabel("Linear: --")
+        self._linear_stats_label.setFrameStyle(QLabel.Panel | QLabel.Sunken)
+        self._linear_stats_label.setMinimumWidth(350)
+        self._linear_stats_label.setToolTip("Linear profile statistics: mean (μ), std (σ), and value range [min-max]")
+        self.statusBar().addPermanentWidget(self._linear_stats_label)
+
+        # Add permanent widget for image statistics
         self._stats_label = QLabel("Image: --")
         self._stats_label.setFrameStyle(QLabel.Panel | QLabel.Sunken)
         self._stats_label.setMinimumWidth(350)
@@ -679,6 +861,18 @@ class MainWindow(QMainWindow):
         dock.setWidget(self.radial_profile_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.viewMenu.addAction(dock.toggleViewAction())
+        dock.hide()
+
+        # Linear profile
+        dock = QDockWidget("Linear Profile", self)
+        dock.setObjectName("LINEAR_PROFILE")
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea | Qt.TopDockWidgetArea)
+        self.linear_profile_widget = LinearProfileWidget(self.fits_image.data)
+        self.linear_profile_widget.stats_updated.connect(self._onLinearStatsCalculated)
+        dock.setWidget(self.linear_profile_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.viewMenu.addAction(dock.toggleViewAction())
+        self.dockLinearProfile = dock
         dock.hide()
 
         #info panel
@@ -848,6 +1042,17 @@ class MainWindow(QMainWindow):
         self.syncShapesToFullView()
         self.syncShapesToZoomView()
 
+    def onLineProfileChanged(self, change):
+        """Handle line profile changes - update widget (Phase 6.6)"""
+        if self.painterComponent.lineProfile and len(self.painterComponent.lineProfile) > 0:
+            line = self.painterComponent.lineProfile[0]
+            self.linear_profile_widget.set_line(
+                line.start_x, line.start_y, line.end_x, line.end_y, line.thickness
+            )
+        else:
+            # No line - clear the widget
+            self.linear_profile_widget.clear()
+
     def syncShapesToFullView(self):
         """Synchronize shapes from main painter to full-image view (Phase 2.5)"""
         full_painter = self.full_view_widget.painterComponent
@@ -864,6 +1069,7 @@ class MainWindow(QMainWindow):
         # Clear existing synced shapes (keep viewport rectangle)
         full_painter.shapes = []
         full_painter.centerCircle = []
+        full_painter.lineProfile = []
 
         # Create NEW shape instances from main painter circles
         for circle in main_painter.shapes:
@@ -876,6 +1082,13 @@ class MainWindow(QMainWindow):
             # BUG FIX #1: Use originColor (base color) instead of color (which includes selection state)
             new_center = CircleCenterShape(center.x, center.y, center.size, color=center.originColor)
             full_painter.centerCircle.append(new_center)
+
+        # Create NEW shape instances from main painter line profile
+        from teda.painterShapes.lineProfileShape import LineProfileShape
+        for line in main_painter.lineProfile:
+            new_line = LineProfileShape(line.start_x, line.start_y, line.end_x, line.end_y,
+                                         line.thickness, color=line.originColor)
+            full_painter.lineProfile.append(new_line)
 
         # Repaint all shapes
         full_painter.paintAllShapes(full_ax)
@@ -890,10 +1103,11 @@ class MainWindow(QMainWindow):
             full_ax.add_patch(temp_circle_patch)
             full_painter.tempCanvas.draw_idle()
 
-        # BUG FIX #3: Keep only viewport rectangle draggable, remove circle draggables
-        # Circles should be read-only in full view, only viewport boundary should be draggable
+        # BUG FIX #3: Keep only viewport rectangle draggable, remove circle/line draggables
+        # Circles and lines should be read-only in full view, only viewport boundary should be draggable
         full_painter.drs = [dr for dr in full_painter.drs
-                            if hasattr(dr.painterElement, 'shapeType') and
+                            if hasattr(dr, 'painterElement') and
+                            hasattr(dr.painterElement, 'shapeType') and
                             dr.painterElement.shapeType == 'rectangleMiniature']
 
     def syncShapesToZoomView(self):
@@ -915,6 +1129,7 @@ class MainWindow(QMainWindow):
         # Clear existing synced shapes
         zoom_painter.shapes = []
         zoom_painter.centerCircle = []
+        zoom_painter.lineProfile = []
 
         # Create NEW shape instances for circles that overlap zoom region
         for circle in main_painter.shapes:
@@ -931,6 +1146,16 @@ class MainWindow(QMainWindow):
                 # BUG FIX #1: Use originColor (base color) instead of color (which includes selection state)
                 new_center = CircleCenterShape(center.x, center.y, center.size, color=center.originColor)
                 zoom_painter.centerCircle.append(new_center)
+
+        # Create NEW shape instances for line profiles that overlap zoom region
+        from teda.painterShapes.lineProfileShape import LineProfileShape
+        for line in main_painter.lineProfile:
+            # Check if line overlaps zoom region (simple check - any endpoint or line segment in view)
+            line_overlaps = self._lineOverlapsRegion(line, x_min, x_max, y_min, y_max)
+            if line_overlaps:
+                new_line = LineProfileShape(line.start_x, line.start_y, line.end_x, line.end_y,
+                                             line.thickness, color=line.originColor)
+                zoom_painter.lineProfile.append(new_line)
 
         # Repaint all shapes (read-only - no dragging)
         zoom_painter.paintAllShapes(zoom_ax)
@@ -961,6 +1186,28 @@ class MainWindow(QMainWindow):
         if (shape_x + shape_radius >= x_min and shape_x - shape_radius <= x_max and
             shape_y + shape_radius >= y_min and shape_y - shape_radius <= y_max):
             return True
+        return False
+
+    def _lineOverlapsRegion(self, line, x_min, x_max, y_min, y_max):
+        """Check if a line profile overlaps with given region (Phase 6.5)"""
+        # Simple check: if either endpoint is in the region, or if the line crosses the region
+        # For simplicity, check if either endpoint is in region, or if bounding box overlaps
+        start_in = (x_min <= line.start_x <= x_max and y_min <= line.start_y <= y_max)
+        end_in = (x_min <= line.end_x <= x_max and y_min <= line.end_y <= y_max)
+
+        if start_in or end_in:
+            return True
+
+        # Check if line's bounding box overlaps with region
+        line_x_min = min(line.start_x, line.end_x)
+        line_x_max = max(line.start_x, line.end_x)
+        line_y_min = min(line.start_y, line.end_y)
+        line_y_max = max(line.start_y, line.end_y)
+
+        if (line_x_max >= x_min and line_x_min <= x_max and
+            line_y_max >= y_min and line_y_min <= y_max):
+            return True
+
         return False
 
     def calculateImageStatistics(self):
@@ -1002,6 +1249,27 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Error displaying image statistics: {e}")
             self._stats_label.setText("Image: error")
+
+    def _onLinearStatsCalculated(self, stats):
+        """Handle calculated linear profile statistics and update status bar (Phase 6.6)"""
+        try:
+            # Format: "Linear: μ=1234.5 σ=45.6 [1000-5000]"
+            text = (f"Linear: μ={stats['mean']:.1f} "
+                    f"σ={stats['std']:.1f} "
+                    f"[{stats['min']:.0f}-{stats['max']:.0f}]")
+            self._linear_stats_label.setText(text)
+
+            # Update tooltip with more details
+            tooltip = (f"Linear profile statistics:\n"
+                       f"Mean (μ): {stats['mean']:.2f}\n"
+                       f"Median: {stats['median']:.2f}\n"
+                       f"Std Dev (σ): {stats['std']:.2f}\n"
+                       f"Min: {stats['min']:.2f}\n"
+                       f"Max: {stats['max']:.2f}")
+            self._linear_stats_label.setToolTip(tooltip)
+        except Exception as e:
+            print(f"Error displaying linear profile statistics: {e}")
+            self._linear_stats_label.setText("Linear: error")
 
     def handleResetOptions(self):
         """Handle --reset-layout and --reset-config CLI options (Phase 6.1, 6.2)"""
