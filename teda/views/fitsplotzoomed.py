@@ -21,7 +21,8 @@ class FitsPlotterZoomed(FitsPlotterControlled):
             ax.add_patch(self.mouse_box)
 
     def moveToXYcordsWithZoom(self, x, y, zoom, fits, idle=True):
-        self.mouse_box.set_xy([x-0.5, y-0.5])
+        if self.mouse_box is not None:
+            self.mouse_box.set_xy([x-0.5, y-0.5])
         super().moveToXYcordsWithZoom(x, y, zoom, fits, idle)
 
     # def moveToXYcordsWithZoom(self, x, y, zoom, fits, idle=True):
