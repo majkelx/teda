@@ -26,13 +26,31 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
         self.open()
         if self._huds is not None and \
                 (isinstance(self._huds[self.hdu], PrimaryHDU) or isinstance(self._huds[self.hdu], ImageHDU)):
-            return self._huds[self.hdu].data
+            try:
+                return self._huds[self.hdu].data
+            except ValueError as e:
+                # Handle memmap incompatibility detected during lazy data access
+                logger.warning(f'Error accessing data: {e}. Attempting to reload without memmap')
+                # Close current file and reload without memmap
+                self._huds.close()
+                try:
+                    self._huds = fits.open(self.fitsfile, lazy_load_hdus=True, memmap=False)
+                    return self._huds[self.hdu].data
+                except Exception as e2:
+                    logger.error(f'Failed to reload file: {e2}')
+                    return None
         else:
             return None
 
     def open(self):
         if self._huds is None and self.fitsfile:
-            self._huds = fits.open(self.fitsfile, lazy_load_hdus=True, memmap=True)
+            try:
+                self._huds = fits.open(self.fitsfile, lazy_load_hdus=True, memmap=True)
+            except (OSError, ValueError) as e:
+                # ValueError: memmap incompatible with BZERO/BSCALE scaling
+                # Fallback to memmap=False
+                logger.warning(f'Cannot use memmap for {self.fitsfile}: {e}. Falling back to memmap=False')
+                self._huds = fits.open(self.fitsfile, lazy_load_hdus=True, memmap=False)
             self._huds.info()
 
     def set_file(self, filename):
@@ -40,8 +58,18 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
             try:
                 self._huds = fits.open(filename, lazy_load_hdus=True, memmap=True)
                 self._huds.info()
+            except ValueError as e:
+                # memmap incompatible with BZERO/BSCALE scaling - retry without memmap
+                logger.warning(f'Cannot use memmap for {filename}: {e}. Falling back to memmap=False')
+                try:
+                    self._huds = fits.open(filename, lazy_load_hdus=True, memmap=False)
+                    self._huds.info()
+                except (FileNotFoundError, OSError) as e2:
+                    logger.error(f'Cannot open file {filename}: {e2}')
+                    self._huds = None
             except (FileNotFoundError, OSError) as e:
-                logger.error(f'Can not open file {filename}: {e}')
+                logger.error(f'Cannot open file {filename}: {e}')
+                self._huds = None
         else:
             self._huds = None
         self.fitsfile = filename
