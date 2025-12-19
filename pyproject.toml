@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "teda"
-version = "4.0.1"  # also update in teda/version.py
+version = "4.0.3"  # also update in teda/version.py
 description = "Yet Another FITS Viewer"
 authors = ["majkelx <mkalusz@camk.edu.pl>"]
 license = "MIT"

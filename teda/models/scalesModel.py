@@ -1,7 +1,9 @@
-from traitlets import HasTraits, Int, Float, Unicode
+from traitlets import HasTraits, Int, Float, Unicode, validate
+import sys
 
 
 class ScalesModel(HasTraits):
+    # Stretch parameters with sensible bounds
     stretch_asinh_a = Float(0.1)
     stretch_contrastbias_contrast = Float(2.0)
     stretch_contrastbias_bias = Float(1.0)
@@ -12,6 +14,7 @@ class ScalesModel(HasTraits):
     stretch_power_a = Float(1.0)
     stretch_sinh_a = Float(0.33)
 
+    # Interval parameters with sensible bounds
     interval_manual_vmin = Float(0.0)
     interval_manual_vmax = Int(30000)
     interval_percentile_percentile = Float(0.1)
@@ -28,6 +31,139 @@ class ScalesModel(HasTraits):
 
     selected_stretch = Unicode('linear')
     selected_interval = Unicode('zscale')
+
+    # Parameter validation to prevent extreme values
+    @validate('stretch_asinh_a', 'stretch_sinh_a')
+    def _validate_stretch_a(self, proposal):
+        """Validate stretch 'a' parameters - must be positive"""
+        value = proposal['value']
+        if value <= 0:
+            print(f"WARNING: {proposal['trait'].name} must be positive, got {value}. Using 0.1", file=sys.stderr)
+            return 0.1
+        if value > 10.0:
+            print(f"WARNING: {proposal['trait'].name} too large ({value}). Clamping to 10.0", file=sys.stderr)
+            return 10.0
+        return value
+
+    @validate('stretch_log_a', 'stretch_powerdist_a')
+    def _validate_large_stretch_a(self, proposal):
+        """Validate large stretch 'a' parameters"""
+        value = proposal['value']
+        if value <= 0:
+            print(f"WARNING: {proposal['trait'].name} must be positive, got {value}. Using 100.0", file=sys.stderr)
+            return 100.0
+        if value > 10000.0:
+            print(f"WARNING: {proposal['trait'].name} too large ({value}). Clamping to 10000.0", file=sys.stderr)
+            return 10000.0
+        return value
+
+    @validate('stretch_power_a')
+    def _validate_power_a(self, proposal):
+        """Validate power stretch 'a' parameter"""
+        value = proposal['value']
+        if value <= 0:
+            print(f"WARNING: Power 'a' must be positive, got {value}. Using 1.0", file=sys.stderr)
+            return 1.0
+        if value > 10.0:
+            print(f"WARNING: Power 'a' too large ({value}). Clamping to 10.0", file=sys.stderr)
+            return 10.0
+        return value
+
+    @validate('stretch_linear_slope')
+    def _validate_linear_slope(self, proposal):
+        """Validate linear slope - must be positive"""
+        value = proposal['value']
+        if value <= 0:
+            print(f"WARNING: Linear slope must be positive, got {value}. Using 0.1", file=sys.stderr)
+            return 0.1
+        if value > 10.0:
+            print(f"WARNING: Linear slope too large ({value}). Clamping to 10.0", file=sys.stderr)
+            return 10.0
+        return value
+
+    @validate('stretch_contrastbias_contrast')
+    def _validate_contrast(self, proposal):
+        """Validate contrast parameter"""
+        value = proposal['value']
+        if value < 0:
+            print(f"WARNING: Contrast must be non-negative, got {value}. Using 0.0", file=sys.stderr)
+            return 0.0
+        if value > 10.0:
+            print(f"WARNING: Contrast too large ({value}). Clamping to 10.0", file=sys.stderr)
+            return 10.0
+        return value
+
+    @validate('interval_zscale_nsamples', 'interval_percentile_nsamples', 'interval_asymetric_nsamples')
+    def _validate_nsamples(self, proposal):
+        """Validate n_samples - must be reasonable for performance"""
+        value = proposal['value']
+        if value < 100:
+            print(f"WARNING: {proposal['trait'].name} too small ({value}). Using 100", file=sys.stderr)
+            return 100
+        if value > 10000:
+            print(f"WARNING: {proposal['trait'].name} too large ({value}). Clamping to 10000", file=sys.stderr)
+            return 10000
+        return value
+
+    @validate('interval_zscale_minpixels')
+    def _validate_minpixels(self, proposal):
+        """Validate min_npixels for ZScale"""
+        value = proposal['value']
+        if value < 5:
+            print(f"WARNING: ZScale min_npixels too small ({value}). Using 5", file=sys.stderr)
+            return 5
+        if value > 50:
+            print(f"WARNING: ZScale min_npixels too large ({value}). Clamping to 50", file=sys.stderr)
+            return 50
+        return value
+
+    @validate('interval_zscale_krej')
+    def _validate_krej(self, proposal):
+        """Validate krej parameter for ZScale"""
+        value = proposal['value']
+        if value < 1.0:
+            print(f"WARNING: ZScale krej too small ({value}). Using 1.0", file=sys.stderr)
+            return 1.0
+        if value > 10.0:
+            print(f"WARNING: ZScale krej too large ({value}). Clamping to 10.0", file=sys.stderr)
+            return 10.0
+        return value
+
+    @validate('interval_zscale_maxiterations')
+    def _validate_maxiterations(self, proposal):
+        """Validate max_iterations for ZScale"""
+        value = proposal['value']
+        if value < 1:
+            print(f"WARNING: ZScale max_iterations too small ({value}). Using 1", file=sys.stderr)
+            return 1
+        if value > 20:
+            print(f"WARNING: ZScale max_iterations too large ({value}). Clamping to 20", file=sys.stderr)
+            return 20
+        return value
+
+    @validate('interval_zscale_contrast')
+    def _validate_zscale_contrast(self, proposal):
+        """Validate contrast parameter for ZScale"""
+        value = proposal['value']
+        if value < 0.0:
+            print(f"WARNING: ZScale contrast must be non-negative, got {value}. Using 0.0", file=sys.stderr)
+            return 0.0
+        if value > 2.0:
+            print(f"WARNING: ZScale contrast too large ({value}). Clamping to 2.0", file=sys.stderr)
+            return 2.0
+        return value
+
+    @validate('interval_zscale_maxreject')
+    def _validate_maxreject(self, proposal):
+        """Validate max_reject parameter for ZScale - must be fraction between 0 and 1"""
+        value = proposal['value']
+        if value < 0.0:
+            print(f"WARNING: ZScale max_reject must be between 0 and 1, got {value}. Using 0.0", file=sys.stderr)
+            return 0.0
+        if value > 1.0:
+            print(f"WARNING: ZScale max_reject must be between 0 and 1, got {value}. Using 1.0", file=sys.stderr)
+            return 1.0
+        return value
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

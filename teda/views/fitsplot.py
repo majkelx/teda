@@ -220,14 +220,79 @@ class FitsPlotter(tr.HasTraits):
         if cache_key == self._norm_cache_key and self._norm_cache is not None:
             return self._norm_cache
 
-        # Create new normalization and cache it
-        self._norm_cache = vis.ImageNormalize(
-            self.data,
-            interval=self.interval,
-            stretch=self.stretch,
-            clip=True
-        )
-        self._norm_cache_key = cache_key
+        # Create new normalization with robust error handling
+        try:
+            self._norm_cache = vis.ImageNormalize(
+                self.data,
+                interval=self.interval,
+                stretch=self.stretch,
+                clip=True
+            )
+            self._norm_cache_key = cache_key
+        except Exception as e:
+            # Log the error with details about what failed
+            import sys
+            interval_name = type(self.interval).__name__
+            stretch_name = type(self.stretch).__name__
+            print(f"ERROR: Normalization failed with {stretch_name} stretch and {interval_name} interval: {e}",
+                  file=sys.stderr)
+
+            # Try fallback strategy: use simpler interval/stretch
+            fallback_tried = False
+
+            # First fallback: Try MinMaxInterval with current stretch
+            if not isinstance(self.interval, vis.MinMaxInterval):
+                try:
+                    print(f"Trying fallback: MinMaxInterval with {stretch_name}", file=sys.stderr)
+                    fallback_tried = True
+                    self._norm_cache = vis.ImageNormalize(
+                        self.data,
+                        interval=vis.MinMaxInterval(),
+                        stretch=self.stretch,
+                        clip=True
+                    )
+                    print(f"SUCCESS: Fallback to MinMaxInterval worked", file=sys.stderr)
+                    # Update the interval to MinMax so UI reflects the actual state
+                    self.interval = vis.MinMaxInterval()
+                    self.scale_model.selected_interval = 'minmax'
+                    self._norm_cache_key = (
+                        type(self.stretch).__name__,
+                        'MinMaxInterval',
+                        id(self.data) if self.data is not None else None
+                    )
+                    return self._norm_cache
+                except Exception as e2:
+                    print(f"Fallback to MinMaxInterval also failed: {e2}", file=sys.stderr)
+
+            # Second fallback: Try LinearStretch with MinMaxInterval (safest combination)
+            if not fallback_tried or True:  # Always try this as ultimate fallback
+                try:
+                    print(f"Trying ultimate fallback: LinearStretch with MinMaxInterval", file=sys.stderr)
+                    self._norm_cache = vis.ImageNormalize(
+                        self.data,
+                        interval=vis.MinMaxInterval(),
+                        stretch=vis.LinearStretch(),
+                        clip=True
+                    )
+                    print(f"SUCCESS: Ultimate fallback worked", file=sys.stderr)
+                    # Update both interval and stretch to safe defaults
+                    self.interval = vis.MinMaxInterval()
+                    self.stretch = vis.LinearStretch()
+                    self.scale_model.selected_interval = 'minmax'
+                    self.scale_model.selected_stretch = 'linear'
+                    self._norm_cache_key = (
+                        'LinearStretch',
+                        'MinMaxInterval',
+                        id(self.data) if self.data is not None else None
+                    )
+                    return self._norm_cache
+                except Exception as e3:
+                    # This should never happen, but if it does, we can't recover
+                    print(f"CRITICAL: Even ultimate fallback failed: {e3}", file=sys.stderr)
+                    print(f"Data shape: {self.data.shape if self.data is not None else 'None'}", file=sys.stderr)
+                    print(f"Data type: {self.data.dtype if self.data is not None else 'None'}", file=sys.stderr)
+                    # Re-raise the original exception
+                    raise
 
         return self._norm_cache
 
