@@ -1,11 +1,34 @@
 import logging
 from astropy.io import fits
-from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU)
+from astropy.io.fits.hdu import(PrimaryHDU, ImageHDU, CompImageHDU)
 import traitlets as tr
 
 from .fitsplotcontrolled import FitsPlotterControlled
 
 logger = logging.getLogger(__name__.rsplit('.')[-1])
+
+_IMAGE_HDU_TYPES = (PrimaryHDU, ImageHDU, CompImageHDU)
+
+
+def _is_image_hdu(hdu):
+    """Return True if the HDU can hold a 2D+ image (incl. tile-compressed)."""
+    return isinstance(hdu, _IMAGE_HDU_TYPES)
+
+
+def _first_image_hdu_index(hduls):
+    """Index of the first HDU that actually carries image data, or 0 as fallback.
+
+    A PRIMARY HDU without NAXIS (common in tile-compressed files) is skipped in
+    favor of the COMPRESSED_IMAGE extension that follows it.
+    """
+    for i, hdu in enumerate(hduls):
+        if not _is_image_hdu(hdu):
+            continue
+        if isinstance(hdu, CompImageHDU):
+            return i
+        if getattr(hdu, 'shape', None):
+            return i
+    return 0
 
 
 class FitsPlotterFitsFile(FitsPlotterControlled):
@@ -24,8 +47,7 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
     @property
     def data(self):
         self.open()
-        if self._huds is not None and \
-                (isinstance(self._huds[self.hdu], PrimaryHDU) or isinstance(self._huds[self.hdu], ImageHDU)):
+        if self._huds is not None and _is_image_hdu(self._huds[self.hdu]):
             try:
                 return self._huds[self.hdu].data
             except ValueError as e:
@@ -52,6 +74,7 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
                 logger.warning(f'Cannot use memmap for {self.fitsfile}: {e}. Falling back to memmap=False')
                 self._huds = fits.open(self.fitsfile, lazy_load_hdus=True, memmap=False)
             self._huds.info()
+            self.hdu = _first_image_hdu_index(self._huds)
 
     def set_file(self, filename):
         if filename is not None:
@@ -72,6 +95,8 @@ class FitsPlotterFitsFile(FitsPlotterControlled):
                 self._huds = None
         else:
             self._huds = None
+        if self._huds is not None:
+            self.hdu = _first_image_hdu_index(self._huds)
         self.fitsfile = filename
 
     @data.setter

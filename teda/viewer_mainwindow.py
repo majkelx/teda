@@ -209,7 +209,9 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Ready", 2000)
 
     def open_dialog(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open Image", ".", "Fits files (*.fits)")
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Open Image", ".",
+            "FITS files (*.fits *.fit *.fts *.fits.fz *.fits.gz *.fz);;All files (*)")
         if fileName:
             self.open_fits(fileName)
 
@@ -555,6 +557,9 @@ class MainWindow(QMainWindow):
         self.hduToolBar = self.addToolBar("HDU Toolbar")
         self.hduToolBar.addAction(self.prevHDUAct)
         self.hduToolBar.addAction(self.nextHDUAct)
+        self.hduInfoLabel = QLabel(" HDU —/— ")
+        self.hduInfoLabel.setContentsMargins(8, 0, 8, 0)
+        self.hduToolBar.addWidget(self.hduInfoLabel)
 
         self.scanToolBar = self.addToolBar("Scan Toolbar")
         self.scanToolBar.addAction(self.scanObject.scanAct)
@@ -623,6 +628,23 @@ class MainWindow(QMainWindow):
         self.headerWidget.setHeader()
         self.prevHDUAct.setEnabled(self.fits_image._huds is not None and self.fits_image.hdu != 0)
         self.nextHDUAct.setEnabled(self.fits_image._huds is not None and self.fits_image.hdu != len(self.fits_image._huds) - 1)
+        self.updateHduInfoLabel()
+
+    def updateHduInfoLabel(self):
+        huds = self.fits_image._huds
+        if huds is None:
+            self.hduInfoLabel.setText(" HDU —/— ")
+            return
+        idx = self.fits_image.hdu
+        total = len(huds)
+        try:
+            hdu = huds[idx]
+            name = hdu.name or type(hdu).__name__
+            kind = type(hdu).__name__.replace('HDU', '')
+            label = f" HDU {idx}/{total - 1}: {name} ({kind}) "
+        except (IndexError, AttributeError):
+            label = f" HDU {idx}/{total - 1} "
+        self.hduInfoLabel.setText(label)
 
     def setZoomButton4(self):
         self.setZoomButton(4,False)

@@ -176,10 +176,19 @@ class FileSystemWidget(QWidget):
 
         self.setPath(self.currentRootPath)
 
+    FITS_NAME_FILTERS = [
+        "*.fits", "*.FITS",
+        "*.fit", "*.FIT",
+        "*.fts", "*.FTS",
+        "*.fits.fz", "*.FITS.fz", "*.fits.FZ", "*.FITS.FZ",
+        "*.fits.gz", "*.FITS.gz", "*.fits.GZ", "*.FITS.GZ",
+        "*.fz", "*.FZ",
+    ]
+
     def showOFFiles(self):
         if self.showOFAction.isChecked():
-            self.dirsModel.setNameFilters(["*.FITS", "*.fits"])
-            self.filesModel.setNameFilters(["*.FITS", "*.fits"])
+            self.dirsModel.setNameFilters(self.FITS_NAME_FILTERS)
+            self.filesModel.setNameFilters(self.FITS_NAME_FILTERS)
         else:
             self.dirsModel.setNameFilters(["*"])
             self.filesModel.setNameFilters(["*"])
